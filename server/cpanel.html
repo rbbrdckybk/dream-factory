@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dream Factory</title>
+    <link rel="shortcut icon" type="image/jpg" href="/static/img/favicon.ico"/>
+    <link href="/static/css/style.css" rel="stylesheet">
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script src="/static/js/shared.js"></script>
+    <script type="text/javascript">
+
+    function new_prompt_file() {
+      new_file = document.getElementById('prompt-file').value;
+      if (new_file != "") {
+        $.ajax({
+          type: "POST",
+          url: "/generator",
+          data: { "type": "prompt_file", "arg": new_file}
+        })
+        .done(function() {
+          document.getElementById('prompt-file').selectedIndex = 0;
+        });
+      }
+    }
+
+    $(document).ready(function() {
+        var status_timeout = setInterval(reloadStatus, 1000);
+        var prompt_timeout = setInterval(reloadPrompts, 1000);
+
+        const status_node = document.getElementById('server-status');
+        const prompt_node = document.getElementById('prompt-dynamic');
+        const prompt_dropdown = document.getElementById('prompt-select');
+
+        function reloadStatus() {
+            $.ajax({
+              type: "STATUS_REFRESH",
+              url: "/generator"
+            })
+            .done(function(string) {
+              paused = string.charAt(0);
+              if (paused == 'y') {
+                  document.getElementById("server-pause").style.display="none";
+                  document.getElementById("server-unpause").style.display="block";
+                  document.getElementById("server-shutdown").style.display="block";
+              } else {
+                  document.getElementById("server-pause").style.display="block";
+                  document.getElementById("server-unpause").style.display="none";
+                  document.getElementById("server-shutdown").style.display="none";
+              }
+              string = string.substring(1);
+              status_node.innerHTML = string;
+            });
+        }
+
+        $("#server-pause").click(function(e) {
+          $.ajax({
+            type: "SERVER_PAUSE",
+            url: "/generator"
+          })
+          .done(function() {
+          });
+        });
+
+        $("#server-unpause").click(function(e) {
+          $.ajax({
+            type: "SERVER_UNPAUSE",
+            url: "/generator"
+          })
+          .done(function() {
+          });
+        });
+
+        function shutdown() {
+          $.ajax({
+            type: "SERVER_SHUTDOWN",
+            url: "/generator"
+          })
+          .done(function() {
+          });
+        }
+
+        $("#server-shutdown").click(function(e) {
+          if (niceAlert("Initiate Shutdown?", "You'll need to restart from the command line after shutdown.", "Shutting down...", "", shutdown) == true) {
+              // shutdown function will be called if user confirms
+          }
+        });
+
+        function reloadPrompts() {
+            $.ajax({
+              type: "PROMPT_REFRESH",
+              url: "/generator"
+            })
+            .done(function(string) {
+              prompt_node.innerHTML = string;
+            });
+        }
+
+        function loadDropdown() {
+            $.ajax({
+              type: "PROMPT_DROPDOWN_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              prompt_dropdown.innerHTML = string;
+            });
+        }
+        // just load this once per page load
+        loadDropdown();
+
+    });
+    </script>
+  </head>
+  <body>
+
+    <div data-include="header"></div>
+
+    <div id="server-panel" class="panel">
+        <div id="server-title" class="panel-title">
+            Server Control
+        </div>
+        <div class="server-row">
+            <div id="server-status" class="server-status">
+            </div>
+            <div id="server-controls" class="server-controls">
+                <button id="server-pause" class="server-button" style="display: none;">Pause</button>
+                <button id="server-unpause" class="server-button" style="display: none;">Resume</button>
+            </div>
+            <div id="shutdown-controls" class="server-controls">
+              <button id="server-shutdown" class="server-button" style="display: none;">Shutdown</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prompt-panel" class="panel">
+      <div id="prompt-title" class="panel-title top-spacer">
+          Prompt File
+      </div>
+      <div id="prompt-column" class="panel-column">
+        <div id="prompt-dynamic">
+        </div>
+        <div id="prompt-select" class="prompt-status">
+        </div>
+      </div>
+    </div>
+
+    <div data-include="footer"></div>
+  </body>
+</html>

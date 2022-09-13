@@ -1,0 +1,18 @@
+###############################################################################
+### Dream Factory default configuration file
+###############################################################################
+
+# directory containing your prompt files
+PROMPTS_LOCATION = prompts
+
+# directory where output images will be created
+OUTPUT_LOCATION = output
+
+# use the webserver (yes/no)? this is required to use the browser interface
+WEBSERVER_USE = yes
+
+# automatically attempt to open the server interface in your browser (yes/no)?
+WEBSERVER_OPEN_BROWSER = yes
+
+# log webserver messages to the console (yes/no)? for debugging
+WEBSERVER_CONSOLE_LOG = no
