@@ -18,6 +18,11 @@
         })
         .done(function() {
           document.getElementById('prompt-file').selectedIndex = 0;
+          // unpause the server if paused upon loading new file
+          $.ajax({
+            type: "SERVER_UNPAUSE",
+            url: "/generator"
+          })
         });
       }
     }

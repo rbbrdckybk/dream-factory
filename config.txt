@@ -15,4 +15,4 @@ WEBSERVER_USE = yes
 WEBSERVER_OPEN_BROWSER = yes
 
 # log webserver messages to the console (yes/no)? for debugging
-WEBSERVER_CONSOLE_LOG = no
+WEBSERVER_CONSOLE_LOG = yes

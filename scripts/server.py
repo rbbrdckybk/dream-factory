@@ -23,7 +23,13 @@ def build_prompt_panel(control):
         buffer += "\t</div>\n"
 
         buffer += "\t<div style=\"font-size: 12px; font-weight: normal;\">\n"
-        buffer += "\t\t6 of 100 prompt combinations completed | loops done: 1 | repeat: on\n"
+        if control.get_mode() == 'random':
+            if control.prompt_manager.config.get('random_input_image_dir') != '':
+                buffer += "\t\tmode: random prompts, random input images\n"
+            else:
+                buffer += "\t\tmode: random prompts\n"
+        elif control.get_mode() == 'combination':
+            buffer += "\t\t6 of 100 prompt combinations completed | loops done: 1 | repeat: on\n"
         buffer += "\t</div>\n"
 
         buffer += "</div>\n"
@@ -61,7 +67,7 @@ def build_worker_panel(workers):
         if count > 0:
             buffer += '\n'
 
-        working_text = "working"
+        working_text = "dreaming"
         clock_text = "0:00"
         prompt_text = "prompt goes here"
         prompt_options_text = "prompt options go here"
@@ -72,7 +78,17 @@ def build_worker_panel(workers):
             prompt_text = ""
             prompt_options_text = ""
         else:
-            prompt_text = worker["job_prompt_info"]
+            prompt_text = worker["job_prompt_info"].get('prompt')
+
+            prompt_options_text = ""
+            if worker["job_prompt_info"].get('input_image') != "":
+                prompt_options_text = "init image: " + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image'))
+            else:
+                prompt_options_text = 'size: ' + str(worker["job_prompt_info"].get('width')) + 'x' + str(worker["job_prompt_info"].get('height'))
+
+            prompt_options_text += ' | steps: ' + str(worker["job_prompt_info"].get('steps')) \
+                + ' | scale: ' + str(worker["job_prompt_info"].get('scale')) \
+                + ' | samples: ' + str(worker["job_prompt_info"].get('samples'))
             exec_time = time.time() - worker["job_start_time"]
             clock_text = time.strftime("%M:%S", time.gmtime(exec_time))
 

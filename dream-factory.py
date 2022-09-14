@@ -53,15 +53,28 @@ class Worker(threading.Thread):
         if len(args) > 1:
             self.output_buffer = args[1]
 
+
     def run(self):
         self.print("starting job #" + str(self.worker['jobs_done']+1) + ":")
-        self.print("command: " + self.command)
+
+        if not self.command.get('seed') > 0:
+            self.command['seed'] = random.randint(1, 2**32) - 1000
+
+        # if this is a random prompt, settle on random values
+        if self.command.get('mode') == 'random':
+            self.command['scale'] = round(random.uniform(float(self.command.get('min_scale')), float(self.command.get('max_scale'))), 1)
+            self.command['strength'] = round(random.uniform(float(self.command.get('min_strength')), float(self.command.get('max_strength'))), 2)
+            if self.command.get('random_input_image_dir') != "":
+                self.command['input_image'] = utils.InputManager(self.command.get('random_input_image_dir')).pick_random()
+
+        command = utils.create_command(self.command, self.command.get('prompt_file'))
+        self.print("command: " + command)
 
         start_time = time.time()
         self.worker['job_start_time'] = start_time
         self.worker['job_prompt_info'] = self.command
 
-        work_time = round(random.uniform(1, 5), 2)
+        work_time = round(random.uniform(5, 25), 2)
         time.sleep(work_time)
         exec_time = time.time() - start_time
 
@@ -87,7 +100,11 @@ class Controller:
         self.config_file = config_file
         self.config = {}
         self.prompt_file = ""
-        self.output_buffer = deque([], maxlen=200)
+
+        self.prompt_manager = None
+        self.input_manager = None
+
+        self.output_buffer = deque([], maxlen=300)
         self.work_queue = deque()
         self.workers = []
         self.work_done = False
@@ -113,11 +130,18 @@ class Controller:
         worker_list.append("cuda:0")
         worker_list.append("cuda:1")
         worker_list.append("cuda:2")
-        worker_list.append("cpu")
+        #worker_list.append("cpu")
 
         self.init_workers(worker_list)
-        self.init_work_queue()
+        #self.init_work_queue()
 
+
+    # returns the current operation mode (combination or random)
+    def get_mode(self):
+        if self.prompt_manager != None:
+            return self.prompt_manager.config.get('mode')
+        else:
+            return None
 
     # reads the config file
     def init_config(self):
@@ -278,14 +302,6 @@ class Controller:
         return working
 
 
-    # build a work queue with the specified prompt and style files
-    def init_work_queue(self):
-        for i in range(20):
-            work = "Test work item #" + str(i+1)
-            self.work_queue.append(work)
-
-        self.print("queued " + str(len(self.work_queue)) + " work items.")
-
     # start a new worker thread
     def do_work(self, worker, command):
         worker['idle'] = False
@@ -303,15 +319,46 @@ class Controller:
         args[0]['job_prompt_info'] = ''
 
 
+
+    def clear_work_queue(self):
+        self.print("clearing work queue...")
+        self.work_queue.clear()
+
+
+    # build a work queue with the specified prompt and style files
+    def init_work_queue(self):
+        if self.prompt_manager.config.get('mode') == 'random':
+            for i in range(50):
+                #work = "Test work item #" + str(i+1)
+                work = self.prompt_manager.config.copy()
+                work['prompt'] = self.prompt_manager.pick_random()
+                work['prompt_file'] = self.prompt_file
+                self.work_queue.append(work)
+
+        self.print("queued " + str(len(self.work_queue)) + " work items.")
+
+
     # loads a new prompt file
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
-
         # TODO validate prompt file
         # create work queue
         # handle both combination/random prompt files
-
         self.prompt_file = new_file
+        self.prompt_manager = utils.PromptManager(self.prompt_file)
+
+        self.prompt_manager.handle_config()
+        self.input_manager = utils.InputManager(self.prompt_manager.config.get('random_input_image_dir'))
+
+        # test
+        self.clear_work_queue()
+        self.init_work_queue()
+
+
+
+
+
+
 
 
     # for debugging; prints a report of current worker status
@@ -364,16 +411,21 @@ if __name__ == '__main__':
                     new_work = control.work_queue.popleft()
                     control.do_work(worker, new_work)
                 else:
-                    if not control.repeat_jobs:
-                        control.is_paused = True
-                        # no more jobs, wait for all workers to finish
-                        control.print('No more work in queue; waiting for all workers to finish...')
-                        while control.num_workers_working() > 0:
-                            time.sleep(.01)
-                        control.print('All work done; pausing server - add some more work via the control panel!')
-                    else:
-                        # flag to repeat work enabled, re-load work queue
+                    # if we're in random prompts mode, re-fill the queue
+                    if control.prompt_manager != None and control.prompt_manager.config.get('mode') == 'random':
+                        control.print('adding more random prompts to the work queue...')
                         control.init_work_queue()
+                    else:
+                        if not control.repeat_jobs:
+                            control.is_paused = True
+                            # no more jobs, wait for all workers to finish
+                            control.print('No more work in queue; waiting for all workers to finish...')
+                            while control.num_workers_working() > 0:
+                                time.sleep(.01)
+                            control.print('All work done; pausing server - add some more work via the control panel!')
+                        else:
+                            # flag to repeat work enabled, re-load work queue
+                            control.init_work_queue()
 
         else:
             time.sleep(.01)

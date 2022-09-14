@@ -152,16 +152,19 @@ a:hover {
     display: flex;
     justify-content: space-between;
     background-color: #222222;
+    margin-left: 4px;
 }
 
 .worker-info-header > div.small {
     font-size: 12px;
     font-weight: normal;
     padding-top: 2px;
+    margin-right: 6px;
 }
 
 .worker-info-prompt {
     background-color: #111111;
+    font-size: 12px;
     padding-top: 2px;
     display: flex;
     flex-grow: 1;
@@ -170,9 +173,10 @@ a:hover {
 .worker-info-prompt > div.left {
     display: flex;
     flex-direction: column;
-    width: 120px;
+    min-width: 105px;
     padding-top: 6px;
     text-align: center;
+    color: #BBEEBB;
 }
 
 .worker-info-prompt > div.left > div.clock {
@@ -195,6 +199,9 @@ a:hover {
     width: 100%;
     align-self: flex-end;
     text-align: right;
+    margin-top: 6px;
+    margin-right: 4px;
+    color: #338833;
 }
 
 .buffer-panel {
@@ -223,7 +230,7 @@ a:hover {
     white-space: pre-wrap;
     overflow-y: scroll;
     font-family: "Lucida Console", "Courier New", monospace;
-    font-size: 12px;
+    font-size: 11px;
     color: #77BB77;
     margin: 4px;
     border: 2px solid #999999;
