@@ -2,6 +2,11 @@
 ### Dream Factory default configuration file
 ###############################################################################
 
+# specify which GPU(s) to use here; auto will attempt to use all detected devices
+# to specify individual GPUs, use a comma-separated list of device IDs
+# e.g. USE_GPU_DEVICES = 0, 1, 2
+USE_GPU_DEVICES = auto
+
 # directory containing your prompt files
 PROMPTS_LOCATION = prompts
 
@@ -11,8 +16,11 @@ OUTPUT_LOCATION = output
 # use the webserver (yes/no)? this is required to use the browser interface
 WEBSERVER_USE = yes
 
+# port the webserver listens on
+WEBSERVER_PORT = 80
+
 # automatically attempt to open the server interface in your browser (yes/no)?
 WEBSERVER_OPEN_BROWSER = yes
 
 # log webserver messages to the console (yes/no)? for debugging
-WEBSERVER_CONSOLE_LOG = yes
+WEBSERVER_CONSOLE_LOG = no

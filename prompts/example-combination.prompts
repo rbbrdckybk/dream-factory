@@ -1,24 +1,26 @@
 # *******************************************************************************
-# Dream Factory example prompt file (random mode)
+# Dream Factory example prompt file (combination mode)
 # config options go here and will override any set in your global config file
 # this is optional, will use global config defaults if not provided
 # *******************************************************************************
 [config]
 
-!MODE = random					# random mode; create random prompts from [prompt] sections below
+!MODE = combination			# combination mode; queue all possible prompt combos
 !SD_LOW_MEMORY = yes			# low GPU VRAM mode (yes/no)? slower but far less VRAM required
 !SD_LOW_MEM_TURBO = yes		# if you're still getting out-of-memory errors in low VRAM mode, set this to no
 !REPEAT = yes					# repeat when all work finished (yes/no)?
 !DELIM = " "					# delimiter to use between prompt sections, default is space
+
+# you may put also embed any of the following config directives into the [prompt] sections 
+# below; they'll affect all prompts that follow the directive
+
 !WIDTH = 512					# output image width, default is 512
 !HEIGHT = 512					# output image height, default is 512
 !STEPS = 50						# number of steps, more may improve image
-!MIN_SCALE = 6					# minimum guidance scale, default = 7.5
-!MAX_SCALE = 18				# maximum guidance scale, set min and max to same number for no variance
-!SAMPLES = 3					# number of images to generate per prompt
-!RANDOM_INPUT_IMAGE_DIR =		# specify a directory of images here to randomly use them as inputs
-!MIN_STRENGTH = 0.65			# min strength of starting image influence, (0-1, with 1 corresponding to least influence)
-!MAX_STRENGTH = 0.85			# max strength of start image, set min and max to same number for no variance
+!SCALE = 7.5					# guidance scale, increase to for stricter prompt adherence
+!SAMPLES = 2					# number of images to generate per prompt
+!INPUT_IMAGE = 				# can specify an input image here (output image will be same resolution)
+!STRENGTH = 0.75				# strength of input image influence (0-1, with 1 corresponding to least influence)
 
 # optional integrated upscaling
 
@@ -30,7 +32,8 @@
 
 # *******************************************************************************
 # prompt section
-# one of these items will be picked at random
+# each of these items will be combined with all other items in all other [prompt] sections
+# see end of file for detailed explanation with examples
 # *******************************************************************************
 [prompts]
 
@@ -40,7 +43,6 @@ a beautiful landscape
 
 # *******************************************************************************
 # another prompt section
-# since there is only one line here, this will always be chosen
 # *******************************************************************************
 [prompts]
 
@@ -49,10 +51,8 @@ a beautiful landscape
 
 # *******************************************************************************
 # another prompt section
-# 2-6 means that between 2-6 of these items will be picked at random
-# " and " will be used to join the chosen items together
 # *******************************************************************************
-[prompts 2-6 " and "]
+[prompts]
 
 Aleksi Briclot
 Alessio Albi
@@ -67,7 +67,6 @@ Ayami Kojima
 
 # *******************************************************************************
 # another prompt section
-# since there is only one line here, this will always be chosen
 # *******************************************************************************
 [prompts]
 
@@ -75,10 +74,8 @@ Ayami Kojima
 
 # *******************************************************************************
 # another prompt section
-# between 1-2 of these items will be picked
-# ", " will be used to join them together
 # *******************************************************************************
-[prompts 1-2 ", "]
+[prompts]
 
 ethereal
 full of details
@@ -89,22 +86,16 @@ digital painting
 muted colors
 
 
-# *******************************************************************************
-# another prompt section
-# between 0-1 of these will be chosen (e.g. possible nothing will be picked)
-# *******************************************************************************
-[prompts 0-1]
+# since we have 5 [prompt] sections, each with 3, 1, 9, 1, and 7 respective items
+# (any embedded command directives don't count), we end up with a total of 
+# 189 possible combinations (3 x 1 x 9 x 7 = 189)
+# the resulting prompt queue will look like this:
 
-artstation
-masterpiece
-highly detailed
+# a cute robot, art by Aleksi Briclot, ethereal
+# a portrait of a cat, art by Aleksi Briclot, ethereal
+# a beautiful landscape, art by Aleksi Briclot, ethereal
+# a cute robot, art by Alessio Albi, ethereal
 
-# example resulting prompts might be:
-# a portrait of a cat, art by Alexander Jansson and Alessio Albi and Arthur Adams, digital painting, masterpiece
-# a cute robot, art by Ayami Kojima and Alphonse Mucha, muted colors, surrealism, highly detailed
-# a beautiful landscape, art by Arthur Adams and Ayami Kojima and Alex Horley-Orlandelli and Anna Dittmann and Andreas Rocha, illustration
-
-
-# when specifying multiple items can be picked from a [prompt] section, duplicates will be avoided
-# prompts will be continuously randomly generated until you stop
-# random is random - no attempt is made to guarantee an even distribution!
+# ... and so on, for all 189 possibilities
+# be careful adding too many [prompt] sections with more than 1 item, as the 
+# increase in prompt combinations is exponential!

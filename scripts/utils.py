@@ -11,6 +11,7 @@ import unicodedata
 import re
 import random
 import os
+import itertools
 from os.path import exists
 from datetime import datetime as dt
 from datetime import date
@@ -72,9 +73,9 @@ class InputManager():
 
 # for easy management of prompts
 class PromptManager():
-    def __init__(self, prompt_file):
-        # text file containing all of the prompt/style/etc info
-        self.prompt_file_name = prompt_file
+    def __init__(self, control_ref):
+        # reference to control obj, lazy but it'll do for now
+        self.control = control_ref
 
         # dictionary of config info w/ initial defaults
         self.config = {}
@@ -92,7 +93,7 @@ class PromptManager():
 
     # init the prompts list
     def __init_prompts(self, which_list, search_text):
-        with open(self.prompt_file_name) as f:
+        with open(self.control.prompt_file) as f:
             lines = f.readlines()
 
             found_header = False
@@ -156,7 +157,7 @@ class PromptManager():
 
     # init the config list
     def __init_config(self, which_list, search_text):
-        with open(self.prompt_file_name) as f:
+        with open(self.control.prompt_file) as f:
             lines = f.readlines()
 
             search_header = '[' + search_text + ']'
@@ -219,7 +220,179 @@ class PromptManager():
         else:
             print("prompts list is empty")
 
-    # update config variables if there were changes in the prompt file
+
+    # handle prompt file config directives
+    def handle_directive(self, command, value):
+        if command == 'width':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    print("*** WARNING: specified 'WIDTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'width' : value})
+
+        elif command == 'height':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'height' : value})
+
+        elif command == 'seed':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    print("*** WARNING: specified 'SEED' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'seed' : value})
+
+        elif command == 'steps':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    print("*** WARNING: specified 'STEPS' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'steps' : value})
+
+        elif command == 'scale':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'scale' : value})
+
+        elif command == 'min_scale':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'MIN_SCALE' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'min_scale' : value})
+
+        elif command == 'max_scale':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'MAX_SCALE' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'max_scale' : value})
+
+        elif command == 'samples':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    print("*** WARNING: specified 'SAMPLES' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'samples' : value})
+
+        elif command == 'batch_size':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    print("*** WARNING: specified 'BATCH_SIZE' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'batch_size' : value})
+
+        elif command == 'strength':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'strength' : value})
+
+        elif command == 'min_strength':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'MIN_STRENGTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'min_strength' : value})
+
+        elif command == 'max_strength':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'MAX_STRENGTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'max_strength' : value})
+
+        elif command == 'sd_low_memory':
+            if value == 'yes' or value == 'no':
+                self.config.update({'sd_low_memory' : value})
+
+        elif command == 'sd_low_mem_turbo':
+            if value == 'yes' or value == 'no':
+                self.config.update({'sd_low_mem_turbo' : value})
+
+        elif command == 'use_upscale':
+            if value == 'yes' or value == 'no':
+                self.config.update({'use_upscale' : value})
+
+        elif command == 'upscale_amount':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'UPSCALE_AMOUNT' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'upscale_amount' : value})
+
+        elif command == 'upscale_face_enh':
+            if value == 'yes' or value == 'no':
+                self.config.update({'upscale_face_enh' : value})
+
+        elif command == 'upscale_keep_org':
+            if value == 'yes' or value == 'no':
+                self.config.update({'upscale_keep_org' : value})
+
+        elif command == 'mode':
+            if value == 'random' or value == 'combination':
+                self.config.update({'mode' : value})
+
+        elif command == 'input_image':
+            if value != '':
+                self.config.update({'input_image' : value})
+
+        elif command == 'random_input_image_dir':
+            if value != '':
+                self.config.update({'random_input_image_dir' : value})
+
+        elif command == 'repeat':
+            if value == 'yes':
+                self.control.repeat_jobs = True
+            elif value == 'no':
+                self.control.repeat_jobs = False
+
+        elif command == 'delim':
+            if value != '':
+                if value.startswith('\"') and value.endswith('\"'):
+                    self.config.update({'delim' : value.strip('\"')})
+                    #print("New delim: \"" + self.config.get('delim')  + "\"")
+                else:
+                    print("*** WARNING: prompt file command DELIM value (" + value + ") not understood (make sure to put quotes around it)! ***")
+                    time.sleep(1.5)
+
+        else:
+            print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
+            time.sleep(1.5)
+
+
+    # update config variables if there were changes in the prompt file [config]
     def handle_config(self):
         if len(self.conf) > 0:
             for line in self.conf:
@@ -228,168 +401,53 @@ class PromptManager():
                 if ss:
                     command = ss.group(1).lower().strip()
                     value = line.split("=",1)[1].lower().strip()
+                    self.handle_directive(command, value)
 
-                    if command == 'width':
-                        if value != '':
-                            try:
-                                int(value)
-                            except:
-                                print("*** WARNING: specified 'WIDTH' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'width' : value})
 
-                    elif command == 'height':
-                        if value != '':
-                            try:
-                                int(value)
-                            except:
-                                print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'height' : value})
+    # return a list of all possible PromptSection combinations
+    def build_combinations(self):
+        prompt_work_queue = deque()
 
-                    elif command == 'seed':
-                        if value != '':
-                            try:
-                                int(value)
-                            except:
-                                print("*** WARNING: specified 'SEED' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'seed' : value})
+        # convert PromptSections to simple lists so they're iterable
+        all_prompts = list()
+        for ps in self.prompts:
+            prompts = list()
+            prompts = ps.tokens
+            all_prompts.append(prompts)
 
-                    elif command == 'steps':
-                        if value != '':
-                            try:
-                                int(value)
-                            except:
-                                print("*** WARNING: specified 'STEPS' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'steps' : value})
+        # get all possible combos
+        prompt_combos = itertools.product(*all_prompts)
 
-                    elif command == 'scale':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'scale' : value})
+        # associate a copy of config info with each prompt
+        for prompt in prompt_combos:
+            work = self.config.copy()
+            work['prompt_file'] = self.control.prompt_file
+            str_prompt = ""
+            fragments = 0
+            is_directive = False
 
-                    elif command == 'min_scale':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'MIN_SCALE' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'min_scale' : value})
+            for fragment in prompt:
+                # handle embedded command directives
+                ss = re.search('!(.+?)=', fragment)
+                if ss:
+                    # this is a directive, handle it and ignore this combination
+                    command = ss.group(1).lower().strip()
+                    value = fragment.split("=",1)[1].lower().strip()
+                    self.handle_directive(command, value)
+                    is_directive = True
+                    break
 
-                    elif command == 'max_scale':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'MAX_SCALE' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'max_scale' : value})
+                if fragments > 0:
+                    if not (fragment.startswith(',') or fragment.startswith(';')):
+                        str_prompt += self.config.get('delim')
+                str_prompt += fragment
+                fragments += 1
 
-                    elif command == 'samples':
-                        if value != '':
-                            try:
-                                int(value)
-                            except:
-                                print("*** WARNING: specified 'SAMPLES' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'samples' : value})
+            if not is_directive:
+                work['prompt'] = str_prompt
+                prompt_work_queue.append(work.copy())
 
-                    elif command == 'batch_size':
-                        if value != '':
-                            try:
-                                int(value)
-                            except:
-                                print("*** WARNING: specified 'BATCH_SIZE' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'batch_size' : value})
-
-                    elif command == 'strength':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'strength' : value})
-
-                    elif command == 'min_strength':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'MIN_STRENGTH' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'min_strength' : value})
-
-                    elif command == 'max_strength':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'MAX_STRENGTH' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'max_strength' : value})
-
-                    elif command == 'sd_low_memory':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'sd_low_memory' : value})
-
-                    elif command == 'sd_low_mem_turbo':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'sd_low_mem_turbo' : value})
-
-                    elif command == 'use_upscale':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'use_upscale' : value})
-
-                    elif command == 'upscale_amount':
-                        if value != '':
-                            try:
-                                float(value)
-                            except:
-                                print("*** WARNING: specified 'UPSCALE_AMOUNT' is not a valid number; it will be ignored!")
-                            else:
-                                self.config.update({'upscale_amount' : value})
-
-                    elif command == 'upscale_face_enh':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'upscale_face_enh' : value})
-
-                    elif command == 'upscale_keep_org':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'upscale_keep_org' : value})
-
-                    elif command == 'mode':
-                        if value == 'random' or value == 'combination':
-                            self.config.update({'mode' : value})
-
-                    elif command == 'input_image':
-                        if value != '':
-                            self.config.update({'input_image' : value})
-
-                    elif command == 'random_input_image_dir':
-                        if value != '':
-                            self.config.update({'random_input_image_dir' : value})
-
-                    elif command == 'delim':
-                        if value != '':
-                            if value.startswith('\"') and value.endswith('\"'):
-                                self.config.update({'delim' : value.strip('\"')})
-                                #print("New delim: \"" + self.config.get('delim')  + "\"")
-                            else:
-                                print("*** WARNING: prompt file command DELIM value (" + value + ") not understood (make sure to put quotes around it)! ***")
-                                time.sleep(1.5)
-
-                    else:
-                        print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
-                        time.sleep(1.5)
+        return prompt_work_queue
 
 
     # create a random prompt from the information in the prompt file
@@ -439,15 +497,6 @@ class PromptManager():
         full_prompt = full_prompt.strip().strip(',')
 
         return full_prompt
-
-
-
-
-
-
-
-
-
 
 
 # for easy reading of prompt/config files
@@ -509,7 +558,7 @@ def path_from_abspath(fpath):
 
 # creates the full command to invoke SD with our specified params
 # and selected prompt + input image
-def create_command(command, output_dir_ext):
+def create_command(command, output_dir_ext, gpu_id):
     output_dir_ext = filename_from_abspath(output_dir_ext)
     if '.' in output_dir_ext:
         output_dir_ext = output_dir_ext.split('.', 1)[0]
@@ -527,8 +576,13 @@ def create_command(command, output_dir_ext):
     if command.get('sd_low_memory') == "yes" and command.get('sd_low_mem_turbo') == "yes":
         py_command += " --turbo"
 
+    # if this isn't happening on the default gpu, specify the device
+    if "cuda:" in gpu_id and gpu_id != "cuda:0":
+        py_command += " --device \"" + gpu_id + "\""
+
     py_command += " --skip_grid" \
         + " --n_iter " + str(command.get('samples')) \
+        + " --n_samples " + str(command.get('batch_size')) \
         + " --prompt \"" + str(command.get('prompt')) + "\"" \
         + " --ddim_steps " + str(command.get('steps')) \
         + " --scale " + str(command.get('scale')) \
@@ -542,3 +596,40 @@ def create_command(command, output_dir_ext):
     py_command += " --outdir \"../" + output_folder + "\""
 
     return py_command
+
+
+# ESRGAN/GFPGAN upscaling:
+# scale - upscale by this amount, default is 2.0x
+# dir - upscale all images in this folder
+# do_face_enhance - True/False use GFPGAN (for faces)
+def upscale(scale, dir, do_face_enhance, gpu_id):
+    command = "python inference_realesrgan.py -n RealESRGAN_x4plus --suffix u -s "
+
+    # check that scale is a valid float, otherwise use default scale of 2
+    try :
+        float(scale)
+        command += str(scale)
+    except :
+        command += "2"
+
+    # append the input/output dir
+    command += " -i ..//" + dir + " -o ..//" + dir
+
+    # whether to use GFPGAN for faces
+    if do_face_enhance:
+        command += " --face_enhance"
+
+    # specify gpu
+    if gpu_id != "":
+        if "cuda:" in gpu_id:
+            gpu_id = gpu_id.replace("cuda:", "")
+        command += " -g " + gpu_id
+
+    cwd = os.getcwd()
+    print("Invoking Real-ESRGAN: " + command)
+
+    # invoke Real-ESRGAN
+    if sys.platform == "win32" or os.name == 'nt':
+        subprocess.call(shlex.split(command), cwd=(cwd + '\Real-ESRGAN'), stderr=subprocess.DEVNULL)
+    else:
+        subprocess.call(shlex.split(command), cwd=(cwd + '/Real-ESRGAN'), stderr=subprocess.DEVNULL)

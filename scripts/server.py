@@ -29,7 +29,12 @@ def build_prompt_panel(control):
             else:
                 buffer += "\t\tmode: random prompts\n"
         elif control.get_mode() == 'combination':
-            buffer += "\t\t6 of 100 prompt combinations completed | loops done: 1 | repeat: on\n"
+            #buffer += "\t\t6 of 100 prompt combinations completed | loops done: 1 | repeat: on\n"
+            buffer += "\t\t" + str(control.jobs_done) + " of " + str(control.orig_work_queue_size) + " prompt combinations completed"
+            if control.repeat_jobs:
+                buffer += " | loops done: " + str(control.loops) + " | repeat: on\n"
+            else:
+                buffer += " | repeat: off\n"
         buffer += "\t</div>\n"
 
         buffer += "</div>\n"
@@ -69,8 +74,8 @@ def build_worker_panel(workers):
 
         working_text = "dreaming"
         clock_text = "0:00"
-        prompt_text = "prompt goes here"
-        prompt_options_text = "prompt options go here"
+        prompt_text = ""
+        prompt_options_text = ""
 
         if worker["idle"]:
             working_text = "idle"
@@ -79,6 +84,8 @@ def build_worker_panel(workers):
             prompt_options_text = ""
         else:
             prompt_text = worker["job_prompt_info"].get('prompt')
+            if worker["work_state"] != "":
+                working_text = worker["work_state"]
 
             prompt_options_text = ""
             if worker["job_prompt_info"].get('input_image') != "":
@@ -202,6 +209,7 @@ class ArtServer:
         }
 
     def start(self, control_ref):
+        cherrypy.config.update({'server.socket_port': control_ref.config['webserver_port']})
         webapp = ArtGenerator()
         webapp.generator = ArtGeneratorWebService(control_ref)
 
