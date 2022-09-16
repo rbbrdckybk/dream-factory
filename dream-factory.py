@@ -255,7 +255,10 @@ class Controller:
             'output_location' : 'output',
             'use_gpu_sevices' : 'auto',
             'webserver_use' : True,
-            'webserver_port' : 8080,
+            'webserver_port' : 80,
+            'webserver_use_authentication' : False,
+            'webserver_auth_username' : 'admin',
+            'webserver_auth_password' : 'password',
             'webserver_open_browser' : True,
             'webserver_console_log' : False,
             'debug_test_mode' : False
@@ -299,6 +302,21 @@ class Controller:
                             print("*** WARNING: specified 'WEBSERVER_PORT' is not a valid number; it will be ignored!")
                         else:
                             self.config.update({'webserver_port' : int(value)})
+
+                    elif command == 'webserver_use_authentication':
+                        if value == 'yes' or value == 'no':
+                            if value == 'yes':
+                                self.config.update({'webserver_use_authentication' : True})
+                            else:
+                                self.config.update({'webserver_use_authentication' : False})
+
+                    elif command == 'webserver_auth_username':
+                        if value != '':
+                            self.config.update({'webserver_auth_username' : value})
+
+                    elif command == 'webserver_auth_password':
+                        if value != '':
+                            self.config.update({'webserver_auth_password' : value})
 
                     elif command == 'webserver_open_browser':
                         if value == 'yes' or value == 'no':

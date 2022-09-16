@@ -8,6 +8,7 @@ import time
 import scripts.utils as utils
 from datetime import datetime, timedelta
 import cherrypy
+from cherrypy.lib import auth_basic
 
 
 def build_prompt_panel(control):
@@ -192,6 +193,7 @@ class ArtGeneratorWebService(object):
 
 class ArtServer:
     def __init__(self):
+        self.control_ref = None
         self.config = {
             '/': {
                 'tools.sessions.on': True,
@@ -209,17 +211,46 @@ class ArtServer:
         }
 
     def start(self, control_ref):
-        cherrypy.config.update({'server.socket_port': control_ref.config['webserver_port']})
-        webapp = ArtGenerator()
-        webapp.generator = ArtGeneratorWebService(control_ref)
+        self.control_ref = control_ref
+        if self.control_ref.config['webserver_use_authentication']:
+            control_ref.print("webserver authentication enabled...")
+            self.config = {
+                '/': {
+                    'tools.auth_basic.on': True,
+                    'tools.auth_basic.realm': 'localhost',
+                    'tools.auth_basic.checkpassword': self.validate_password,
+                    'tools.auth_basic.accept_charset': 'UTF-8',
+                    'tools.sessions.on': True,
+                    'tools.staticdir.root': os.path.abspath(os.getcwd())
+                },
+                '/generator': {
+                    'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+                    'tools.response_headers.on': True,
+                    'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+                },
+                '/static': {
+                    'tools.staticdir.on': True,
+                    'tools.staticdir.dir': './server'
+                }
+            }
 
-        if not control_ref.config.get('webserver_console_log'):
+        cherrypy.config.update({'server.socket_port': self.control_ref.config['webserver_port']})
+        webapp = ArtGenerator()
+        webapp.generator = ArtGeneratorWebService(self.control_ref)
+
+        if not self.control_ref.config.get('webserver_console_log'):
             # disable console logging
             cherrypy.log.screen = False
         cherrypy.quickstart(webapp, '/', self.config)
 
     def stop(self):
         cherrypy.engine.exit()
+
+    def validate_password(self, realm, username, password):
+        if username == self.control_ref.config['webserver_auth_username'] \
+            and password == self.control_ref.config['webserver_auth_password']:
+           return True
+        return False
 
 
 if __name__ == '__main__':

@@ -19,6 +19,14 @@ WEBSERVER_USE = yes
 # port the webserver listens on
 WEBSERVER_PORT = 80
 
+# enable webserver authentication?
+# this is the most basic form of HTTP authentication and should not be considered secure!
+WEBSERVER_USE_AUTHENTICATION = no
+
+# webserver login credentials; make sure to change these if you're using authentication!
+WEBSERVER_AUTH_USERNAME = admin
+WEBSERVER_AUTH_PASSWORD = password
+
 # automatically attempt to open the server interface in your browser (yes/no)?
 WEBSERVER_OPEN_BROWSER = yes
 
