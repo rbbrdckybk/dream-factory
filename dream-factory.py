@@ -510,7 +510,6 @@ class Controller:
         args[0]['job_prompt_info'] = ''
 
 
-
     def clear_work_queue(self):
         self.print("clearing work queue...")
         self.work_queue.clear()
@@ -552,10 +551,6 @@ class Controller:
 
         self.clear_work_queue()
         self.init_work_queue()
-
-
-
-
 
 
 
@@ -637,16 +632,18 @@ if __name__ == '__main__':
                             # no more jobs, wait for all workers to finish
                             control.print('No more work in queue; waiting for all workers to finish...')
                             while control.num_workers_working() > 0:
-                                time.sleep(.01)
+                                time.sleep(.05)
                             control.print('All work done; pausing server - add some more work via the control panel!')
                         else:
                             # flag to repeat work enabled, re-load work queue
                             control.loops += 1
                             control.jobs_done = 0
                             control.init_work_queue()
+            else:
+                time.sleep(.1)
 
         else:
-            time.sleep(.01)
+            time.sleep(.05)
 
     print('\nShutting down...')
     if control and control.total_jobs_done > 0:

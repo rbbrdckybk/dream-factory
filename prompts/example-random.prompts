@@ -8,7 +8,6 @@
 !MODE = random					# random mode; create random prompts from [prompt] sections below
 !SD_LOW_MEMORY = yes			# low GPU VRAM mode (yes/no)? slower but far less VRAM required
 !SD_LOW_MEM_TURBO = yes		# if you're still getting out-of-memory errors in low VRAM mode, set this to no
-!REPEAT = yes					# repeat when all work finished (yes/no)?
 !DELIM = " "					# delimiter to use between prompt sections, default is space
 !WIDTH = 512					# output image width, default is 512
 !HEIGHT = 512					# output image height, default is 512
