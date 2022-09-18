@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dream Factory</title>
+    <link rel="shortcut icon" type="image/jpg" href="/static/img/favicon.ico"/>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400&display=swap" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script src="/static/js/shared.js"></script>
+    <script type="text/javascript">
+
+    $(document).ready(function() {
+        var gallery_timeout = setInterval(reloadGallery, 15000);
+        const gallery_node = document.getElementById('gallery');
+
+        function reloadGallery() {
+            $.ajax({
+              type: "GALLERY_REFRESH",
+              url: "/generator"
+            })
+            .done(function(string) {
+              gallery_node.innerHTML = string;
+            });
+        }
+
+        document.onload = reloadGallery();
+    });
+    </script>
+  </head>
+  <body>
+
+    <div data-include="header"></div>
+
+    <div id="gallery-panel" class="panel">
+        <div id="gallery-title" class="panel-title">
+            Gallery
+        </div>
+
+        <div id="gallery">
+            gallery images are loading...
+        </div>
+
+    </div>
+
+    <div data-include="footer"></div>
+  </body>
+</html>

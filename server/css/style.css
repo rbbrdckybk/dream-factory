@@ -259,7 +259,7 @@ a:hover {
 }
 
 .server-status {
-    width: 200px;
+    width: 850px;
     display: flex;
     flex-direction: column;
     white-space: pre-wrap;
@@ -299,7 +299,6 @@ a:hover {
 }
 
 .prompt-status-header {
-
     width: 100%;
     font-size: 16px;
     height: 18px;
@@ -308,9 +307,66 @@ a:hover {
     display: flex;
     justify-content: space-between;
     background-color: #222222;
-
-
 }
+
+ul {
+  list-style: none;
+}
+
+.image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: -20px;
+}
+
+.image-gallery > li {
+  flex: 1 1 auto;
+  height: 225px;
+  cursor: pointer;
+  position: relative;
+}
+
+.image-gallery::after {
+  content: "";
+  flex-grow: 999;
+}
+
+.image-gallery li img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  vertical-align: middle;
+  border-radius: 5px;
+}
+
+.overlay {
+  position: absolute;
+  width: 98%;
+  font-family: 'Raleway', sans-serif;
+  font-size: 13px;
+  padding: 3px 3px 3px;
+  background: rgba(57, 57, 57, 0.67);
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  transition: all 0.2s 0.1s ease-in-out;
+  color: white;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-gallery li:hover .overlay {
+  transform: scale(1.00);
+  opacity: 1;
+}
+
+.image-gallery img:hover {
+  transform: scale(1.02);
+}
+
 
 
 

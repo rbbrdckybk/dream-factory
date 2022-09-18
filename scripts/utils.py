@@ -10,13 +10,15 @@ import sys
 import unicodedata
 import re
 import random
+import glob
 import os
 import itertools
-from os.path import exists
+from os.path import exists, isdir
 from datetime import datetime as dt
 from datetime import date
 from pathlib import Path
 from collections import deque
+from PIL import Image
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 
 
@@ -633,3 +635,53 @@ def upscale(scale, dir, do_face_enhance, gpu_id):
         subprocess.call(shlex.split(command), cwd=(cwd + '\Real-ESRGAN'), stderr=subprocess.DEVNULL)
     else:
         subprocess.call(shlex.split(command), cwd=(cwd + '/Real-ESRGAN'), stderr=subprocess.DEVNULL)
+
+
+# returns the exif data of the specified image
+def read_exif_from_image(abs_path_to_img):
+    exif = None
+    if exists(abs_path_to_img):
+        if abs_path_to_img.lower().endswith('.jpg'):
+            try:
+                im = Image.open(abs_path_to_img)
+                exif = im.getexif()
+                im.close()
+            except:
+                pass
+    return exif
+
+
+# gets the most recently modified images found within the SUBDIRs of dir
+# will return up to max_files images
+def get_recent_images(dir, max_files):
+    count = 0
+    images = []
+    subdirs = []
+
+    # first get a list of directories in most-recently-modified order
+    for f in os.scandir(dir):
+        if f.is_dir():
+            subdirs.append(f.path)
+
+    # contains a list of subdirs in most-recently-modified order
+    subdirs.sort(key=os.path.getmtime, reverse=True)
+
+    # iterate through sorted subdirs, sorting images within each by
+    # most-recently-modified, then adding images until we have max_files
+    for d in subdirs:
+        tmp_images = []
+        for f in os.scandir(d):
+            if f.path.lower().endswith(".jpg"):
+                tmp_images.append(f.path)
+        tmp_images.sort(key=os.path.getmtime, reverse=True)
+
+        for img in tmp_images:
+            images.append(img)
+            count += 1
+            if count >= max_files:
+                break
+
+        if count >= max_files:
+            break
+
+    return images

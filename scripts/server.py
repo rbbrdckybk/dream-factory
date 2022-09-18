@@ -11,6 +11,38 @@ import cherrypy
 from cherrypy.lib import auth_basic
 
 
+
+def build_gallery(control):
+    images = utils.get_recent_images(control.config['output_location'], 100)
+    buffer = "<ul class=\"image-gallery\">\n"
+
+    for img in images:
+        exif = utils.read_exif_from_image(img)
+        details = ""
+        if exif != None:
+            try:
+                details = exif[0x9286]
+            except KeyError as e:
+                try:
+                    details = exif[0x9c9c].decode('utf16')
+                except KeyError as e:
+                    pass
+        if details != "":
+            details = details.strip('"')
+            if '"' in details:
+                details = details.split('"', 1)[0]
+
+        buffer += "\t<li>\n"
+        buffer += "\t\t<a href=\"/" + img + "\">\n"
+        buffer += "\t\t<img src=\"/" + img + "\" alt=\"\" />\n"
+        buffer += "\t\t<div class=\"overlay\"><span>" + details + "</span></div>\n"
+        buffer += "\t\t</a>\n"
+        buffer += "\t</li>\n"
+
+    buffer += "</ul>\n"
+    return buffer
+
+
 def build_prompt_panel(control):
     buffer = ""
     if not control.prompt_file == "":
@@ -162,16 +194,24 @@ class ArtGeneratorWebService(object):
             buffer_text += i
         return buffer_text
 
+    def GALLERY_REFRESH(self):
+        buffer_text = build_gallery(self.control)
+        return buffer_text
+
     def STATUS_REFRESH(self):
         jobs_done = "{:,}".format(self.control.total_jobs_done)
         # we'll pass back whether or not the server is paused as the first char
         buffer_text = "n<div>Server is running</div>"
         if self.control.is_paused:
-            buffer_text = "y<div style=\"color: yellow;\">Server is paused</div>"
+            if self.control.num_workers_working() > 0:
+                buffer_text = "y<div style=\"color: yellow;\">Pause requested; waiting for " + str(self.control.num_workers_working()) + " worker(s) to finish...</div>"
+            else:
+                buffer_text = "y<div style=\"color: yellow;\">Server is paused</div>"
         buffer_text += "<div>Server uptime: "
         diff = time.time() - self.control.server_startup_time
         buffer_text += "{}".format(str(timedelta(seconds = round(diff, 0))))
-        buffer_text += "</div><div>Total jobs done: " + jobs_done + "</div>"
+        jobs = "{:,}".format(int(jobs_done))
+        buffer_text += "</div><div>Total jobs done: " + jobs + "</div>"
         return buffer_text
 
     def BUFFER_LENGTH(self, new_length):
@@ -194,24 +234,18 @@ class ArtGeneratorWebService(object):
 class ArtServer:
     def __init__(self):
         self.control_ref = None
+        self.config = {}
+
+    def start(self, control_ref):
+        self.control_ref = control_ref
+
         self.config = {
             '/': {
                 'tools.sessions.on': True,
                 'tools.staticdir.root': os.path.abspath(os.getcwd())
-            },
-            '/generator': {
-                'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-                'tools.response_headers.on': True,
-                'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-            },
-            '/static': {
-                'tools.staticdir.on': True,
-                'tools.staticdir.dir': './server'
             }
         }
 
-    def start(self, control_ref):
-        self.control_ref = control_ref
         if self.control_ref.config['webserver_use_authentication']:
             control_ref.print("webserver authentication enabled...")
             self.config = {
@@ -222,17 +256,25 @@ class ArtServer:
                     'tools.auth_basic.accept_charset': 'UTF-8',
                     'tools.sessions.on': True,
                     'tools.staticdir.root': os.path.abspath(os.getcwd())
-                },
-                '/generator': {
-                    'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-                    'tools.response_headers.on': True,
-                    'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-                },
-                '/static': {
-                    'tools.staticdir.on': True,
-                    'tools.staticdir.dir': './server'
                 }
             }
+
+        # common config items
+        self.config.update({
+            '/generator': {
+                'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+                'tools.response_headers.on': True,
+                'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+            },
+            '/static': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': './server'
+            },
+            '/output': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': os.path.abspath(self.control_ref.config['output_location'])
+            }
+        })
 
         cherrypy.config.update({'server.socket_port': self.control_ref.config['webserver_port']})
         webapp = ArtGenerator()
