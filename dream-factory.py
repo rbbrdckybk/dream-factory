@@ -259,6 +259,11 @@ class Controller:
             'webserver_use_authentication' : False,
             'webserver_auth_username' : 'admin',
             'webserver_auth_password' : 'password',
+            'gallery_max_images' : 100,
+            'gallery_refresh' : 30,
+            'gallery_user_folder' : '',
+            'gallery_user_folder_alias' : '',
+            'gallery_current' : 'recent',
             'webserver_open_browser' : True,
             'webserver_console_log' : False,
             'debug_test_mode' : False
@@ -317,6 +322,30 @@ class Controller:
                     elif command == 'webserver_auth_password':
                         if value != '':
                             self.config.update({'webserver_auth_password' : value})
+
+                    elif command == 'gallery_max_images':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'GALLERY_MAX_IMAGES' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'gallery_max_images' : int(value)})
+
+                    elif command == 'gallery_refresh':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'GALLERY_REFRESH' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'gallery_refresh' : int(value)})
+
+                    elif command == 'gallery_user_folder':
+                        if value != '':
+                            self.config.update({'gallery_user_folder' : value})
+
+                    elif command == 'gallery_user_folder_alias':
+                        if value != '':
+                            self.config.update({'gallery_user_folder_alias' : value})
 
                     elif command == 'webserver_open_browser':
                         if value == 'yes' or value == 'no':
@@ -551,8 +580,6 @@ class Controller:
 
         self.clear_work_queue()
         self.init_work_queue()
-
-
 
 
     # for debugging; prints a report of current worker status

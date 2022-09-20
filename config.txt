@@ -32,3 +32,16 @@ WEBSERVER_OPEN_BROWSER = yes
 
 # log webserver messages to the console (yes/no)? for debugging
 WEBSERVER_CONSOLE_LOG = no
+
+# gallery maximum images to display
+GALLERY_MAX_IMAGES = 50
+
+# gallery refresh interval in seconds; set to zero to disable auto-refresh of gallery
+GALLERY_REFRESH = 30
+
+# optional folder to display in the gallery (and alias to refer to it)
+GALLERY_USER_FOLDER = 
+GALLERY_USER_FOLDER_ALIAS = favorites
+
+# for development; don't use this
+DEBUG_TEST_MODE = no

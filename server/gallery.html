@@ -9,9 +9,43 @@
     <script src="/static/js/shared.js"></script>
     <script type="text/javascript">
 
+    function new_gallery_location() {
+      new_location = document.getElementById('gallery-location').value;
+      if (new_location != "") {
+        $.ajax({
+          type: "POST",
+          url: "/generator",
+          data: { "type": "gallery_location", "arg": new_location}
+        })
+        .done(function() {
+          if (document.getElementById('gallery-location').value == 'recent') {
+            document.getElementById('gallery-msg').innerHTML = 'You are viewing the most recently-created images.';
+          } else {
+            var dd = document.getElementById('gallery-location');
+            if (dd.value == 'user_gallery') {
+              var txt = dd.options[dd.selectedIndex].text;
+              document.getElementById('gallery-msg').innerHTML = 'You are viewing images in \'' + txt + '\' (user-specified location in config.txt).';
+            } else {
+              document.getElementById('gallery-msg').innerHTML = 'You are viewing images in \'' + dd.value + '\'.';
+            }
+          }
+
+          document.getElementById('gallery-location').selectedIndex = 0;
+
+          $.ajax({
+            type: "GALLERY_REFRESH",
+            url: "/generator"
+          })
+          .done(function(string) {
+            document.getElementById('gallery').innerHTML = string;
+          });
+        });
+      }
+    }
+
     $(document).ready(function() {
-        var gallery_timeout = setInterval(reloadGallery, 15000);
         const gallery_node = document.getElementById('gallery');
+        const gallery_dropdown = document.getElementById('gallery-dropdown');
 
         function reloadGallery() {
             $.ajax({
@@ -23,6 +57,30 @@
             });
         }
 
+        function loadDropdown() {
+            $.ajax({
+              type: "GALLERY_DROPDOWN_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              gallery_dropdown.innerHTML = string;
+            });
+        }
+
+        function setRefreshRate() {
+            $.ajax({
+              type: "GALLERY_REFRESH_RATE",
+              url: "/generator"
+            })
+            .done(function(string) {
+              gallery_timeout = setInterval(reloadGallery, 1000 * parseInt(string));
+            });
+        }
+
+        // just do these once per page load
+        setRefreshRate();
+        loadDropdown();
+
         document.onload = reloadGallery();
     });
     </script>
@@ -31,9 +89,20 @@
 
     <div data-include="header"></div>
 
+    <div id="myModal" class="modal">
+      <span class="close" id="close">&times;</span>
+      <img class="modal-content" id="img01">
+      <div id="caption"></div>
+    </div>
+
     <div id="gallery-panel" class="panel">
         <div id="gallery-title" class="panel-title">
             Gallery
+        </div>
+
+        <div class="panel-column">
+          <div id="gallery-msg" class="prompt-status">You are viewing the most recently-created images.</div>
+          <div id="gallery-dropdown" class="prompt-status"></div>
         </div>
 
         <div id="gallery">
@@ -43,5 +112,31 @@
     </div>
 
     <div data-include="footer"></div>
+
+    <script type="text/javascript">
+      function img_modal(img_id, caption_id) {
+        var modal = document.getElementById("myModal");
+        var img = document.getElementById(img_id);
+        var modalImg = document.getElementById("img01");
+        var captionText = document.getElementById("caption");
+
+        modal.style.display = "block";
+        modalImg.src = img.src;
+        captionText.innerHTML = document.getElementById(caption_id).innerHTML;
+      }
+
+      var span = document.getElementById("close");
+      var modal = document.getElementById("myModal");
+
+      document.addEventListener('keydown', function(event){
+      	if(event.key === "Escape"){
+      	   modal.style.display = "none";
+      	}
+      });
+
+      span.onclick = function() {
+        modal.style.display = "none";
+      }
+    </script>
   </body>
 </html>

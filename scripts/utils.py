@@ -685,3 +685,24 @@ def get_recent_images(dir, max_files):
             break
 
     return images
+
+
+# gets the most recently modified images found within specified dir
+# will return up to max_files images
+def get_images_from_dir(dir, max_files):
+    count = 0
+    images = []
+    tmp_images = []
+
+    for f in os.scandir(dir):
+        if f.path.lower().endswith(".jpg"):
+            tmp_images.append(f.path)
+    tmp_images.sort(key=os.path.getmtime, reverse=True)
+
+    for img in tmp_images:
+        images.append(img)
+        count += 1
+        if count >= max_files:
+            break
+
+    return images

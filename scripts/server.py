@@ -13,7 +13,15 @@ from cherrypy.lib import auth_basic
 
 
 def build_gallery(control):
-    images = utils.get_recent_images(control.config['output_location'], 100)
+    images = []
+    if control.config['gallery_current'] == 'recent':
+        images = utils.get_recent_images(control.config['output_location'], control.config['gallery_max_images'])
+    else:
+        if control.config['gallery_current'] == 'user_gallery':
+            images = utils.get_images_from_dir(control.config['gallery_user_folder'], control.config['gallery_max_images'])
+        else:
+            images = utils.get_images_from_dir(control.config['gallery_current'], control.config['gallery_max_images'])
+
     buffer = "<ul class=\"image-gallery\">\n"
 
     for img in images:
@@ -32,11 +40,15 @@ def build_gallery(control):
             if '"' in details:
                 details = details.split('"', 1)[0]
 
-        buffer += "\t<li>\n"
-        buffer += "\t\t<a href=\"/" + img + "\">\n"
-        buffer += "\t\t<img src=\"/" + img + "\" alt=\"\" />\n"
-        buffer += "\t\t<div class=\"overlay\"><span>" + details + "</span></div>\n"
-        buffer += "\t\t</a>\n"
+        if len(details) > 302:
+            details = details[:300] + '...'
+
+        buffer += "\t<li onclick=\"img_modal('i_" + utils.filename_from_abspath(img) + "', 'c_" + utils.filename_from_abspath(img) + "')\">\n"
+        if control.config['gallery_current'] == 'user_gallery':
+            buffer += "\t\t<img src=\"/user_gallery/" + utils.filename_from_abspath(img) + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
+        else:
+            buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
+        buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + utils.filename_from_abspath(img) + "\">" + details + "</span></div>\n"
         buffer += "\t</li>\n"
 
     buffer += "</ul>\n"
@@ -81,6 +93,34 @@ def build_prompt_panel(control):
         buffer += "\tNo prompt file loaded; choose one below\n"
         buffer += "</div>\n"
 
+    return buffer
+
+
+def build_gallery_dropdown(control):
+    # reset gallery view to most recent images upon page/dropdown initial load
+    control.config['gallery_current'] = 'recent'
+
+    buffer = "<label for=\"prompt-file\">View a specific location:</label>\n"
+    buffer += "<select name=\"gallery-location\" id=\"gallery-location\" class=\"prompt-dropdown\" onchange=\"new_gallery_location()\">\n"
+    buffer += "\t<option value=\"\">select</option>\n"
+    buffer += "\t<option value=\"recent\">recent output files</option>\n"
+
+    files = os.listdir(control.config.get('output_location'))
+    for f in files:
+        full_path = os.path.join(control.config.get('output_location'), f)
+        if os.path.isdir(full_path):
+            buffer += "\t<option value=\"" + full_path + "\">" + f + "</option>\n"
+
+    # add the user-specified gallery dir as an option if it exists
+    if control.config.get('gallery_user_folder') != '':
+        user_dir = control.config.get('gallery_user_folder')
+        if os.path.exists(user_dir):
+            user_dir_alias = control.config.get('gallery_user_folder_alias')
+            if user_dir_alias == '':
+                user_dir_alias = user_dir
+            buffer += "\t<option value=\"" + 'user_gallery' + "\">" + user_dir_alias + "</option>\n"
+
+    buffer += "</select>\n"
     return buffer
 
 
@@ -175,6 +215,9 @@ class ArtGeneratorWebService(object):
     def POST(self, type, arg):
         if type.lower().strip() == 'prompt_file':
             self.control.new_prompt_file(arg)
+        if type.lower().strip() == 'gallery_location':
+            self.control.config['gallery_current'] = arg
+
 
     def WORKER_REFRESH(self):
         buffer_text = build_worker_panel(self.control.workers)
@@ -188,6 +231,10 @@ class ArtGeneratorWebService(object):
         buffer_text = build_prompt_dropdown(self.control)
         return buffer_text
 
+    def GALLERY_DROPDOWN_LOAD(self):
+        buffer_text = build_gallery_dropdown(self.control)
+        return buffer_text
+
     def BUFFER_REFRESH(self):
         buffer_text = ""
         for i in self.control.output_buffer:
@@ -197,6 +244,9 @@ class ArtGeneratorWebService(object):
     def GALLERY_REFRESH(self):
         buffer_text = build_gallery(self.control)
         return buffer_text
+
+    def GALLERY_REFRESH_RATE(self):
+        return str(self.control.config['gallery_refresh'])
 
     def STATUS_REFRESH(self):
         jobs_done = "{:,}".format(self.control.total_jobs_done)
@@ -275,6 +325,17 @@ class ArtServer:
                 'tools.staticdir.dir': os.path.abspath(self.control_ref.config['output_location'])
             }
         })
+
+        # set up reference to user-specified gallery folder if necessary
+        if self.control_ref.config['gallery_user_folder'] != '':
+            user_dir = self.control_ref.config.get('gallery_user_folder')
+            if os.path.exists(user_dir):
+                self.config.update({
+                    '/user_gallery': {
+                        'tools.staticdir.on': True,
+                        'tools.staticdir.dir': os.path.abspath(self.control_ref.config.get('gallery_user_folder'))
+                    }
+                })
 
         cherrypy.config.update({'server.socket_port': self.control_ref.config['webserver_port']})
         webapp = ArtGenerator()
