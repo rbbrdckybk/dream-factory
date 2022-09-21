@@ -29,7 +29,6 @@ from scripts.server import ArtServer
 cwd = os.getcwd()
 
 if sys.platform == "win32" or os.name == 'nt':
-    import keyboard
     os.environ['PYTHONPATH'] = os.pathsep + (cwd + "\latent-diffusion") + os.pathsep + (cwd + "\\taming-transformers") + os.pathsep + (cwd + "\CLIP")
 else:
     os.environ['PYTHONPATH'] = os.pathsep + (cwd + "/latent-diffusion") + os.pathsep + (cwd + "/taming-transformers") + os.pathsep + (cwd + "/CLIP")
@@ -220,8 +219,11 @@ class Controller:
         self.server = None
         self.server_startup_time = time.time()
 
+        if sys.platform == "win32" or os.name == 'nt':
+            signal.signal(signal.SIGBREAK, self.sigterm_handler)
+
+
         signal.signal(signal.SIGINT, self.sigterm_handler)
-        signal.signal(signal.SIGBREAK, self.sigterm_handler)
         signal.signal(signal.SIGTERM, self.sigterm_handler)
 
         # read config options

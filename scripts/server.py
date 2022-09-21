@@ -337,6 +337,9 @@ class ArtServer:
                     }
                 })
 
+
+        cherrypy.config.update({'server.socket_host': '0.0.0.0'})
+
         cherrypy.config.update({'server.socket_port': self.control_ref.config['webserver_port']})
         webapp = ArtGenerator()
         webapp.generator = ArtGeneratorWebService(self.control_ref)
