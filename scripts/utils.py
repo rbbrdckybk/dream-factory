@@ -592,13 +592,14 @@ def create_command(command, output_dir_ext, gpu_id):
         + " --n_samples " + str(command.get('batch_size')) \
         + " --prompt \"" + str(command.get('prompt')) + "\"" \
         + " --ddim_steps " + str(command.get('steps')) \
-        + " --scale " + str(command.get('scale')) \
-        + " --seed " + str(command.get('seed'))
+        + " --scale " + str(command.get('scale'))
 
     if command.get('input_image') != "":
         py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
     else:
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
+
+    py_command += " --seed " + str(command.get('seed'))
 
     py_command += " --outdir \"../" + output_folder + "\""
 

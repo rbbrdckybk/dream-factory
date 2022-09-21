@@ -324,6 +324,13 @@ class Controller:
                         else:
                             self.config.update({'webserver_port' : int(value)})
 
+                    elif command == 'webserver_network_accessible':
+                        if value == 'yes' or value == 'no':
+                            if value == 'yes':
+                                self.config.update({'webserver_network_accessible' : True})
+                            else:
+                                self.config.update({'webserver_network_accessible' : False})
+
                     elif command == 'webserver_use_authentication':
                         if value == 'yes' or value == 'no':
                             if value == 'yes':
@@ -388,9 +395,9 @@ class Controller:
                         if value == 'yes' or value == 'no':
                             self.config.update({'sd_low_memory' : value})
 
-                    elif command == 'pf_sd_low_memory_turbo':
+                    elif command == 'pf_sd_low_mem_turbo':
                         if value == 'yes' or value == 'no':
-                            self.config.update({'sd_low_memory_turbo' : value})
+                            self.config.update({'sd_low_mem_turbo' : value})
 
                     elif command == 'pf_width':
                         try:
@@ -663,7 +670,7 @@ class Controller:
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
         # TODO validate everything is ok before making the switch
-        
+
         self.prompt_file = new_file
         self.prompt_manager = utils.PromptManager(self)
 
