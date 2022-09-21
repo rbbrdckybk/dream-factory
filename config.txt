@@ -17,10 +17,16 @@ OUTPUT_LOCATION = output
 WEBSERVER_USE = yes
 
 # port the webserver listens on
-WEBSERVER_PORT = 80
+# note that ports under 1024 require root permission on linux
+WEBSERVER_PORT = 8080
+
+# set this to yes if you want to be able to access the webserver UI from other computers
+# at the default "no" setting the web UI is inaccessible anywhere except at the local computer running the server!
+WEBSERVER_NETWORK_ACCESSIBLE = no
 
 # enable webserver authentication?
 # this is the most basic form of HTTP authentication and should not be considered secure!
+# however if you're going to make this accessible via WAN/internet it's better than nothing
 WEBSERVER_USE_AUTHENTICATION = no
 
 # webserver login credentials; make sure to change these if you're using authentication!
@@ -45,3 +51,18 @@ GALLERY_USER_FOLDER_ALIAS = favorites
 
 # for development; don't use this
 DEBUG_TEST_MODE = no
+
+# you can set your own defaults for prompt file settings below
+# settings specified in individual prompt files will always override these
+
+PF_SD_LOW_MEMORY = yes				# low GPU VRAM mode (yes/no)? slower but far less VRAM required
+PF_SD_LOW_MEM_TURBO = yes			# if you're still getting out-of-memory errors in low VRAM mode, set this to no
+PF_WIDTH = 512             			# output image width, default is 512
+PF_HEIGHT = 512            			# output image height, default is 512
+PF_STEPS = 50              			# number of steps, default = 50
+PF_SCALE = 7.5              		# guidance scale, default = 7.5
+PF_SAMPLES = 1						# number of images to generate per prompt
+PF_USE_UPSCALE = no					# use ESRGAN to upscale output images?
+PF_UPSCALE_AMOUNT = 2.0				# upscaling factor
+PF_UPSCALE_FACE_ENH = no			# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
+PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?

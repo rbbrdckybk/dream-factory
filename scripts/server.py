@@ -8,7 +8,7 @@ import time
 import scripts.utils as utils
 from datetime import datetime, timedelta
 import cherrypy
-from cherrypy.lib import auth_basic
+from cherrypy.lib import auth_basic, static
 
 
 
@@ -27,28 +27,58 @@ def build_gallery(control):
     for img in images:
         exif = utils.read_exif_from_image(img)
         details = ""
+        upscale_info = ""
         if exif != None:
             try:
-                details = exif[0x9286]
+                details = exif[0x9c9c].decode('utf16')
+                upscale_info = exif[0x9c9d].decode('utf16')
             except KeyError as e:
-                try:
-                    details = exif[0x9c9c].decode('utf16')
-                except KeyError as e:
-                    pass
-        if details != "":
-            details = details.strip('"')
-            if '"' in details:
-                details = details.split('"', 1)[0]
+                pass
 
-        if len(details) > 302:
-            details = details[:300] + '...'
+        params = utils.extract_params_from_command(details)
+        param_string = ''
 
-        buffer += "\t<li onclick=\"img_modal('i_" + utils.filename_from_abspath(img) + "', 'c_" + utils.filename_from_abspath(img) + "')\">\n"
+        short_prompt = params['prompt']
+        if len(params['prompt']) > 302:
+            short_prompt = params['prompt'][:300] + '...'
+
+        if params['prompt'] != '':
+            if params['width'] != '':
+                param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
+            elif params['input_image'] != "":
+                param_string += 'init image: ' + params['input_image'] + '  |  strength: ' + str(params['strength'])
+
+            if params['steps'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'steps: ' + str(params['steps'])
+
+            if params['scale'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'scale: ' + str(params['scale'])
+
+            if params['seed'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'seed: ' + str(params['seed'])
+
+            if '(upscaled' in upscale_info:
+                upscale_info = upscale_info.split('(upscaled', 1)[1]
+                upscale_info = upscale_info.replace(')', '').strip()
+                upscale_info = "upscaled " + upscale_info
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += upscale_info
+
+        buffer += "\t<li onclick=\"img_modal('i_" + utils.filename_from_abspath(img) + "', 'd_" + utils.filename_from_abspath(img) + "', 'p_" + utils.filename_from_abspath(img) + "')\">\n"
         if control.config['gallery_current'] == 'user_gallery':
             buffer += "\t\t<img src=\"/user_gallery/" + utils.filename_from_abspath(img) + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
         else:
             buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
-        buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + utils.filename_from_abspath(img) + "\">" + details + "</span></div>\n"
+        buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + utils.filename_from_abspath(img) + "\">" + short_prompt + "</span></div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"d_" + utils.filename_from_abspath(img) + "\">" + params['prompt'] + "</div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"p_" + utils.filename_from_abspath(img) + "\">" + param_string + "</div>\n"
         buffer += "\t</li>\n"
 
     buffer += "</ul>\n"
@@ -197,16 +227,35 @@ def build_worker_panel(workers):
     return buffer
 
 
+
+
+
 class ArtGenerator(object):
+    def __init__(self, control_ref):
+        self.control = control_ref
+
     @cherrypy.expose
     def index(self):
         return open('./server/index.html')
+
+    @cherrypy.expose
+    def getzip(self):
+        dir = self.control.config['gallery_current']
+        if dir == 'user_gallery':
+            dir = self.control.config['gallery_user_folder']
+
+        zip_path = utils.create_zip(dir)
+
+        return static.serve_download(os.path.abspath(zip_path))
+        #return static.serve_download(os.path.abspath('server/temp/images.zip'))
+
 
 
 @cherrypy.expose
 class ArtGeneratorWebService(object):
     def __init__(self, control_ref):
         self.control = control_ref
+
 
     @cherrypy.tools.accept(media='text/plain')
     def GET(self):
@@ -217,7 +266,6 @@ class ArtGeneratorWebService(object):
             self.control.new_prompt_file(arg)
         if type.lower().strip() == 'gallery_location':
             self.control.config['gallery_current'] = arg
-
 
     def WORKER_REFRESH(self):
         buffer_text = build_worker_panel(self.control.workers)
@@ -338,10 +386,12 @@ class ArtServer:
                 })
 
 
-        cherrypy.config.update({'server.socket_host': '0.0.0.0'})
+        if self.control_ref.config['webserver_network_accessible']:
+            control_ref.print("webserver listening for external requests...")
+            cherrypy.config.update({'server.socket_host': '0.0.0.0'})
 
         cherrypy.config.update({'server.socket_port': self.control_ref.config['webserver_port']})
-        webapp = ArtGenerator()
+        webapp = ArtGenerator(self.control_ref)
         webapp.generator = ArtGeneratorWebService(self.control_ref)
 
         if not self.control_ref.config.get('webserver_console_log'):

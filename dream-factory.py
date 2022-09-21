@@ -15,6 +15,7 @@ import platform
 import signal
 import webbrowser
 import argparse
+import shutil
 import scripts.utils as utils
 from os.path import exists
 from datetime import datetime as dt
@@ -73,7 +74,7 @@ class Worker(threading.Thread):
 
         if control.config.get('debug_test_mode'):
             # simulate SD work
-            work_time = round(random.uniform(5, 15), 2)
+            work_time = round(random.uniform(2, 5), 2)
             time.sleep(work_time)
         else:
             # invoke SD
@@ -94,7 +95,7 @@ class Worker(threading.Thread):
 
             if control.config.get('debug_test_mode'):
                 # simulate upscaling work
-                work_time = round(random.uniform(3, 6), 2)
+                work_time = round(random.uniform(0.5, 2), 2)
                 time.sleep(work_time)
 
             else:
@@ -258,6 +259,7 @@ class Controller:
             'use_gpu_sevices' : 'auto',
             'webserver_use' : True,
             'webserver_port' : 80,
+            'webserver_network_accessible' : False,
             'webserver_use_authentication' : False,
             'webserver_auth_username' : 'admin',
             'webserver_auth_password' : 'password',
@@ -268,7 +270,19 @@ class Controller:
             'gallery_current' : 'recent',
             'webserver_open_browser' : True,
             'webserver_console_log' : False,
-            'debug_test_mode' : False
+            'debug_test_mode' : False,
+
+            'sd_low_memory' : "yes",
+            'sd_low_mem_turbo' : "yes",
+            'width' : 512,
+            'height' : 512,
+            'steps' : 50,
+            'scale' : 7.5,
+            'samples' : 1,
+            'use_upscale' : "no",
+            'upscale_amount' : 2.0,
+            'upscale_face_enh' : "no",
+            'upscale_keep_org' : "no"
         }
 
         file = utils.TextFile(self.config_file)
@@ -370,6 +384,74 @@ class Controller:
                             else:
                                 self.config.update({'debug_test_mode' : False})
 
+                    elif command == 'pf_sd_low_memory':
+                        if value == 'yes' or value == 'no':
+                            self.config.update({'sd_low_memory' : value})
+
+                    elif command == 'pf_sd_low_memory_turbo':
+                        if value == 'yes' or value == 'no':
+                            self.config.update({'sd_low_memory_turbo' : value})
+
+                    elif command == 'pf_width':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'PF_WIDTH' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'width' : int(value)})
+
+                    elif command == 'pf_height':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'PF_HEIGHT' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'height' : int(value)})
+
+                    elif command == 'pf_steps':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'PF_STEPS' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'steps' : int(value)})
+
+                    elif command == 'pf_scale':
+                        try:
+                            float(value)
+                        except:
+                            print("*** WARNING: specified 'PF_SCALE' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'scale' : float(value)})
+
+                    elif command == 'pf_samples':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'PF_SAMPLES' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'samples' : int(value)})
+
+                    elif command == 'pf_use_upscale':
+                        if value == 'yes' or value == 'no':
+                            self.config.update({'use_upscale' : value})
+
+                    elif command == 'pf_upscale_amount':
+                        try:
+                            float(value)
+                        except:
+                            print("*** WARNING: specified 'PF_UPSCALE_AMOUNT' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'upscale_amount' : float(value)})
+
+                    elif command == 'pf_upscale_face_enh':
+                        if value == 'yes' or value == 'no':
+                            self.config.update({'upscale_face_enh' : value})
+
+                    elif command == 'pf_upscale_keep_org':
+                        if value == 'yes' or value == 'no':
+                            self.config.update({'upscale_keep_org' : value})
+
                     else:
                         self.print("warning: config file command not recognized: " + command.upper() + " (it will be ignored)!")
 
@@ -420,8 +502,15 @@ class Controller:
         if self.server != None:
             # stop the webserver if it's running
             self.server.stop()
+
+        # clean up temp directory
+        temp = os.path.join('server', 'temp')
+        if os.path.exists(temp):
+            shutil.rmtree(temp)
+
         self.is_paused = True
         self.work_done = True
+
 
 
     # adds a GPU to the list of workers
@@ -574,6 +663,7 @@ class Controller:
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
         # TODO validate everything is ok before making the switch
+        
         self.prompt_file = new_file
         self.prompt_manager = utils.PromptManager(self)
 

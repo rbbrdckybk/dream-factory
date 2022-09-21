@@ -20,6 +20,7 @@
         .done(function() {
           if (document.getElementById('gallery-location').value == 'recent') {
             document.getElementById('gallery-msg').innerHTML = 'You are viewing the most recently-created images.';
+            document.getElementById('zip-download').style.display="none";
           } else {
             var dd = document.getElementById('gallery-location');
             if (dd.value == 'user_gallery') {
@@ -28,6 +29,7 @@
             } else {
               document.getElementById('gallery-msg').innerHTML = 'You are viewing images in \'' + dd.value + '\'.';
             }
+            document.getElementById('zip-download').style.display="block";
           }
 
           document.getElementById('gallery-location').selectedIndex = 0;
@@ -41,6 +43,7 @@
           });
         });
       }
+
     }
 
     $(document).ready(function() {
@@ -93,6 +96,7 @@
       <span class="close" id="close">&times;</span>
       <img class="modal-content" id="img01">
       <div id="caption"></div>
+      <div id="subcaption"></div>
     </div>
 
     <div id="gallery-panel" class="panel">
@@ -100,9 +104,17 @@
             Gallery
         </div>
 
-        <div class="panel-column">
-          <div id="gallery-msg" class="prompt-status">You are viewing the most recently-created images.</div>
-          <div id="gallery-dropdown" class="prompt-status"></div>
+        <div class="panel-row">
+          <div style="display: flex; flex-direction: column;">
+            <div id="gallery-msg" class="prompt-status">You are viewing the most recently-created images.</div>
+            <div id="gallery-dropdown" class="prompt-status"></div>
+          </div>
+          <div class="zip-download" id="zip-download">
+            <a href="/getzip">
+              <img src="/static/img/download-zip-icon.png" title="download as .zip file" alt="download as .zip file">
+            <!--img src="/static/img/download-zip-icon.png" title="download as .zip file" alt="download as .zip file" onclick="download_zip()"-->
+            </a>
+          </div>
         </div>
 
         <div id="gallery">
@@ -114,15 +126,17 @@
     <div data-include="footer"></div>
 
     <script type="text/javascript">
-      function img_modal(img_id, caption_id) {
+      function img_modal(img_id, caption_id, subcaption_id) {
         var modal = document.getElementById("myModal");
         var img = document.getElementById(img_id);
         var modalImg = document.getElementById("img01");
         var captionText = document.getElementById("caption");
+        var subcaptionText = document.getElementById("subcaption");
 
         modal.style.display = "block";
         modalImg.src = img.src;
         captionText.innerHTML = document.getElementById(caption_id).innerHTML;
+        subcaptionText.innerHTML = document.getElementById(subcaption_id).innerHTML;
       }
 
       var span = document.getElementById("close");
@@ -136,6 +150,13 @@
 
       span.onclick = function() {
         modal.style.display = "none";
+      }
+
+      function download_zip() {
+        $.ajax({
+          type: "DOWNLOAD_ZIP",
+          url: "/generator"
+        });
       }
     </script>
   </body>

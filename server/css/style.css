@@ -358,6 +358,10 @@ ul {
   justify-content: center;
 }
 
+.hidden {
+  display: none;
+}
+
 .image-gallery li:hover .overlay {
   transform: scale(1.00);
   opacity: 1;
@@ -366,9 +370,6 @@ ul {
 .image-gallery img:hover {
   transform: scale(1.02);
 }
-
-
-
 
 /* Modal Image open/close */
 #myImg {
@@ -383,12 +384,12 @@ ul {
   display: none;
   position: fixed;
   z-index: 1;
-  padding-top: 50px;
+  padding-top: 15px;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: scroll;
   background-color: rgb(0,0,0);
   background-color: rgba(0,0,0,0.9);
 }
@@ -396,22 +397,33 @@ ul {
 .modal-content {
   margin: auto;
   display: block;
-  width: 80%;
-  max-width: 800px;
+  padding-left: 15px;
+  max-width: 1025px;
 }
 
 #caption {
   margin: auto;
   display: block;
   width: 80%;
-  max-width: 700px;
+  max-width: 850px;
   text-align: center;
-  color: #ccc;
+  color: #eee;
   padding: 10px 0;
-  height: 150px;
+  font-size: 16px;
 }
 
-.modal-content, #caption {
+#subcaption {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 850px;
+  text-align: center;
+  color: #aaa;
+  padding-bottom: 10px;
+  font-size: 14px;
+}
+
+.modal-content, #caption, #subcaption {
   animation-name: zoom;
   animation-duration: 0.33s;
 }
@@ -426,7 +438,7 @@ ul {
   display: flex;
   justify-content: flex-end;
   margin: auto;
-  padding-right: 120px;
+  padding-right: 18px;
   color: #f1f1f1;
   font-size: 40px;
   font-weight: bold;
@@ -442,14 +454,17 @@ ul {
 
 /* Modal Image open/close end */
 
+.zip-download {
+  display: none;
+  padding-top: 2px;
+  padding-left: 2px;
+}
 
-
-
-
-
-
-
-
+.zip-download:hover,
+.zip-download:focus {
+  cursor: pointer;
+  transform:scale(1.1)
+}
 
 
 

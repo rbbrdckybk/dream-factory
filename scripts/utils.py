@@ -13,7 +13,8 @@ import random
 import glob
 import os
 import itertools
-from os.path import exists, isdir
+from zipfile import ZipFile
+from os.path import exists, isdir, basename
 from datetime import datetime as dt
 from datetime import date
 from pathlib import Path
@@ -189,16 +190,16 @@ class PromptManager():
     def reset_config_defaults(self):
         self.config = {
             'mode' : "combination",
-            'sd_low_memory' : "no",
-            'sd_low_mem_turbo' : "no",
+            'sd_low_memory' : self.control.config['sd_low_memory'],
+            'sd_low_mem_turbo' : self.control.config['sd_low_mem_turbo'],
             'seed' : -1,
-            'width' : 512,
-            'height' : 512,
-            'steps' : 80,
-            'scale' : 7.5,
+            'width' : self.control.config['width'],
+            'height' : self.control.config['height'],
+            'steps' : self.control.config['steps'],
+            'scale' : self.control.config['scale'],
             'min_scale' : 7.5,
             'max_scale' : 7.5,
-            'samples' : 1,
+            'samples' : self.control.config['samples'],
             'batch_size' : 1,
             'input_image' : "",
             'random_input_image_dir' : "",
@@ -206,11 +207,11 @@ class PromptManager():
             'min_strength' : 0.75,
             'max_strength' : 0.75,
             'delim' : " ",
-            'use_upscale' : "no",
-            'upscale_amount' : 2.0,
-            'upscale_face_enh' : "no",
-            'upscale_keep_org' : "no",
-            'outdir' : "output"
+            'use_upscale' : self.control.config['use_upscale'],
+            'upscale_amount' : self.control.config['upscale_amount'],
+            'upscale_face_enh' : self.control.config['upscale_face_enh'],
+            'upscale_keep_org' : self.control.config['upscale_keep_org'],
+            'outdir' : self.control.config['output_location']
         }
 
 
@@ -269,6 +270,8 @@ class PromptManager():
                     print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'scale' : value})
+                    self.config.update({'min_scale' : value})
+                    self.config.update({'max_scale' : value})
 
         elif command == 'min_scale':
             if value != '':
@@ -314,6 +317,8 @@ class PromptManager():
                     print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'strength' : value})
+                    self.config.update({'min_strength' : value})
+                    self.config.update({'max_strength' : value})
 
         elif command == 'min_strength':
             if value != '':
@@ -600,6 +605,84 @@ def create_command(command, output_dir_ext, gpu_id):
     return py_command
 
 
+# extracts SD parameters from the full command
+def extract_params_from_command(command):
+    params = {
+        'prompt' : "",
+        'seed' : "",
+        'width' : "",
+        'height' : "",
+        'steps' : "",
+        'scale' : "",
+        'input_image' : "",
+        'strength' : ""
+    }
+
+    if command != "":
+        command = command.strip('"')
+
+        # need this because of old format w/ upscale info included
+        if '(upscaled' in command:
+            command = command.split('(upscaled', 1)[0]
+            command = command.replace('(upscaled', '')
+
+        if '--prompt' in command:
+            temp = command.split('--prompt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'prompt' : temp.strip().strip('"')})
+
+        elif '"' in command:
+            params.update({'prompt' : command.split('"', 1)[0]})
+            command = command.split('"', 1)[1]
+
+        if '--ddim_steps' in command:
+            temp = command.split('--ddim_steps', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'steps' : temp.strip()})
+
+        if '--scale' in command:
+            temp = command.split('--scale', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'scale' : temp.strip()})
+
+        if '--seed' in command:
+            temp = command.split('--seed', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'seed' : temp.strip()})
+
+        if '--W' in command:
+            temp = command.split('--W', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'width' : temp.strip()})
+
+        if '--H' in command:
+            temp = command.split('--H', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'height' : temp.strip()})
+
+        if '--init-img' in command:
+            temp = command.split('--init-img', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('../', '').strip().strip('"')
+            temp = filename_from_abspath(temp)
+            params.update({'input_image' : temp})
+
+        if '--strength' in command:
+            temp = command.split('--strength', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'strength' : temp.strip()})
+
+    return params
+
+
 # ESRGAN/GFPGAN upscaling:
 # scale - upscale by this amount, default is 2.0x
 # dir - upscale all images in this folder
@@ -706,3 +789,22 @@ def get_images_from_dir(dir, max_files):
             break
 
     return images
+
+
+# creates a .zip of the files in the specified directory
+def create_zip(dir):
+    # make sure server/temp exists
+    zip_path = os.path.join('server', 'temp')
+    if not os.path.exists(zip_path):
+        os.makedirs(zip_path)
+
+    filename = filename_from_abspath(dir) + '.zip'
+    zip_path = os.path.join(zip_path, filename)
+    print("creating " + zip_path + " for download at user request...")
+
+    with ZipFile(zip_path, 'w') as zipObj:
+        for f in os.scandir(dir):
+           if f.path.lower().endswith('.jpg'):
+               zipObj.write(f.path, basename(f.path))
+
+    return zip_path
