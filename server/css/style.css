@@ -57,7 +57,9 @@ a:hover {
 
 
 .header-panel {
-    background-image: url("/static/img/ai_head_128.png");
+    /*background-image: url("/static/img/ai_head_128.png");*/
+    background-image: url("/static/img/dream-factory-sm.png");
+
     background-repeat: no-repeat;
     width: 1050px;
     height: 128px;
