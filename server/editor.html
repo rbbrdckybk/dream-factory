@@ -157,6 +157,7 @@
                 if (before_equal.trim().indexOf(' ') == -1) {
                     // this is a command directive
                     // force uppercase on directive
+                    var range = quill.getSelection();
                     upper = quill.getText(line_start, pos).toUpperCase();
                     remainder = quill.getText(line_start + pos, line.length-pos);
 
@@ -166,7 +167,7 @@
                     if (last_char == '\n') {
                         setTimeout(() => quill.setSelection(line_start + line.length), 0);
                     } else {
-                        setTimeout(() => quill.setSelection(line_start + line.length-1), 0);
+                        setTimeout(() => quill.setSelection(range));
                     }
 
                     // add styling
