@@ -1,57 +1,56 @@
-# *******************************************************************************
+# *****************************************************************************************************
 # Dream Factory example prompt file (combination mode)
-# config options go here and will override any set in your global config file
-# this is optional, will use global config defaults if not provided
-# *******************************************************************************
+# config settings go here (optionally) and will override any set in your global config file
+# *****************************************************************************************************
 [config]
 
-!MODE = combination			# combination mode; queue all possible prompt combos
-!SD_LOW_MEMORY = yes			# low GPU VRAM mode (yes/no)? slower but far less VRAM required
-!SD_LOW_MEM_TURBO = yes		# if you're still getting out-of-memory errors in low VRAM mode, set this to no
-!REPEAT = yes					# repeat when all work finished (yes/no)?
-!DELIM = " "					# delimiter to use between prompt sections, default is space
+!MODE = combination					# combination mode; queue all possible prompt combos
+!SD_LOW_MEMORY = yes					# low GPU VRAM mode (yes/no)? slower but far less VRAM required
+!SD_LOW_MEM_TURBO = yes				# if you're still getting out-of-memory errors in low VRAM mode, set this to no
+!REPEAT = yes							# repeat when all work finished (yes/no)?
+!DELIM = " "							# delimiter to use between prompt sections, default is space
 
-# you may put also embed any of the following config directives into the [prompt] sections 
-# below; they'll affect all prompts that follow the directive
+# in combination mode, you may put also embed any of the following config directives into 
+# the [prompt] sections below; they'll affect all prompts that follow the directive
 
-!WIDTH = 512					# output image width, default is 512
-!HEIGHT = 512					# output image height, default is 512
-!STEPS = 50						# number of steps, more may improve image
-!SCALE = 7.5					# guidance scale, increase to for stricter prompt adherence
-!SAMPLES = 2					# number of images to generate per prompt
-!INPUT_IMAGE = 				# can specify an input image here (output image will be same resolution)
-!STRENGTH = 0.75				# strength of input image influence (0-1, with 1 corresponding to least influence)
+!WIDTH = 512							# output image width, default is 512
+!HEIGHT = 512							# output image height, default is 512
+!STEPS = 50							# number of steps, more may improve image but increase generation time
+!SCALE = 7.5							# guidance scale, increase for stricter prompt adherence
+!SAMPLES = 2							# number of images to generate per prompt
+!INPUT_IMAGE = 						# can specify an input image here (output image will be same resolution)
+!STRENGTH = 0.75						# strength of input image influence (0-1, with 1 corresponding to least influence)
 
-# optional integrated upscaling
+# optional integrated ESRGAN/GFPGAN upscaling
 
-!USE_UPSCALE = no				# use ESRGAN to upscale output images?
-!UPSCALE_AMOUNT = 2.0			# upscaling factor
-!UPSCALE_FACE_ENH = no		# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
-!UPSCALE_KEEP_ORG = no		# keep the original non-upscaled image (yes/no)?
+!USE_UPSCALE = no						# use ESRGAN to upscale output images?
+!UPSCALE_AMOUNT = 2.0					# upscaling factor
+!UPSCALE_FACE_ENH = no				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
+!UPSCALE_KEEP_ORG = no				# keep the original non-upscaled image (yes/no)?
 
 
-# *******************************************************************************
+# *****************************************************************************************************
 # prompt section
 # each of these items will be combined with all other items in all other [prompt] sections
 # see end of file for detailed explanation with examples
-# *******************************************************************************
+# *****************************************************************************************************
 [prompts]
 
 a cute robot
 a portrait of a cat
 a beautiful landscape
 
-# *******************************************************************************
+# *****************************************************************************************************
 # another prompt section
-# *******************************************************************************
+# *****************************************************************************************************
 [prompts]
 
 , art by
 
 
-# *******************************************************************************
+# *****************************************************************************************************
 # another prompt section
-# *******************************************************************************
+# *****************************************************************************************************
 [prompts]
 
 Aleksi Briclot
@@ -65,16 +64,16 @@ Arthur Adams
 Ayami Kojima
 
 
-# *******************************************************************************
+# *****************************************************************************************************
 # another prompt section
-# *******************************************************************************
+# *****************************************************************************************************
 [prompts]
 
 ,
 
-# *******************************************************************************
+# *****************************************************************************************************
 # another prompt section
-# *******************************************************************************
+# *****************************************************************************************************
 [prompts]
 
 ethereal
@@ -86,9 +85,8 @@ digital painting
 muted colors
 
 
-# since we have 5 [prompt] sections, each with 3, 1, 9, 1, and 7 respective items
-# (any embedded command directives don't count), we end up with a total of 
-# 189 possible combinations (3 x 1 x 9 x 7 = 189)
+# since we have 5 [prompt] sections, each with 3, 1, 9, 1, and 7 respective items (any embedded command 
+# directives don't count), we end up with a total of 189 possible combinations (3 x 1 x 9 x 7 = 189)
 # the resulting prompt queue will look like this:
 
 # a cute robot, art by Aleksi Briclot, ethereal
@@ -99,3 +97,6 @@ muted colors
 # ... and so on, for all 189 possibilities
 # be careful adding too many [prompt] sections with more than 1 item, as the 
 # increase in prompt combinations is exponential!
+
+
+

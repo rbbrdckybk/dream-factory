@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dream Factory</title>
+    <link rel="shortcut icon" type="image/jpg" href="/static/img/favicon.ico"/>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400&display=swap" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="/static/css/editor.css" rel="stylesheet">
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="/static/js/shared.js"></script>
+    <script type="text/javascript">
+
+
+    $(document).ready(function() {
+        const prompt_dropdown = document.getElementById('prompt-select');
+
+        function loadDropdown() {
+            $.ajax({
+              type: "PROMPT_DROPDOWN_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              prompt_dropdown.innerHTML = string;
+            });
+        }
+        // just load this once per page load
+        loadDropdown();
+    });
+
+    </script>
+  </head>
+  <body>
+    <div data-include="header"></div>
+
+    <div id="myModal" class="modal">
+      <div class="modal-editor-content" id="editor_msg">
+      </div>
+    </div>
+
+    <div id="editor-panel" class="panel">
+
+        <div id="editor-title" class="panel-title">
+            Prompt Editor
+        </div>
+
+        <div id="editor-column" class="panel-column">
+          <div id="prompt-dynamic">
+          </div>
+          <div id="prompt-select" class="prompt-status">
+          </div>
+        </div>
+
+        <div class="panel-column" id="panel-editor" style="display: none;">
+
+            <div id="toolbar" style="display: flex; flex-direction: row-reverse;">
+              <button id="save-button" class="server-button">Save</button>
+            </div>
+
+            <div id="editor">
+            </div>
+        </div>
+
+    </div>
+    <div data-include="footer"></div>
+    <script type="text/javascript">
+
+    function msg_modal(msg) {
+      var modal = document.getElementById("myModal");
+      var modalDiv = document.getElementById("editor_msg");
+
+      modal.style.display = "block";
+      modalDiv.innerHTML = msg;
+    }
+
+    function hide_msg_modal() {
+        var modal = document.getElementById("myModal");
+        modal.style.display = "none";
+    }
+
+    var quill = new Quill('#editor', {
+        modules: {
+            toolbar: '#toolbar'
+        },
+        scrollingContainer: document.documentElement    // fix for paste jump issue
+    });
+
+    var customButton = document.getElementById('save-button');
+    customButton.addEventListener('click', function() {
+        var start = Date.now();
+        msg_modal("Saving...");
+        $.ajax({
+          type: "POST",
+          url: "/generator",
+          data: { "type": "prompt_editor_save", "arg": quill.getText()}
+        })
+        .done(function(string) {
+            var elapsed = Date.now() - start;
+            if (elapsed > 1000) {
+                hide_msg_modal();
+            } else {
+                setTimeout(function() {
+                    hide_msg_modal();
+                }, 1000-elapsed);
+            }
+        });
+    });
+
+    quill.on('text-change', function(delta, oldDelta, source) {
+        if (source == 'user') {
+            delta.ops.forEach((op) => {
+                if (op.insert) {
+                    if (op.insert == ' ' || op.insert == '\n') {
+                        // only check on spacebar and enter
+                        decorate_line(op.insert);
+                    }
+                } else if (op.delete) {
+                    decorate_line();
+                }
+            });
+        }
+    });
+
+    function new_prompt_file() {
+      var start = Date.now();
+      msg_modal("Loading, please wait...");
+      new_file = document.getElementById('prompt-file').value;
+      if (new_file != "") {
+        $.ajax({
+          type: "POST",
+          url: "/generator",
+          data: { "type": "prompt_editor", "arg": new_file}
+        })
+        .done(function(string) {
+          document.getElementById('prompt-file').selectedIndex = 0;
+          document.getElementById('panel-editor').style.display="flex";
+          quill.setText(string);
+          decorate_prompt_file_text();
+          var elapsed = Date.now() - start;
+          if (elapsed > 1000) {
+              hide_msg_modal();
+          } else {
+              setTimeout(function() {
+                  hide_msg_modal();
+              }, 1000-elapsed);
+          }
+        });
+      }
+    }
+
+    function do_line_styling(line, line_start, last_char) {
+        if (line.trim()[0] == '!') {
+            pos = line.indexOf('=');
+            if (pos != -1) {
+                // regex would be better here but this works for now
+                before_equal = line.substring(line.indexOf('!'), line.indexOf('='));
+                if (before_equal.trim().indexOf(' ') == -1) {
+                    // this is a command directive
+                    // force uppercase on directive
+                    upper = quill.getText(line_start, pos).toUpperCase();
+                    remainder = quill.getText(line_start + pos, line.length-pos);
+
+                    quill.deleteText(line_start, line.length);
+                    quill.insertText(line_start, upper + remainder);
+
+                    if (last_char == '\n') {
+                        setTimeout(() => quill.setSelection(line_start + line.length), 0);
+                    } else {
+                        setTimeout(() => quill.setSelection(line_start + line.length-1), 0);
+                    }
+
+                    // add styling
+                    quill.formatText(line_start, pos, 'color', 'rgb(0, 150, 255)');
+                    quill.formatText(line_start, pos, 'bold', true);
+                    quill.formatText(line_start, pos, 'italic', false);
+                    quill.formatText(line_start, pos, 'code-block', true);
+                    // remove formatting after equal sign
+                    quill.removeFormat(line_start+pos, line.length-pos);
+                }
+            }
+        }
+
+        else if (line.trim()[0] == '[') {
+            pos = line.indexOf(']');
+            if (pos != -1) {
+                // this is a section header
+                quill.formatText(line_start, pos+1, 'color', 'rgb(255, 0, 0)');
+                quill.formatText(line_start, pos+1, 'background', 'rgb(220, 220, 0)');
+                quill.formatText(line_start, pos+1, 'bold', true);
+                quill.formatText(line_start, pos+1, 'italic', false);
+                // remove formatting after closing bracket
+                quill.removeFormat(line_start+pos+1, line.length-pos);
+            }
+        }
+
+        else {
+            // no formatting this line - this is slow
+            quill.removeFormat(line_start, line.length);
+        }
+
+        if (line.includes('#')) {
+            pos = line.indexOf('#');
+            if (pos != -1) {
+                // this is a comment
+                quill.formatText(line_start + pos, line.length-pos, 'color', 'rgb(140, 140, 140)');
+                quill.formatText(line_start + pos, line.length-pos, 'italic', true);
+                quill.formatText(line_start + pos, line.length-pos, 'bold', false);
+            }
+        }
+    }
+
+    function decorate_line(last_char = ' ') {
+        var range = quill.getSelection();
+        if (range) {
+            if (range.length == 0) {
+              var loc = range.index;
+              text = quill.getText();
+              line = "";
+              var count = 0;
+              for (var char of text) {
+                  count++;
+                  line += char;
+                  if (char == '\n') {
+                      if (count > loc) {
+                          // user is on this line
+                          console.log(line);
+                          var line_start = count - line.length;
+                          do_line_styling(line, line_start, last_char);
+                          break;
+                      } else {
+                          line = "";
+                      }
+                  }
+              }
+           }
+        }
+    }
+
+    function decorate_prompt_file_text() {
+        text = quill.getText();
+        line = "";
+
+        // total characters at the end of the last full line
+        var count_last_line = 0;
+        // characters on current line
+        var count = 0;
+
+        for (var char of text) {
+            count++;
+            if (char != '\n') {
+                line += char;
+            } else {
+                // end of line, check for styling
+                line += '\n';
+                do_line_styling(line, count_last_line);
+                count_last_line += count;
+                count = 0;
+                line = "";
+            }
+        }
+    }
+
+    </script>
+  </body>
+</html>

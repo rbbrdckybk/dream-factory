@@ -57,9 +57,7 @@ a:hover {
 
 
 .header-panel {
-    /*background-image: url("/static/img/ai_head_128.png");*/
     background-image: url("/static/img/dream-factory-sm.png");
-
     background-repeat: no-repeat;
     width: 1050px;
     height: 128px;
@@ -403,6 +401,15 @@ ul {
   max-width: 1025px;
 }
 
+.modal-editor-content {
+  margin: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
 #caption {
   margin: auto;
   display: block;
@@ -425,7 +432,7 @@ ul {
   font-size: 14px;
 }
 
-.modal-content, #caption, #subcaption {
+.modal-content, .modal-editor-content, #caption, #subcaption {
   animation-name: zoom;
   animation-duration: 0.33s;
 }

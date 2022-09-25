@@ -12,6 +12,17 @@ from cherrypy.lib import auth_basic, static
 
 
 
+def build_prompt_editor_text(prompt_file):
+    buffer = ""
+
+    f = open(prompt_file,'r')
+    for line in f:
+        buffer += line
+    f.close()
+
+    return buffer
+
+
 def build_gallery(control):
     images = []
     if control.config['gallery_current'] == 'recent':
@@ -104,7 +115,6 @@ def build_prompt_panel(control):
             else:
                 buffer += "\t\tmode: random prompts\n"
         elif control.get_mode() == 'combination':
-            #buffer += "\t\t6 of 100 prompt combinations completed | loops done: 1 | repeat: on\n"
             buffer += "\t\t" + str(control.jobs_done) + " of " + str(control.orig_work_queue_size) + " prompt combinations completed"
             if control.repeat_jobs:
                 buffer += " | loops done: " + str(control.loops) + " | repeat: on\n"
@@ -264,6 +274,15 @@ class ArtGeneratorWebService(object):
     def POST(self, type, arg):
         if type.lower().strip() == 'prompt_file':
             self.control.new_prompt_file(arg)
+
+        if type.lower().strip() == 'prompt_editor':
+            self.control.new_prompt_editor_file(arg)
+            buffer_text = build_prompt_editor_text(arg)
+            return buffer_text
+
+        if type.lower().strip() == 'prompt_editor_save':
+            self.control.save_prompt_editor_file(arg)
+
         if type.lower().strip() == 'gallery_location':
             self.control.config['gallery_current'] = arg
 
@@ -310,6 +329,8 @@ class ArtGeneratorWebService(object):
         buffer_text += "{}".format(str(timedelta(seconds = round(diff, 0))))
         jobs = "{:,}".format(int(jobs_done))
         buffer_text += "</div><div>Total jobs done: " + jobs + "</div>"
+        if self.control.config['debug_test_mode']:
+            buffer_text += "<div style=\"color: yellow;\">*** TEST/DEBUG MODE ENABLED - NO ACTUAL IMAGES ARE BEING CREATED! ***</div>"
         return buffer_text
 
     def BUFFER_LENGTH(self, new_length):
@@ -373,6 +394,14 @@ class ArtServer:
                 'tools.staticdir.dir': os.path.abspath(self.control_ref.config['output_location'])
             }
         })
+
+        # if we're not in debug mode, enable production mode
+        if not self.control_ref.config['debug_test_mode']:
+            self.config.update({
+                'global': {
+                    'environment' : 'production'
+                }
+            })
 
         # set up reference to user-specified gallery folder if necessary
         if self.control_ref.config['gallery_user_folder'] != '':

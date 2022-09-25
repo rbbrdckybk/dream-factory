@@ -50,11 +50,13 @@ class InputManager():
     def __init__(self, input_path):
         # a list of all the files we're using as inputs
         self.files = list()
+        self.input_path = ""
+
         if input_path != "":
-            self.input_directory = input_path
+            self.input_path = input_path
 
             # populate the list with the given init directory
-            for x in os.listdir(input_path):
+            for x in os.listdir(self.input_path):
                 if x.endswith('.jpg') or x.endswith('.png'):
                     self.files.append(x)
 
@@ -62,7 +64,8 @@ class InputManager():
     def pick_random(self):
         if len(self.files) > 0:
             x = random.randint(0, len(self.files)-1)
-            return self.files[x]
+            full_path = os.path.join(self.input_path, self.files[x])
+            return full_path
         else:
             return ""
 

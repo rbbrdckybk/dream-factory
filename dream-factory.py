@@ -203,6 +203,7 @@ class Controller:
         self.config_file = config_file
         self.config = {}
         self.prompt_file = ""
+        self.prompt_editor_file = ""
 
         self.prompt_manager = None
         self.input_manager = None
@@ -679,6 +680,20 @@ class Controller:
 
         self.clear_work_queue()
         self.init_work_queue()
+
+
+    # sets a new active editor file
+    # note that new_file is an absolute path reference
+    def new_prompt_editor_file(self, new_file):
+        self.prompt_editor_file = new_file
+
+
+    # saves the currently open prompt editor file with the new
+    # text supplied by the user via the editor
+    def save_prompt_editor_file(self, new_text):
+        if self.prompt_editor_file != "":
+            with open(self.prompt_editor_file, 'w') as f:
+                f.write(new_text)
 
 
     # for debugging; prints a report of current worker status
