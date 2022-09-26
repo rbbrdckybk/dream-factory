@@ -192,7 +192,7 @@ class PromptManager():
     # resets config options back to defaults
     def reset_config_defaults(self):
         self.config = {
-            'mode' : "combination",
+            'mode' : "standard",
             'sd_low_memory' : self.control.config['sd_low_memory'],
             'sd_low_mem_turbo' : self.control.config['sd_low_mem_turbo'],
             'seed' : -1,
@@ -371,7 +371,7 @@ class PromptManager():
                 self.config.update({'upscale_keep_org' : value})
 
         elif command == 'mode':
-            if value == 'random' or value == 'combination':
+            if value == 'random' or value == 'standard':
                 self.config.update({'mode' : value})
 
         elif command == 'input_image':

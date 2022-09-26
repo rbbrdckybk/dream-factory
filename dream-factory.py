@@ -204,6 +204,7 @@ class Controller:
         self.config = {}
         self.prompt_file = ""
         self.prompt_editor_file = ""
+        self.temp_path = ""
 
         self.prompt_manager = None
         self.input_manager = None
@@ -236,6 +237,11 @@ class Controller:
             x = threading.Thread(target=self.start_server, args=(), daemon=True)
             x.start()
 
+        # create temp folder for backups/zips/etc - needs to be webserver-accessible
+        self.temp_path = os.path.join('server', 'temp')
+        if not os.path.exists(self.temp_path):
+            os.makedirs(self.temp_path)
+
         if not self.config.get('debug_test_mode'):
             # initialize GPU(s)
             self.init_gpu_workers()
@@ -244,7 +250,7 @@ class Controller:
             self.init_dummy_workers()
 
 
-    # returns the current operation mode (combination or random)
+    # returns the current operation mode (standard or random)
     def get_mode(self):
         if self.prompt_manager != None:
             return self.prompt_manager.config.get('mode')
@@ -657,7 +663,7 @@ class Controller:
                 work['prompt_file'] = self.prompt_file
                 self.work_queue.append(work)
 
-        # combination mode, grab all possible combos
+        # standard mode, grab all possible combos
         else:
             self.work_queue = self.prompt_manager.build_combinations()
             self.orig_work_queue_size = len(self.work_queue)
@@ -691,9 +697,138 @@ class Controller:
     # saves the currently open prompt editor file with the new
     # text supplied by the user via the editor
     def save_prompt_editor_file(self, new_text):
+        result = True
         if self.prompt_editor_file != "":
-            with open(self.prompt_editor_file, 'w') as f:
-                f.write(new_text)
+            # create backup in case anything goes wrong
+            backup_file = os.path.join(self.temp_path, utils.filename_from_abspath(self.prompt_editor_file))
+            shutil.copy2(self.prompt_editor_file, backup_file)
+            try:
+                with open(self.prompt_editor_file, 'w', encoding='utf-8') as f:
+                    f.write(new_text)
+            except:
+                result = False
+                # restore backup
+                shutil.copy2(backup_file, self.prompt_editor_file)
+            else:
+                # success
+                result = True
+
+        return result
+
+
+    # renames currently open prompt editor file
+    def rename_prompt_editor_file(self, new_name):
+        result = True
+        if self.prompt_editor_file != "":
+            # create backup in case anything goes wrong
+            backup_file = os.path.join(self.temp_path, utils.filename_from_abspath(self.prompt_editor_file))
+            shutil.copy2(self.prompt_editor_file, backup_file)
+            new_file = os.path.join(self.config['prompts_location'], new_name + '.prompts')
+            try:
+                os.rename(self.prompt_editor_file, new_file)
+            except:
+                result = False
+            else:
+                # success; update the prompt file with the new name
+                self.prompt_editor_file = new_file
+                result = True
+
+        return result
+
+
+    # deletes currently selected prompt file
+    def delete_prompt_file(self):
+        result = True
+        if self.prompt_editor_file != "":
+            if os.path.exists(self.prompt_editor_file):
+                # create backup in case anything goes wrong
+                backup_file = os.path.join(self.temp_path, utils.filename_from_abspath(self.prompt_editor_file))
+                shutil.copy2(self.prompt_editor_file, backup_file)
+                try:
+                    os.remove(self.prompt_editor_file)
+                except:
+                    result = False
+                else:
+                    # success; clear the prompt file
+                    self.prompt_editor_file = ""
+                    result = True
+
+        return result
+
+
+    # creates a new prompt file of the specified type
+    # types may be 'standard' or 'random'
+    def create_prompt_editor_file(self, type):
+        mode_desc = '							# random mode; queue random prompts from [prompts] sections below'
+        if (type != 'random'):
+            mode_desc = '                       # standard mode; queue all possible combinations of [prompts] below'
+            type = 'standard'
+
+        newfilename = dt.now().strftime('%Y-%m-%d-') + 'prompts-' + type
+        new_file = os.path.join(self.config['prompts_location'], newfilename + '.prompts')
+
+        # make sure we have a unique file name
+        count = 0
+        while os.path.exists(new_file):
+            temp = newfilename + '-' + str(count)
+            new_file = os.path.join(self.config['prompts_location'], temp + '.prompts')
+            count += 1
+
+        # create a simple template
+        buffer = "# *****************************************************************************************************\n"
+        buffer += "# Dream Factory " + type + " prompt file\n"
+        create_stamp = dt.now().strftime('%Y-%m-%d') + " at " + dt.now().strftime('%H:%M:%S')
+        buffer += "# created " + create_stamp + " via the integrated prompt editor\n"
+        buffer += "# *****************************************************************************************************\n"
+
+        buffer += "# these are the default configuration parameters set in your config.txt file\n"
+        buffer += "# you may override anything in this section if you wish, otherwise skip down to the [prompts] section(s) below\n"
+        buffer += "[config]\n\n"
+        buffer += "!MODE = " + type + mode_desc + "\n"
+        buffer += "!SD_LOW_MEMORY = " + self.config['sd_low_memory'] + "					# low GPU VRAM mode (yes/no)? slower but far less VRAM required\n"
+        buffer += "!SD_LOW_MEM_TURBO = " + self.config['sd_low_mem_turbo'] + "				# if you're still getting out-of-memory errors in low VRAM mode, set this to no\n"
+        buffer += "!DELIM = \" \"							# delimiter to use between prompt sections, default is space\n"
+        if type == "standard":
+            buffer += "!REPEAT = yes							# repeat when all work finished (yes/no)?\n\n"
+            buffer += "# in standard mode, you may put also embed any of the following config directives into \n"
+            buffer += "# the [prompt] sections below; they'll affect all prompts that follow the directive\n\n"
+
+
+        buffer += "!WIDTH = " + str(self.config['width']) + "							# output image width, default is 512\n"
+        buffer += "!HEIGHT = " + str(self.config['height']) + "							# output image height, default is 512\n"
+        buffer += "!STEPS = " + str(self.config['steps']) + "							# number of steps, more may improve image but increase generation time\n"
+        buffer += "!SAMPLES = " + str(self.config['samples']) + "					      	# number of images to generate per prompt\n"
+
+        if type == "standard":
+            buffer += "!SCALE = " + str(self.config['scale']) + "							# guidance scale, increase for stricter prompt adherence\n"
+            buffer += "!INPUT_IMAGE = 						# can specify an input image here (output image will be same resolution)\n"
+            buffer += "!STRENGTH = 0.75						# strength of input image influence (0-1, with 1 corresponding to least influence)\n"
+        else:
+            buffer += "!MIN_SCALE = " + str(self.config['scale']) + "						# minimum guidance scale, default = 7.5\n"
+            buffer += "!MAX_SCALE = " + str(self.config['scale']) + "						# maximum guidance scale, set min and max to same number for no variance\n"
+            buffer += "!RANDOM_INPUT_IMAGE_DIR =				# specify a directory of images here to randomly use them as inputs\n"
+            buffer += "!MIN_STRENGTH = 0.75					# min strength of starting image influence, (0-1, 1 is lowest influence)\n"
+            buffer += "!MAX_STRENGTH = 0.75					# max strength of start image, set min and max to same number for no variance\n"
+
+        buffer += "\n# optional integrated upscaling\n\n"
+        buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# use ESRGAN to upscale output images?\n"
+        buffer += "!UPSCALE_AMOUNT = " + str(self.config['upscale_amount']) + "					# upscaling factor\n"
+        buffer += "!UPSCALE_FACE_ENH = " + self.config['upscale_face_enh'] + "				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?\n"
+        buffer += "!UPSCALE_KEEP_ORG = " + self.config['upscale_keep_org'] + "				# keep the original non-upscaled image (yes/no)?\n"
+
+        buffer += "\n# *****************************************************************************************************\n"
+        buffer += "# prompt section\n"
+        buffer += "# *****************************************************************************************************\n"
+        buffer += "[prompts]\n"
+        buffer += "\n# put your prompts here; one per line\n"
+        buffer += "# you may also add additional [prompt] sections below, see 'example-" + type + ".prompts' for details\n"
+
+        # write the buffer to a new file and return it
+        with open(new_file, 'w') as f:
+            f.write(buffer)
+
+        buffer = utils.filename_from_abspath(new_file).replace('.prompts', '') + '|' + buffer
+        return buffer
 
 
     # for debugging; prints a report of current worker status

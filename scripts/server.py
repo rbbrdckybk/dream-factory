@@ -114,7 +114,7 @@ def build_prompt_panel(control):
                 buffer += "\t\tmode: random prompts, random input images\n"
             else:
                 buffer += "\t\tmode: random prompts\n"
-        elif control.get_mode() == 'combination':
+        elif control.get_mode() == 'standard':
             buffer += "\t\t" + str(control.jobs_done) + " of " + str(control.orig_work_queue_size) + " prompt combinations completed"
             if control.repeat_jobs:
                 buffer += " | loops done: " + str(control.loops) + " | repeat: on\n"
@@ -164,17 +164,22 @@ def build_gallery_dropdown(control):
     return buffer
 
 
-
 def build_prompt_dropdown(control):
-    buffer = "<label for=\"prompt-file\">Choose a new prompt file:</label>\n"
-    buffer += "<select name=\"prompt-file\" id=\"prompt-file\" class=\"prompt-dropdown\" onchange=\"new_prompt_file()\">\n"
-    buffer += "\t<option value=\"\">select</option>\n"
+    buffer = "<div class=\"tooltip\">\n"
+    buffer += "\t<div id=\"prompt-select\" class=\"prompt-status\">\n"
+    buffer += "\t\t<label for=\"prompt-file\">Choose a prompt file:</label>\n"
+    buffer += "\t\t<select name=\"prompt-file\" id=\"prompt-file\" class=\"prompt-dropdown\" onchange=\"new_prompt_file()\">\n"
+    buffer += "\t\t\t<option value=\"\">select</option>\n"
     files = os.listdir(control.config.get('prompts_location'))
     for f in files:
         if f.lower().endswith('.prompts'):
             full_path = os.path.abspath(control.config.get('prompts_location') + '/' + f)
-            buffer += "\t<option value=\"" + full_path + "\">" + f.replace('.prompts', '') + "</option>\n"
-    buffer += "</select>\n"
+            buffer += "\t\t\t<option value=\"" + full_path + "\">" + f.replace('.prompts', '') + "</option>\n"
+    buffer += "\t\t</select>\n"
+
+    buffer += "\t</div>\n"
+    buffer += "\t<span class=\"tooltiptext\">All .prompt files in your&#xa;prompt folder appear here.</span>\n"
+    buffer += "</div>\n"
     return buffer
 
 
@@ -237,9 +242,6 @@ def build_worker_panel(workers):
     return buffer
 
 
-
-
-
 class ArtGenerator(object):
     def __init__(self, control_ref):
         self.control = control_ref
@@ -255,10 +257,7 @@ class ArtGenerator(object):
             dir = self.control.config['gallery_user_folder']
 
         zip_path = utils.create_zip(dir)
-
         return static.serve_download(os.path.abspath(zip_path))
-        #return static.serve_download(os.path.abspath('server/temp/images.zip'))
-
 
 
 @cherrypy.expose
@@ -280,8 +279,25 @@ class ArtGeneratorWebService(object):
             buffer_text = build_prompt_editor_text(arg)
             return buffer_text
 
+        if type.lower().strip() == 'prompt_editor_create':
+            buffer_text = self.control.create_prompt_editor_file(arg)
+            return buffer_text
+
         if type.lower().strip() == 'prompt_editor_save':
-            self.control.save_prompt_editor_file(arg)
+            result = self.control.save_prompt_editor_file(arg)
+            if result:
+                return ""
+            else:
+                # error saving
+                return "-1"
+
+        if type.lower().strip() == 'prompt_editor_rename':
+            result = self.control.rename_prompt_editor_file(arg)
+            if result:
+                return ""
+            else:
+                # error renaming
+                return "-1"
 
         if type.lower().strip() == 'gallery_location':
             self.control.config['gallery_current'] = arg
@@ -296,6 +312,15 @@ class ArtGeneratorWebService(object):
 
     def PROMPT_DROPDOWN_LOAD(self):
         buffer_text = build_prompt_dropdown(self.control)
+        return buffer_text
+
+    def PROMPT_FILE_DELETE(self):
+        result = self.control.delete_prompt_file()
+        if result:
+            return ""
+        else:
+            # error deleting
+            return "-1"
         return buffer_text
 
     def GALLERY_DROPDOWN_LOAD(self):

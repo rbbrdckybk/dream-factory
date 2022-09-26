@@ -44,17 +44,43 @@
             Prompt Editor
         </div>
 
-        <div id="editor-column" class="panel-column">
-          <div id="prompt-dynamic">
-          </div>
+        <div id="editor-row" class="panel-row">
           <div id="prompt-select" class="prompt-status">
+          </div>
+
+          <div id="top-toolbar" class="toolbar" style="padding-top: 9px;">
+              <div class="tooltip">
+                  <button id="new-random" class="button-editor">New Random</button>
+                  <span class="tooltiptext">Create a new prompt file.&#xa;(random mode)</span>
+              </div>
+
+              <div class="tooltip">
+                  <button id="new-standard" class="button-editor">New Standard</button>
+                  <span class="tooltiptext">Create a new prompt file.&#xa;(standard mode)</span>
+              </div>
           </div>
         </div>
 
         <div class="panel-column" id="panel-editor" style="display: none;">
 
-            <div id="toolbar" style="display: flex; flex-direction: row-reverse;">
-              <button id="save-button" class="server-button">Save</button>
+            <div id="toolbar-container" class="toolbar-container">
+                <div id="toolbar-name" class="toolbar-name">
+                    <div class="tooltip">
+                        <input type="text" id="prompt-file-name" class="prompt-file-name" maxlength="100" value="test"></input>
+                        <span class="tooltiptext">The prompt filename.&#xa;Click to change.</span>
+                    </div>
+                    <button id="rename-button" class="button-editor" style="display: none;">Rename</button>
+                </div>
+                <div id="toolbar" class="toolbar">
+                    <div class="tooltip">
+                        <button id="save-button" class="button-editor">Save</button>
+                        <span class="tooltiptext">Saves the prompt file.&#xa;(hotkey: ctrl+s)</span>
+                    </div>
+                    <div class="tooltip">
+                        <button id="delete-button" class="button-editor">Delete</button>
+                        <span class="tooltiptext">Permanently delete this file.</span>
+                    </div>
+                </div>
             </div>
 
             <div id="editor">
@@ -85,16 +111,36 @@
         scrollingContainer: document.documentElement    // fix for paste jump issue
     });
 
-    var customButton = document.getElementById('save-button');
-    customButton.addEventListener('click', function() {
+    const newStandard = document.getElementById('new-standard');
+    const newRandom = document.getElementById('new-random');
+
+    newStandard.addEventListener('click', function() {
+        createFile('standard');
+    });
+    newRandom.addEventListener('click', function() {
+        createFile('random');
+    });
+
+    function createFile(type) {
         var start = Date.now();
-        msg_modal("Saving...");
+        msg_modal("Creating, please wait...");
         $.ajax({
-          type: "POST",
-          url: "/generator",
-          data: { "type": "prompt_editor_save", "arg": quill.getText()}
+            type: "POST",
+            url: "/generator",
+            data: { "type": "prompt_editor_create", "arg": type}
         })
         .done(function(string) {
+            fname = string.split('|', 1)[0];
+            console.log(fname);
+            string = string.split('|', 2)[1];
+            console.log(string);
+            renameField.value = fname;
+            renameButton.style.display = "none";
+            var dropdown = document.getElementById('prompt-file');
+            dropdown.selectedIndex = 0;
+            document.getElementById('panel-editor').style.display="flex";
+            quill.setText(string);
+            decorate_prompt_file_text();
             var elapsed = Date.now() - start;
             if (elapsed > 1000) {
                 hide_msg_modal();
@@ -104,7 +150,113 @@
                 }, 1000-elapsed);
             }
         });
+    }
+
+    const renameField = document.getElementById('prompt-file-name');
+    const renameButton = document.getElementById('rename-button');
+    renameField.addEventListener('input', function() {
+        if (renameField.value.length > 0) {
+            renameButton.style.display = "flex";
+        } else {
+            renameButton.style.display = "none";
+        }
     });
+
+    renameButton.addEventListener('click', function() {
+        $.ajax({
+          type: "POST",
+          url: "/generator",
+          data: { "type": "prompt_editor_rename", "arg": renameField.value}
+        })
+        .done(function(string) {
+            if (string == "") {
+                // success, reload dropdown
+                $.ajax({
+                  type: "PROMPT_DROPDOWN_LOAD",
+                  url: "/generator"
+                })
+                .done(function(string) {
+                  document.getElementById('prompt-select').innerHTML = string;
+                });
+                // hide rename button
+                renameButton.style.display = "none";
+            } else {
+                msg_modal("Another file with that name already exists!");
+                setTimeout(function() {
+                    hide_msg_modal();
+                }, 2500);
+            }
+        });
+    });
+
+    const saveButton = document.getElementById('save-button');
+    saveButton.addEventListener('click', save);
+
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        save();
+      }
+    });
+
+    function save() {
+        var allText = quill.getText();
+        if (allText === null || allText.trim() === "") {
+            // something happened
+            console.log('save attempt with nothing returned by editor');
+        } else {
+            var start = Date.now();
+            msg_modal("Saving...");
+            $.ajax({
+              type: "POST",
+              url: "/generator",
+              data: { "type": "prompt_editor_save", "arg": allText}
+            })
+            .done(function(string) {
+                var elapsed = Date.now() - start;
+                if (string == "") {
+                    if (elapsed > 1000) {
+                        hide_msg_modal();
+                    } else {
+                        setTimeout(function() {
+                            hide_msg_modal();
+                        }, 1000-elapsed);
+                    }
+                } else {
+                    msg_modal("Save failed, please try again!");
+                    setTimeout(function() {
+                        hide_msg_modal();
+                    }, 1500);
+                }
+            });
+        }
+    }
+
+    const deleteButton = document.getElementById('delete-button');
+    deleteButton.addEventListener('click', function() {
+        if (niceAlert("Really delete?", "This prompt file will be deleted forever!", "Deleted!", "", deleteFile) == true) {
+            // deleteFile function will be called if user confirms
+        }
+    });
+
+    function deleteFile() {
+        $.ajax({
+          type: "PROMPT_FILE_DELETE",
+          url: "/generator"
+        })
+        .done(function(string) {
+            // reload dropdown and reset page
+            $.ajax({
+              type: "PROMPT_DROPDOWN_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              document.getElementById('prompt-select').innerHTML = string;
+            });
+            renameButton.style.display = "none";
+            document.getElementById('panel-editor').style.display = "none";
+        });
+    }
 
     quill.on('text-change', function(delta, oldDelta, source) {
         if (source == 'user') {
@@ -124,7 +276,8 @@
     function new_prompt_file() {
       var start = Date.now();
       msg_modal("Loading, please wait...");
-      new_file = document.getElementById('prompt-file').value;
+      var dropdown = document.getElementById('prompt-file');
+      new_file = dropdown.value;
       if (new_file != "") {
         $.ajax({
           type: "POST",
@@ -132,7 +285,9 @@
           data: { "type": "prompt_editor", "arg": new_file}
         })
         .done(function(string) {
-          document.getElementById('prompt-file').selectedIndex = 0;
+          renameField.value = dropdown.options[dropdown.selectedIndex].text;
+          renameButton.style.display = "none";
+          dropdown.selectedIndex = 0;
           document.getElementById('panel-editor').style.display="flex";
           quill.setText(string);
           decorate_prompt_file_text();

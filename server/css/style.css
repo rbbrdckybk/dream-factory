@@ -298,6 +298,10 @@ a:hover {
     padding: 4px;
 }
 
+.prompt-dropdown {
+    min-width: 200px;
+}
+
 .prompt-status-header {
     width: 100%;
     font-size: 16px;
@@ -473,6 +477,56 @@ ul {
 .zip-download:focus {
   cursor: pointer;
   transform:scale(1.1)
+}
+
+/* mouseover context tooltip popups */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: rgba(88, 88, 88, 0.92);
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 145%;
+  left: 50%;
+  margin-left: -100px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(100, 100, 100, 0.92) transparent transparent rgba(100, 100, 100, 0.92);
+  white-space: pre;
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 9px;
+  border-style: solid;
+  border-color: rgba(88, 88, 88, 0.92) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+.tooltip .tooltiptext {
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.tooltip:hover .tooltiptext {
+  opacity: 1;
 }
 
 

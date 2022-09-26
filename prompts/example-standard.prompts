@@ -1,16 +1,16 @@
 # *****************************************************************************************************
-# Dream Factory example prompt file (combination mode)
+# Dream Factory example prompt file (standard mode)
 # config settings go here (optionally) and will override any set in your global config file
 # *****************************************************************************************************
 [config]
 
-!MODE = combination					# combination mode; queue all possible prompt combos
+!MODE = standard					# standard mode; queue all possible prompt combos
 !SD_LOW_MEMORY = yes					# low GPU VRAM mode (yes/no)? slower but far less VRAM required
 !SD_LOW_MEM_TURBO = yes				# if you're still getting out-of-memory errors in low VRAM mode, set this to no
 !REPEAT = yes							# repeat when all work finished (yes/no)?
 !DELIM = " "							# delimiter to use between prompt sections, default is space
 
-# in combination mode, you may put also embed any of the following config directives into 
+# in standard mode, you may put also embed any of the following config directives into 
 # the [prompt] sections below; they'll affect all prompts that follow the directive
 
 !WIDTH = 512							# output image width, default is 512
@@ -97,6 +97,12 @@ muted colors
 # ... and so on, for all 189 possibilities
 # be careful adding too many [prompt] sections with more than 1 item, as the 
 # increase in prompt combinations is exponential!
+
+
+
+
+
+
 
 
 

@@ -971,3 +971,80 @@
    left: 50% !important;
    top: 50% !important;
 }
+
+/* toolbar styling */
+.toolbar-container {
+    display: flex;
+    justify-content: space-between;
+    background-color: #282828;
+}
+
+.toolbar-name {
+    display: flex;
+    padding: 4px;
+}
+
+.prompt-file-name {
+    width: 600px;
+    padding-left: 10px;
+    outline: none;
+    box-sizing: border-box;
+    background-color: #222;
+    color: white;
+    border: none;
+    border-bottom: 2px solid green;
+    font-family: Raleway,sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.prompt-file-name:focus {
+  background-color: #224422;
+  border-bottom: 3px solid green;
+  transform:scale(1.01);
+}
+
+.toolbar {
+    display: flex;
+    flex-direction: row-reverse;
+    padding: 4px;
+}
+
+.button-editor {
+  background: #00AA00;
+  border: 1px solid #00AA00;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.1) 1px 2px 4px;
+  text-shadow: 1px 1px 3px black;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-family: Raleway,sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 10px;
+  min-height: 20px;
+  outline: 0;
+  padding: 10px 12px;
+  margin-left: 10px;
+  text-align: center;
+  text-rendering: geometricprecision;
+  text-transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+}
+
+.button-editor:hover,
+.button-editor:active {
+  background-color: initial;
+  background-position: 0 0;
+  color: #00FF00;
+  transform:scale(1.03);
+}
+
+.button-editor:active {
+  opacity: .5;
+}
