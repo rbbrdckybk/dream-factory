@@ -131,9 +131,7 @@
         })
         .done(function(string) {
             fname = string.split('|', 1)[0];
-            console.log(fname);
             string = string.split('|', 2)[1];
-            console.log(string);
             renameField.value = fname;
             renameButton.style.display = "none";
             var dropdown = document.getElementById('prompt-file');

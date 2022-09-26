@@ -712,6 +712,10 @@ class Controller:
             else:
                 # success
                 result = True
+                # if the saved prompt file is the actively-running one, reload it
+                if utils.filename_from_abspath(self.prompt_editor_file) == utils.filename_from_abspath(self.prompt_file):
+                    self.print("active prompt file edited; reloading it...")
+                    self.new_prompt_file(self.prompt_editor_file)
 
         return result
 
@@ -829,6 +833,43 @@ class Controller:
 
         buffer = utils.filename_from_abspath(new_file).replace('.prompts', '') + '|' + buffer
         return buffer
+
+
+    # delete an image
+    def delete_gallery_img(self, web_path):
+        web_path = web_path.replace('/', os.path.sep)
+        web_path = web_path.replace('\\', os.path.sep)
+        response = ""
+        actual_path = ""
+        if (os.path.sep + 'user_gallery') in web_path:
+            div = os.path.sep + 'user_gallery' + os.path.sep
+            actual_path = web_path.split(div, 1)[1]
+            actual_path = os.path.join(self.config['gallery_user_folder'], actual_path)
+        else:
+            div = os.path.sep + 'output' + os.path.sep
+            actual_path = web_path.split(div, 1)[1]
+            actual_path = os.path.join(self.config['output_location'], actual_path)
+
+        print(actual_path)
+        if os.path.exists(actual_path):
+            # move the 'deleted' file to the server /temp directory
+            # it will be deleted permanently when the server shuts down
+            temp = os.path.join(self.temp_path, utils.filename_from_abspath(actual_path))
+            try:
+                os.replace(actual_path, temp)
+            except:
+                try:
+                    shutil.move(actual_path, temp)
+                except:
+                    pass
+            else:
+                # if the moves failed, just delete the file
+                if os.path.exists(actual_path):
+                    os.remove(actual_path)
+        else:
+            response = "image not found"
+
+        return response
 
 
     # for debugging; prints a report of current worker status

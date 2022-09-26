@@ -33,7 +33,7 @@ def build_gallery(control):
         else:
             images = utils.get_images_from_dir(control.config['gallery_current'], control.config['gallery_max_images'])
 
-    buffer = "<ul class=\"image-gallery\">\n"
+    buffer = "<ul id=\"images\" class=\"image-gallery\">\n"
 
     for img in images:
         exif = utils.read_exif_from_image(img)
@@ -82,7 +82,7 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += upscale_info
 
-        buffer += "\t<li onclick=\"img_modal('i_" + utils.filename_from_abspath(img) + "', 'd_" + utils.filename_from_abspath(img) + "', 'p_" + utils.filename_from_abspath(img) + "')\">\n"
+        buffer += "\t<li id=\"" + utils.filename_from_abspath(img) + "\" onclick=\"img_modal('i_" + utils.filename_from_abspath(img) + "', 'd_" + utils.filename_from_abspath(img) + "', 'p_" + utils.filename_from_abspath(img) + "')\">\n"
         if control.config['gallery_current'] == 'user_gallery':
             buffer += "\t\t<img src=\"/user_gallery/" + utils.filename_from_abspath(img) + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
         else:
@@ -271,6 +271,10 @@ class ArtGeneratorWebService(object):
         pass
 
     def POST(self, type, arg):
+        if type.lower().strip() == 'gallery_delete':
+            response = self.control.delete_gallery_img(arg)
+            return response
+        
         if type.lower().strip() == 'prompt_file':
             self.control.new_prompt_file(arg)
 

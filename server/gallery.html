@@ -112,7 +112,6 @@
           <div class="zip-download" id="zip-download">
             <a href="/getzip">
               <img src="/static/img/download-zip-icon.png" title="download as .zip file" alt="download as .zip file">
-            <!--img src="/static/img/download-zip-icon.png" title="download as .zip file" alt="download as .zip file" onclick="download_zip()"-->
             </a>
           </div>
         </div>
@@ -126,6 +125,11 @@
     <div data-include="footer"></div>
 
     <script type="text/javascript">
+      var span = document.getElementById("close");
+      var modal = document.getElementById("myModal");
+      var currentImage = "";
+      var imgList = null;
+
       function img_modal(img_id, caption_id, subcaption_id) {
         var modal = document.getElementById("myModal");
         var img = document.getElementById(img_id);
@@ -137,19 +141,102 @@
         modalImg.src = img.src;
         captionText.innerHTML = document.getElementById(caption_id).innerHTML;
         subcaptionText.innerHTML = document.getElementById(subcaption_id).innerHTML;
-      }
 
-      var span = document.getElementById("close");
-      var modal = document.getElementById("myModal");
+        refreshImageList();
+        currentImage = img_id.split('_', 2)[1];
+      }
 
       document.addEventListener('keydown', function(event){
       	if(event.key === "Escape"){
-      	   modal.style.display = "none";
+      	   closeModal();
       	}
+
+        if(event.key === "Delete"){
+            if (currentImage != "") {
+                next = nextImage(currentImage);
+                src = document.getElementById("img01").src;
+
+                // send server request
+                $.ajax({
+                  type: "POST",
+                  url: "/generator",
+                  data: { "type": "gallery_delete", "arg": src}
+                })
+                .done(function(string) {
+                    document.getElementById(currentImage).remove();
+                    if (next != "") {
+                        img_modal('i_' + next, 'd_' + next, 'p_' + next);
+                    } else {
+                        closeModal();
+                    }
+                });
+
+            }
+        }
+
+        if(event.key === "ArrowLeft"){
+            if (currentImage != "") {
+                prev = prevImage(currentImage);
+                if (prev != "") {
+                    img_modal('i_' + prev, 'd_' + prev, 'p_' + prev);
+                }
+            }
+        }
+
+        if(event.key === "ArrowRight"){
+            if (currentImage != "") {
+                next = nextImage(currentImage);
+                if (next != "") {
+                    img_modal('i_' + next, 'd_' + next, 'p_' + next);
+                }
+            }
+        }
+
       });
 
       span.onclick = function() {
-        modal.style.display = "none";
+        closeModal();
+      }
+
+      function closeModal() {
+          currentImage = "";
+          modal.style.display = "none";
+      }
+
+      function refreshImageList() {
+          imgList = document.getElementById("images").getElementsByTagName("li");
+          for (let i = 0; i < imgList.length; i++) {
+              let item = imgList[i];
+              //console.log(i + ': ' + item.id);
+          }
+      }
+
+      function prevImage(currImage) {
+          prev = "";
+          for (i = 0; i < imgList.length; i++) {
+              img = imgList[i].id;
+              if (img == currImage) {
+                  if (i-1 >= 0) {
+                      prev = imgList[i-1].id;
+                      break;
+                  }
+              }
+          }
+          return prev;
+      }
+
+      function nextImage(currImage) {
+          next = "";
+          for (i = 0; i < imgList.length; i++) {
+              img = imgList[i].id;
+              if (img == currImage) {
+                  if (i+1 < imgList.length) {
+                      next = imgList[i+1].id;
+                      break;
+                  }
+              }
+          }
+          return next;
       }
 
       function download_zip() {
