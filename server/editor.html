@@ -147,6 +147,15 @@
                     hide_msg_modal();
                 }, 1000-elapsed);
             }
+
+            $.ajax({
+              type: "PROMPT_DROPDOWN_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              document.getElementById('prompt-select').innerHTML = string;
+            });
+
         });
     }
 

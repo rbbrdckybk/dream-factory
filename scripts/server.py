@@ -145,11 +145,17 @@ def build_gallery_dropdown(control):
     buffer += "\t<option value=\"\">select</option>\n"
     buffer += "\t<option value=\"recent\">recent output files</option>\n"
 
+    dirs = []
     files = os.listdir(control.config.get('output_location'))
     for f in files:
         full_path = os.path.join(control.config.get('output_location'), f)
         if os.path.isdir(full_path):
-            buffer += "\t<option value=\"" + full_path + "\">" + f + "</option>\n"
+            dirs.append("\t<option value=\"" + full_path + "\">" + f + "</option>\n")
+
+    # sort in reverse alpha order, which should be most recent first
+    dirs.sort(reverse=True)
+    for dir in dirs:
+        buffer += dir
 
     # add the user-specified gallery dir as an option if it exists
     if control.config.get('gallery_user_folder') != '':

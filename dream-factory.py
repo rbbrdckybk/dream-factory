@@ -831,7 +831,9 @@ class Controller:
         with open(new_file, 'w') as f:
             f.write(buffer)
 
+        self.prompt_editor_file = new_file
         buffer = utils.filename_from_abspath(new_file).replace('.prompts', '') + '|' + buffer
+
         return buffer
 
 
