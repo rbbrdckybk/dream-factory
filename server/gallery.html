@@ -93,7 +93,35 @@
     <div data-include="header"></div>
 
     <div id="myModal" class="modal">
-      <span class="close" id="close">&times;</span>
+      <!--span class="close" id="close">&times;</span-->
+      <div id="img-toolbar" class="img-toolbar">
+          <div class="tooltip-bottom">
+              <div><img id="left-img" src="/static/img/arrow-sm.png" class="edit-img" style="transform: scaleX(-1);"></div>
+              <span class="tooltiptext-bottom">Previous image&#xa;(hotkey: left arrow)</span>
+          </div>
+          <div>
+              <div class="tooltip-bottom">
+                  <a id="download-img" href="">
+                      <img src="/static/img/download-sm.png" class="edit-img">
+                  </a>
+                  <span class="tooltiptext-bottom">Download this image.</span>
+              </div>
+
+              <div class="tooltip-bottom">
+                  <img id="delete-img" src="/static/img/trash-sm.png" class="edit-img">
+                  <span class="tooltiptext-bottom">Delete this image.&#xa;(hotkey: delete)&#xa;Tip: use the hotkey to&#xa;skip confirmation dialog.</span>
+              </div>
+
+              <div class="tooltip-bottom">
+                  <img id="close-img" src="/static/img/close-sm.png" class="edit-img">
+                  <span class="tooltiptext-bottom">Close this window.&#xa;(hotkey: esc)</span>
+              </div>
+          </div>
+          <div class="tooltip-bottom">
+              <div><img id="right-img" src="/static/img/arrow-sm.png" class="edit-img"></div>
+              <span class="tooltiptext-bottom">Next image&#xa;(hotkey: right arrow)</span>
+          </div>
+      </div>
       <img class="modal-content" id="img01">
       <div id="caption"></div>
       <div id="subcaption"></div>
@@ -125,7 +153,6 @@
     <div data-include="footer"></div>
 
     <script type="text/javascript">
-      var span = document.getElementById("close");
       var modal = document.getElementById("myModal");
       var currentImage = "";
       var imgList = null;
@@ -136,6 +163,8 @@
         var modalImg = document.getElementById("img01");
         var captionText = document.getElementById("caption");
         var subcaptionText = document.getElementById("subcaption");
+        var downloadLink = document.getElementById("download-img");
+        downloadLink.href = "/getimg?img=" + img.src;
 
         modal.style.display = "block";
         modalImg.src = img.src;
@@ -146,56 +175,85 @@
         currentImage = img_id.split('_', 2)[1];
       }
 
-      document.addEventListener('keydown', function(event){
+      document.getElementById('delete-img').onclick = function() {
+          //deleteImage();
+          if (niceAlertQuick("Delete this image?", "Tip: if you accidentally delete an image, you may recover it in the 'server\\temp' folder BEFORE you shut the server down!", deleteImage) == true) {
+              // deleteImage function will be called if user confirms
+          }
+
+      }
+
+      function deleteImage() {
+          if (currentImage != "") {
+              next = nImage(currentImage);
+              src = document.getElementById("img01").src;
+
+              // send server request
+              $.ajax({
+                type: "POST",
+                url: "/generator",
+                data: { "type": "gallery_delete", "arg": src}
+              })
+              .done(function(string) {
+                  document.getElementById(currentImage).remove();
+                  if (next != "") {
+                      img_modal('i_' + next, 'd_' + next, 'p_' + next);
+                  } else {
+                      closeModal();
+                  }
+              });
+          }
+      }
+
+      document.addEventListener('keydown', event => {
       	if(event.key === "Escape"){
       	   closeModal();
       	}
 
         if(event.key === "Delete"){
-            if (currentImage != "") {
-                next = nextImage(currentImage);
-                src = document.getElementById("img01").src;
-
-                // send server request
-                $.ajax({
-                  type: "POST",
-                  url: "/generator",
-                  data: { "type": "gallery_delete", "arg": src}
-                })
-                .done(function(string) {
-                    document.getElementById(currentImage).remove();
-                    if (next != "") {
-                        img_modal('i_' + next, 'd_' + next, 'p_' + next);
-                    } else {
-                        closeModal();
-                    }
-                });
-
-            }
+            deleteImage();
         }
 
         if(event.key === "ArrowLeft"){
-            if (currentImage != "") {
-                prev = prevImage(currentImage);
-                if (prev != "") {
-                    img_modal('i_' + prev, 'd_' + prev, 'p_' + prev);
-                }
-            }
+            event.preventDefault();
+            previousImage();
         }
 
         if(event.key === "ArrowRight"){
-            if (currentImage != "") {
-                next = nextImage(currentImage);
-                if (next != "") {
-                    img_modal('i_' + next, 'd_' + next, 'p_' + next);
-                }
-            }
+            event.preventDefault();
+            nextImage();
         }
 
       });
 
-      span.onclick = function() {
-        closeModal();
+      document.getElementById('left-img').onclick = function() {
+          previousImage();
+      }
+
+      function previousImage() {
+          if (currentImage != "") {
+              prev = pImage(currentImage);
+              if (prev != "") {
+                  img_modal('i_' + prev, 'd_' + prev, 'p_' + prev);
+              }
+          }
+      }
+
+      document.getElementById('right-img').onclick = function() {
+          nextImage();
+      }
+
+      function nextImage() {
+          if (currentImage != "") {
+              next = nImage(currentImage);
+              if (next != "") {
+                  img_modal('i_' + next, 'd_' + next, 'p_' + next);
+              }
+          }
+      }
+
+      document.getElementById('close-img').onclick = function() {
+          closeModal();
       }
 
       function closeModal() {
@@ -207,11 +265,10 @@
           imgList = document.getElementById("images").getElementsByTagName("li");
           for (let i = 0; i < imgList.length; i++) {
               let item = imgList[i];
-              //console.log(i + ': ' + item.id);
           }
       }
 
-      function prevImage(currImage) {
+      function pImage(currImage) {
           prev = "";
           for (i = 0; i < imgList.length; i++) {
               img = imgList[i].id;
@@ -225,7 +282,7 @@
           return prev;
       }
 
-      function nextImage(currImage) {
+      function nImage(currImage) {
           next = "";
           for (i = 0; i < imgList.length; i++) {
               img = imgList[i].id;
@@ -239,12 +296,6 @@
           return next;
       }
 
-      function download_zip() {
-        $.ajax({
-          type: "DOWNLOAD_ZIP",
-          url: "/generator"
-        });
-      }
     </script>
   </body>
 </html>

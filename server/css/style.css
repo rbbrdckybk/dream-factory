@@ -436,7 +436,19 @@ ul {
   font-size: 14px;
 }
 
-.modal-content, .modal-editor-content, #caption, #subcaption {
+#img-toolbar {
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  width: 80%;
+  max-width: 850px;
+  text-align: center;
+  color: #aaa;
+  padding-bottom: 10px;
+  font-size: 14px;
+}
+
+.modal-content, .modal-editor-content, #caption, #subcaption, #img-toolbar {
   animation-name: zoom;
   animation-duration: 0.33s;
 }
@@ -463,6 +475,16 @@ ul {
   color: #e22;
   text-decoration: none;
   cursor: pointer;
+}
+
+.edit-img {
+    margin: 2px 10px 2px 10px;
+}
+
+.edit-img:hover,
+.edit-img:focus {
+  cursor: pointer;
+  transform:scale(1.2);
 }
 
 /* Modal Image open/close end */
@@ -528,6 +550,61 @@ ul {
 .tooltip:hover .tooltiptext {
   opacity: 1;
 }
+
+
+/* mouseover context tooltip popups BOTTOM */
+.tooltip-bottom {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip-bottom .tooltiptext-bottom {
+  visibility: hidden;
+  width: 200px;
+  background-color: rgba(88, 88, 88, 0.92);
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 6px;
+  position: absolute;
+  z-index: 1;
+  top: 145%;
+  left: 50%;
+  margin-left: -100px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(100, 100, 100, 0.92) transparent transparent rgba(100, 100, 100, 0.92);
+  white-space: pre;
+}
+
+.tooltip-bottom .tooltiptext-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 9px;
+  border-style: solid;
+  border-color: transparent transparent rgba(88, 88, 88, 0.92) transparent;
+}
+
+.tooltip-bottom:hover .tooltiptext-bottom {
+  visibility: visible;
+}
+
+.tooltip-bottom .tooltiptext-bottom {
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.tooltip-bottom:hover .tooltiptext-bottom {
+  opacity: 1;
+}
+
+
+
+
 
 
 

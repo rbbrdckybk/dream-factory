@@ -259,6 +259,17 @@ class ArtGenerator(object):
         zip_path = utils.create_zip(dir)
         return static.serve_download(os.path.abspath(zip_path))
 
+    @cherrypy.expose
+    def getimg(self, img):
+        actual_path = ""
+        if ('user_gallery/') in img:
+            actual_path = img.split('user_gallery/', 1)[1]
+            actual_path = os.path.join(self.control.config['gallery_user_folder'], actual_path)
+        else:
+            actual_path = img.split('output/', 1)[1]
+            actual_path = os.path.join(self.control.config['output_location'], actual_path)
+
+        return static.serve_download(os.path.abspath(actual_path))
 
 @cherrypy.expose
 class ArtGeneratorWebService(object):
@@ -274,7 +285,7 @@ class ArtGeneratorWebService(object):
         if type.lower().strip() == 'gallery_delete':
             response = self.control.delete_gallery_img(arg)
             return response
-        
+
         if type.lower().strip() == 'prompt_file':
             self.control.new_prompt_file(arg)
 

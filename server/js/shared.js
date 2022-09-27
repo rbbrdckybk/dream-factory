@@ -37,3 +37,22 @@ function niceAlert(titleText, descText, yesText, noText, confirmFunction) {
     }
   });
 }
+
+function niceAlertQuick(titleText, descText, confirmFunction) {
+  swal({
+    title: titleText,
+    text: descText,
+    icon: "warning",
+    buttons: true,
+    dangerMode: true,
+  })
+  .then((answer) => {
+    if (answer) {
+      confirmFunction()
+    } else {
+      if (noText != "") {
+        swal(noText);
+      }
+    }
+  });
+}
