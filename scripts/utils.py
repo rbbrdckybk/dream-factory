@@ -593,7 +593,7 @@ def create_command(command, output_dir_ext, gpu_id):
     py_command += " --skip_grid" \
         + " --n_iter " + str(command.get('samples')) \
         + " --n_samples " + str(command.get('batch_size')) \
-        + " --prompt \"" + str(command.get('prompt')) + "\"" \
+        + " --prompt \"" + str(command.get('prompt')).replace('\"', '') + "\"" \
         + " --ddim_steps " + str(command.get('steps')) \
         + " --scale " + str(command.get('scale'))
 
