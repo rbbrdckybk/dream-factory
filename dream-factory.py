@@ -83,10 +83,16 @@ class Worker(threading.Thread):
             else:
                 subprocess.call(shlex.split(command), cwd=(cwd + '/stable-diffusion'))
 
-        # TODO change /samples to /samples + gpu_id in forked SD repo
         output_dir = command.split(" --outdir ",1)[1].strip('\"')
         output_dir = output_dir.replace("../","")
-        samples_dir = output_dir + "/samples"
+
+        gpu_id = 0
+        if "cuda:" in self.worker['id']:
+            gpu_id = self.worker['id'].replace('cuda:', '')
+        else:
+            gpu_id = self.worker['id']
+
+        samples_dir = output_dir + "/gpu_" + str(gpu_id)
 
         # upscale here if requested
         if self.command['use_upscale'] == 'yes':
