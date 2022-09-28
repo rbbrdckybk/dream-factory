@@ -1,5 +1,12 @@
 # Dream Factory
+
 Multi-threaded GUI manager for mass creation of AI-generated art with support for multiple GPUs.
+
+# Features
+
+ * Multi-threaded engine capable of simultaneous management of multiple GPUs.
+ * Powerful custom prompt file format that allows you to easily define compound prompt templates. Want to quickly create thousands of prompts from a template like "_photo of a **[adjective(s)] [animal]** as a **[profession]**, art by **[artist(s)]**, **[keyword(s)]**_" where each bracketed section needs to be filled in with dozens (or hundreds) of different items? No problem. Maybe you want your GPUs to create every possible combination, or maybe you want combinations to be picked randomly? Your choice. Maybe you want some items to be handled with different settings? Totally doable.
+ * 
 
 # Requirements
 
