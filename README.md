@@ -6,24 +6,24 @@ This is aimed at the user that wants to create a **lot** of AI artwork with mini
 
 To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Factory 24/7 for a couple weeks now, and they churn out roughly 5,000 images every day! Some samples (all straight out of Dream Factory other than some minor sharpening applied in Photoshop):  
 <table>
-<tr>
-<td><img src="/images/01.jpg" width="160" height="160" alt="sample image 1" title="sample image 1"></td>
-<td><img src="/images/02.jpg" width="160" height="160" alt="sample image 2" title="sample image 2"></td>
-<td><img src="/images/03.jpg" width="160" height="160" alt="sample image 3" title="sample image 3"></td>
-<td><img src="/images/04.jpg" width="160" height="160" alt="sample image 4" title="sample image 4"></td>
-</tr>
-<tr>
-<td><img src="/images/05.jpg" width="148" height="148" alt="sample image 5" title="sample image 5"></td>
-<td><img src="/images/06.jpg" width="148" height="148" alt="sample image 6" title="sample image 6"></td>
-<td><img src="/images/07.jpg" width="148" height="148" alt="sample image 7" title="sample image 7"></td>
-<td><img src="/images/08.jpg" width="148" height="148" alt="sample image 8" title="sample image 8"></td>
-</tr>
-<tr>
-<td><img src="/images/09.jpg" width="148" height="148" alt="sample image 9" title="sample image 9"></td>
-<td><img src="/images/10.jpg" width="148" height="148" alt="sample image 10" title="sample image 10"></td>
-<td><img src="/images/11.jpg" width="148" height="148" alt="sample image 11" title="sample image 11"></td>
-<td><img src="/images/12.jpg" width="148" height="148" alt="sample image 12" title="sample image 12"></td>
-</tr>
+ <tr>
+  <td><img src="/images/01.jpg" width="152" height="152" alt="sample image 1" title="sample image 1"></td>
+  <td><img src="/images/02.jpg" width="152" height="152" alt="sample image 2" title="sample image 2"></td>
+  <td><img src="/images/03.jpg" width="152" height="152" alt="sample image 3" title="sample image 3"></td>
+  <td><img src="/images/04.jpg" width="152" height="152" alt="sample image 4" title="sample image 4"></td>
+ </tr>
+ <tr>
+  <td><img src="/images/05.jpg" width="152" height="152" alt="sample image 5" title="sample image 5"></td>
+  <td><img src="/images/06.jpg" width="152" height="152" alt="sample image 6" title="sample image 6"></td>
+  <td><img src="/images/07.jpg" width="152" height="152" alt="sample image 7" title="sample image 7"></td>
+  <td><img src="/images/08.jpg" width="152" height="152" alt="sample image 8" title="sample image 8"></td>
+ </tr>
+ <tr>
+  <td><img src="/images/09.jpg" width="152" height="152" alt="sample image 9" title="sample image 9"></td>
+  <td><img src="/images/10.jpg" width="152" height="152" alt="sample image 10" title="sample image 10"></td>
+  <td><img src="/images/11.jpg" width="152" height="152" alt="sample image 11" title="sample image 11"></td>
+  <td><img src="/images/12.jpg" width="152" height="152" alt="sample image 12" title="sample image 12"></td>
+ </tr>
 </table>
 
 # Features
