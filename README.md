@@ -2,11 +2,31 @@
 
 Multi-threaded GUI manager for mass creation of AI-generated art with support for multiple GPUs.
 
+This is aimed at the user that wants to create a **lot** of AI artwork with minimal hands-on time. If you're looking for a repo that will allow you to spend hours tweaking a single image until it's perfect, [there are better options](https://github.com/AUTOMATIC1111/stable-diffusion-webui). If you have hundreds of prompt ideas and want to easily and quickly (well, as quickly as your GPUs can manage!) see them rendered in hundreds of different variations and/or styles, then this is for you.
+
+To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Factory 24/7 for a couple weeks now, and they churn out roughly 5,000 images every day! Some samples (all straight from Dream Factory other than minor sharpening applied in Photoshop):
+<img src="/images/01.jpg" width="148" height="148" alt="sample image 1" title="sample image 1">
+<img src="/images/02.jpg" width="148" height="148" alt="sample image 2" title="sample image 2">
+<img src="/images/03.jpg" width="148" height="148" alt="sample image 3" title="sample image 3">
+<img src="/images/04.jpg" width="148" height="148" alt="sample image 4" title="sample image 4">
+<img src="/images/05.jpg" width="148" height="148" alt="sample image 5" title="sample image 5">
+<img src="/images/06.jpg" width="148" height="148" alt="sample image 6" title="sample image 6">
+<img src="/images/07.jpg" width="148" height="148" alt="sample image 7" title="sample image 7">
+<img src="/images/08.jpg" width="148" height="148" alt="sample image 8" title="sample image 8">
+<img src="/images/09.jpg" width="148" height="148" alt="sample image 9" title="sample image 9">
+<img src="/images/10.jpg" width="148" height="148" alt="sample image 10" title="sample image 10">
+<img src="/images/11.jpg" width="148" height="148" alt="sample image 11" title="sample image 11">
+<img src="/images/12.jpg" width="148" height="148" alt="sample image 12" title="sample image 12">
+
 # Features
 
  * Multi-threaded engine capable of simultaneous management of multiple GPUs.
- * Powerful custom prompt file format that allows you to easily define compound prompt templates. Want to quickly create thousands of prompts from a template like "_photo of a **[adjective(s)] [animal]** as a **[profession]**, art by **[artist(s)]**, **[keyword(s)]**_" where each bracketed section needs to be filled in with dozens (or hundreds) of different items? No problem. Maybe you want your GPUs to create every possible combination, or maybe you want combinations to be picked randomly? Your choice. Maybe you want some items to be handled with different settings? Totally doable.
- * 
+ * Powerful custom prompt file format that allows you to easily define compound prompt templates. Want to quickly create thousands of prompts from a template like "_photo of a **[adjective(s)] [animal]** as a **[profession]**, art by **[artist(s)]**, **[keyword(s)]**_" where each bracketed section needs to be filled in with dozens (or hundreds) of different items? No problem. Maybe you want your GPUs to create every possible combination, or maybe you want combinations to be picked randomly? Your choice. Maybe you want some items to be handled with different settings? Totally doable. Prompt files can be as complex or simple as you want — you can simply paste in a list of stand-alone prompts and go, too!
+ * All prompt and creation settings are automatically embedded into output images as EXIF metadata (including the random seed used). Never wonder how you created an image again!
+ * Easy web interface. Includes a built-in prompt file editor with context-sensitive highlighting, a gallery that displays your prompts and creation settings alongside your images, and at-a-glance information about the status of completed/ongoing work. Hate web interfaces? Turn it off via a configuration file — Dream Factory can be run completely via the command line if that's your thing!
+ * Remote management. Access and fully manage your Dream Factory installation from anywhere (and easily download your created images in bulk as .zip files!). Can be configured to be accessible via LAN, WAN (internet), or just locally on the computer that Dream Factory is running on. Includes very basic HTTP-based authentication for WAN access.
+ * Integrated optional [ESRGAN upscaling](https://github.com/xinntao/ESRGAN) with [GFPGAN face correction](https://xinntao.github.io/projects/gfpgan). 
+ * Easy setup. If you can download a file and copy & paste 6 lines ([see below](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#setup)), you can get this working. Uses Anaconda so Dream Factory will happily run alongside other Stable Diffusion repos without disturbing them.
 
 # Requirements
 
