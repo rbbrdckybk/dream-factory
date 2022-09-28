@@ -5,18 +5,18 @@ Multi-threaded GUI manager for mass creation of AI-generated art with support fo
 This is aimed at the user that wants to create a **lot** of AI artwork with minimal hands-on time. If you're looking for a repo that will allow you to spend hours tweaking a single image until it's perfect, [there are better options](https://github.com/AUTOMATIC1111/stable-diffusion-webui). If you have hundreds of prompt ideas and want to easily and quickly (well, as quickly as your GPUs can manage!) see them rendered in hundreds of different variations and/or styles, then this is for you.
 
 To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Factory 24/7 for a couple weeks now, and they churn out roughly 5,000 images every day! Some samples (all straight from Dream Factory other than minor sharpening applied in Photoshop):
-<img src="/images/01.jpg" width="128" height="148" alt="sample image 1" title="sample image 1">
-<img src="/images/02.jpg" width="128" height="148" alt="sample image 2" title="sample image 2">
-<img src="/images/03.jpg" width="128" height="148" alt="sample image 3" title="sample image 3">
-<img src="/images/04.jpg" width="128" height="148" alt="sample image 4" title="sample image 4">
-<img src="/images/05.jpg" width="128" height="148" alt="sample image 5" title="sample image 5">
-<img src="/images/06.jpg" width="128" height="148" alt="sample image 6" title="sample image 6">
-<img src="/images/07.jpg" width="128" height="148" alt="sample image 7" title="sample image 7">
-<img src="/images/08.jpg" width="128" height="148" alt="sample image 8" title="sample image 8">
-<img src="/images/09.jpg" width="128" height="148" alt="sample image 9" title="sample image 9">
-<img src="/images/10.jpg" width="128" height="148" alt="sample image 10" title="sample image 10">
-<img src="/images/11.jpg" width="128" height="148" alt="sample image 11" title="sample image 11">
-<img src="/images/12.jpg" width="128" height="148" alt="sample image 12" title="sample image 12">
+<img src="/images/01.jpg" width="136" height="148" alt="sample image 1" title="sample image 1">
+<img src="/images/02.jpg" width="136" height="148" alt="sample image 2" title="sample image 2">
+<img src="/images/03.jpg" width="136" height="148" alt="sample image 3" title="sample image 3">
+<img src="/images/04.jpg" width="136" height="148" alt="sample image 4" title="sample image 4">
+<img src="/images/05.jpg" width="136" height="148" alt="sample image 5" title="sample image 5">
+<img src="/images/06.jpg" width="136" height="148" alt="sample image 6" title="sample image 6">
+<img src="/images/07.jpg" width="136" height="148" alt="sample image 7" title="sample image 7">
+<img src="/images/08.jpg" width="136" height="148" alt="sample image 8" title="sample image 8">
+<img src="/images/09.jpg" width="136" height="148" alt="sample image 9" title="sample image 9">
+<img src="/images/10.jpg" width="136" height="148" alt="sample image 10" title="sample image 10">
+<img src="/images/11.jpg" width="136" height="148" alt="sample image 11" title="sample image 11">
+<img src="/images/12.jpg" width="136" height="148" alt="sample image 12" title="sample image 12">
 
 # Features
 
