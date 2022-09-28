@@ -26,7 +26,7 @@ cd dream-factory
 conda install -c anaconda git urllib3
 ```
 
-**[4]** Run the included setup script to finish the rest of your installation automatically
+**[4]** Run the included setup script to finish the rest of your installation automatically:
 ```
 python setup.py
 ```
