@@ -4,8 +4,7 @@ Multi-threaded GUI manager for mass creation of AI-generated art with support fo
 
 This is aimed at the user that wants to create a **lot** of AI artwork with minimal hands-on time. If you're looking for a repo that will allow you to spend hours tweaking a single image until it's perfect, [there are better options](https://github.com/AUTOMATIC1111/stable-diffusion-webui). If you have hundreds of prompt ideas and want to easily and quickly (well, as quickly as your GPUs can manage!) see them rendered in hundreds of different variations and/or styles, then this is for you.
 
-To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Factory 24/7 for a couple weeks now, and they churn out roughly 5,000 images every day! Some samples (all straight out of Dream Factory other than some minor sharpening applied in Photoshop):
-<img src="/images/01.jpg" width="136" style="float: left; margin-right: 10px;" />
+To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Factory 24/7 for a couple weeks now, and they churn out roughly 5,000 images every day! Some samples (all straight out of Dream Factory other than some minor sharpening applied in Photoshop):  
 <img src="/images/01.jpg" width="136" height="148" alt="sample image 1" title="sample image 1">
 <img src="/images/02.jpg" width="136" height="148" alt="sample image 2" title="sample image 2">
 <img src="/images/03.jpg" width="136" height="148" alt="sample image 3" title="sample image 3">
