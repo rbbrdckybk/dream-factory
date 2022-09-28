@@ -51,15 +51,15 @@ conda create --name dream-factory python=3.9
 conda activate dream-factory
 ```
 
-**[2]** Clone this repository and switch to its directory:
+**[2]** Install a couple required Python packages:
+```
+conda install -c anaconda git urllib3
+```
+
+**[3]** Clone this repository and switch to its directory:
 ```
 git clone https://github.com/rbbrdckybk/dream-factory
 cd dream-factory
-```
-
-**[3]** Install a couple required Python packages:
-```
-conda install -c anaconda git urllib3
 ```
 
 **[4]** Run the included setup script to finish the rest of your installation automatically:
