@@ -28,6 +28,7 @@ To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Fac
 
 # Features
 
+ * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with an optional low-VRAM mode to enable support for GPUs with as little as 3GB of VRAM.
  * Multi-threaded engine capable of simultaneous management of multiple GPUs.
  * Powerful custom prompt file format that allows you to easily define compound prompt templates. Want to quickly create thousands of prompts from a template like "_photo of a **[adjective(s)] [animal]** as a **[profession]**, art by **[artist(s)]**, **[keyword(s)]**_" where each bracketed section needs to be filled in with dozens (or hundreds) of different items? No problem. Maybe you want your GPUs to create every possible combination, or maybe you want combinations to be picked randomly? Your choice. Maybe you want some items to be handled with different settings? Totally doable. Prompt files can be as complex or simple as you want — you can simply paste in a list of stand-alone prompts and go, too!
  * All prompt and creation settings are automatically embedded into output images as EXIF metadata (including the random seed used). Never wonder how you created an image again!
