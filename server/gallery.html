@@ -49,6 +49,8 @@
     $(document).ready(function() {
         const gallery_node = document.getElementById('gallery');
         const gallery_dropdown = document.getElementById('gallery-dropdown');
+        const main_node = document.getElementById('main-page');
+        const load_msg = document.getElementById('load-msg');
 
         function reloadGallery() {
             $.ajax({
@@ -57,6 +59,8 @@
             })
             .done(function(string) {
               gallery_node.innerHTML = string;
+              load_msg.style.display="none";
+              main_node.style.display="block";
             });
         }
 
@@ -91,65 +95,68 @@
   <body>
 
     <div data-include="header"></div>
-
-    <div id="myModal" class="modal">
-      <!--span class="close" id="close">&times;</span-->
-      <div id="img-toolbar" class="img-toolbar">
-          <div class="tooltip-bottom">
-              <div><img id="left-img" src="/static/img/arrow-sm.png" class="edit-img" style="transform: scaleX(-1);"></div>
-              <span class="tooltiptext-bottom">Previous image&#xa;(hotkey: left arrow)</span>
-          </div>
-          <div>
-              <div class="tooltip-bottom">
-                  <a id="download-img" href="">
-                      <img src="/static/img/download-sm.png" class="edit-img">
-                  </a>
-                  <span class="tooltiptext-bottom">Download this image.</span>
-              </div>
-
-              <div class="tooltip-bottom">
-                  <img id="delete-img" src="/static/img/trash-sm.png" class="edit-img">
-                  <span class="tooltiptext-bottom">Delete this image.&#xa;(hotkey: delete)&#xa;Tip: use the hotkey to&#xa;skip confirmation dialog.</span>
-              </div>
-
-              <div class="tooltip-bottom">
-                  <img id="close-img" src="/static/img/close-sm.png" class="edit-img">
-                  <span class="tooltiptext-bottom">Close this window.&#xa;(hotkey: esc)</span>
-              </div>
-          </div>
-          <div class="tooltip-bottom">
-              <div><img id="right-img" src="/static/img/arrow-sm.png" class="edit-img"></div>
-              <span class="tooltiptext-bottom">Next image&#xa;(hotkey: right arrow)</span>
-          </div>
-      </div>
-      <img class="modal-content" id="img01">
-      <div id="caption"></div>
-      <div id="subcaption"></div>
+    <div id="load-msg" class="load-msg">
+        Connecting to Dream Factory; please wait...
     </div>
+    <div id="main-page" style="display: none;">
 
-    <div id="gallery-panel" class="panel">
-        <div id="gallery-title" class="panel-title">
-            Gallery
+        <div id="myModal" class="modal">
+          <div id="img-toolbar" class="img-toolbar">
+              <div class="tooltip-bottom">
+                  <div><img id="left-img" src="/static/img/arrow-sm.png" class="edit-img" style="transform: scaleX(-1);"></div>
+                  <span class="tooltiptext-bottom">Previous image&#xa;(hotkey: left arrow)</span>
+              </div>
+              <div>
+                  <div class="tooltip-bottom">
+                      <a id="download-img" href="">
+                          <img src="/static/img/download-sm.png" class="edit-img">
+                      </a>
+                      <span class="tooltiptext-bottom">Download this image.</span>
+                  </div>
+
+                  <div class="tooltip-bottom">
+                      <img id="delete-img" src="/static/img/trash-sm.png" class="edit-img">
+                      <span class="tooltiptext-bottom">Delete this image.&#xa;(hotkey: delete)&#xa;Tip: use the hotkey to&#xa;skip confirmation dialog.</span>
+                  </div>
+
+                  <div class="tooltip-bottom">
+                      <img id="close-img" src="/static/img/close-sm.png" class="edit-img">
+                      <span class="tooltiptext-bottom">Close this window.&#xa;(hotkey: esc)</span>
+                  </div>
+              </div>
+              <div class="tooltip-bottom">
+                  <div><img id="right-img" src="/static/img/arrow-sm.png" class="edit-img"></div>
+                  <span class="tooltiptext-bottom">Next image&#xa;(hotkey: right arrow)</span>
+              </div>
+          </div>
+          <img class="modal-content" id="img01">
+          <div id="caption"></div>
+          <div id="subcaption"></div>
         </div>
 
-        <div class="panel-row">
-          <div style="display: flex; flex-direction: column;">
-            <div id="gallery-msg" class="prompt-status">You are viewing the most recently-created images.</div>
-            <div id="gallery-dropdown" class="prompt-status"></div>
-          </div>
-          <div class="zip-download" id="zip-download">
-            <a href="/getzip">
-              <img src="/static/img/download-zip-icon.png" title="download as .zip file" alt="download as .zip file">
-            </a>
-          </div>
-        </div>
+        <div id="gallery-panel" class="panel">
+            <div id="gallery-title" class="panel-title">
+                Gallery
+            </div>
 
-        <div id="gallery">
-            gallery images are loading...
+            <div class="panel-row">
+              <div style="display: flex; flex-direction: column;">
+                <div id="gallery-msg" class="prompt-status">You are viewing the most recently-created images.</div>
+                <div id="gallery-dropdown" class="prompt-status"></div>
+              </div>
+              <div class="zip-download" id="zip-download">
+                <a href="/getzip">
+                  <img src="/static/img/download-zip-icon.png" title="download as .zip file" alt="download as .zip file">
+                </a>
+              </div>
+            </div>
+
+            <div id="gallery">
+            </div>
+
         </div>
 
     </div>
-
     <div data-include="footer"></div>
 
     <script type="text/javascript">

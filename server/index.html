@@ -15,6 +15,8 @@
 
         const worker_node = document.getElementById('workers');
         const status_node = document.getElementById('server-status');
+        const main_node = document.getElementById('main-page');
+        const load_msg = document.getElementById('load-msg');
 
         function reloadStatus() {
             $.ajax({
@@ -34,6 +36,8 @@
               }
               string = string.substring(1);
               status_node.innerHTML = string;
+              load_msg.style.display="none";
+              main_node.style.display="block";
             });
         }
 
@@ -61,6 +65,9 @@
             url: "/generator"
           })
           .done(function() {
+              main_node.style.display="none";
+              load_msg.innerHTML = "Dream Factory is shutting down..."
+              load_msg.style.display="flex";
           });
         }
 
@@ -115,46 +122,64 @@
   <body>
 
     <div data-include="header"></div>
-
-    <div id="server-panel" class="panel">
-        <div id="server-title" class="panel-title">
-            Server Control
+    <div id="load-msg" class="load-msg">
+        Connecting to Dream Factory; please wait...
+    </div>
+    <div id="main-page" style="display: none;">
+        <div id="server-panel" class="panel">
+            <div id="server-title" class="panel-title">
+                Server Control
+            </div>
+            <div class="server-row">
+                <div id="server-status" class="server-status">
+                </div>
+                <div id="shutdown-controls" class="server-controls">
+                    <div class="tooltip">
+                        <button id="server-shutdown" class="server-button" style="display: none;">Shutdown</button>
+                        <span class="tooltiptext">Shutdown Dream Factory.</span>
+                    </div>
+                </div>
+                <div id="server-controls" class="server-controls">
+                    <div class="tooltip">
+                        <button id="server-pause" class="server-button" style="display: none;">Pause</button>
+                        <span class="tooltiptext">Pause all work.&#xa;(workers finish current jobs)</span>
+                    </div>
+                    <div class="tooltip">
+                        <button id="server-unpause" class="server-button" style="display: none;">Resume</button>
+                        <span class="tooltiptext">Resume working.</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="server-row">
-            <div id="server-status" class="server-status">
+
+        <div id="worker-panel" class="worker-panel">
+            <div id="worker-title" class="worker-title">
+                GPU Worker(s)
             </div>
-            <div id="shutdown-controls" class="server-controls">
-              <button id="server-shutdown" class="server-button" style="display: none;">Shutdown</button>
+            <div id="workers" class="workers">
             </div>
-            <div id="server-controls" class="server-controls">
-                <button id="server-pause" class="server-button" style="display: none;">Pause</button>
-                <button id="server-unpause" class="server-button" style="display: none;">Resume</button>
+        </div>
+
+        <div id="buffer-panel" class="buffer-panel">
+            <div id="buffer-header" class="buffer-header">
+                <div>
+                    Server Activity
+                </div>
+                <div>
+                    <div class="tooltip">
+                        <button id="buffer-clear" class="button">Clear</button>
+                        <span class="tooltiptext">Clear the log.</span>
+                    </div>
+                    <div class="tooltip">
+                        <button id="buffer-copy" class="button" onclick="copyToClipboard('buffer')">Copy</button>
+                        <span class="tooltiptext">Copy log to the clipboard.</span>
+                    </div>
+                </div>
+            </div>
+            <div id="buffer" class="buffer">
             </div>
         </div>
     </div>
-
-    <div id="worker-panel" class="worker-panel">
-        <div id="worker-title" class="worker-title">
-            GPU Worker(s)
-        </div>
-        <div id="workers" class="workers">
-        </div>
-    </div>
-
-    <div id="buffer-panel" class="buffer-panel">
-        <div id="buffer-header" class="buffer-header">
-            <div>
-                Server Activity
-            </div>
-            <div >
-              <button id="buffer-clear" class="button">Clear</button>
-              <button id="buffer-copy" class="button" onclick="copyToClipboard('buffer')">Copy</button>
-            </div>
-        </div>
-        <div id="buffer" class="buffer">
-        </div>
-    </div>
-
     <div data-include="footer"></div>
   </body>
 </html>

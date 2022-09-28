@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/ai-art-generator)
+# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import threading
@@ -852,7 +852,6 @@ class Controller:
             actual_path = web_path.split(div, 1)[1]
             actual_path = os.path.join(self.config['output_location'], actual_path)
 
-        print(actual_path)
         if os.path.exists(actual_path):
             # move the 'deleted' file to the server /temp directory
             # it will be deleted permanently when the server shuts down

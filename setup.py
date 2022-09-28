@@ -155,4 +155,5 @@ if __name__ == '__main__':
             print(checkpoint_path + '\n')
         else:
             print('\nPrevious installation detected; aborting setup.')
-            print('If you really want to run setup again, use the --force switch.\n')
+            print('If you really want to run setup again, use the --force switch.')
+            print('If you want to update this installation, use the --update switch.\n')

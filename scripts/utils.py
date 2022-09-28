@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy
+# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import threading

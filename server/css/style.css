@@ -18,6 +18,19 @@ a:hover {
     margin-top: 8px;
 }
 
+.load-msg {
+    width: 1050px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: auto;
+    text-align: center;
+    margin-top: 35px;
+    margin-bottom: 520px;
+    animation-name: zoom;
+    animation-duration: 0.1s;
+}
+
 .panel {
     width: 1050px;
     display: flex;
@@ -51,10 +64,6 @@ a:hover {
     border: 1px solid #666666;
     background-color: #111111;
 }
-
-
-
-
 
 .header-panel {
     background-image: url("/static/img/dream-factory-sm.png");
