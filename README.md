@@ -92,4 +92,17 @@ You'll need to [enable developer mode](https://www.howtogeek.com/292914/what-is-
 
 # Usage
 
-TODO
+Full instructions coming soon. Quick version:
+
+After installation, open **config.txt** and make any desired edits.
+
+Start Dream Factory with:
+```
+python dream-factory.py
+```
+The web UI should open automatically, if not go to http://localhost:8080 (assuming you didn't change the port in config.txt) via your browser.
+
+Browse to 'Control Panel' in the top nav and select one of the two example prompt files via the dropdown. Your GPU(s) should immediately start working on whichever one you choose. If you browse to 'Gallery' in the top nav you'll see images appearing as they're completed.
+
+To create your own prompt files, browse to 'Prompt Editor' in the top nav and open one of the example files and read through the comments to see how they work. Experiment with creating your own via one of the 'New ...' buttons at the top of the page. To execute your new prompt file, go back to 'Control Panel' and select it from the drop down. 
+
