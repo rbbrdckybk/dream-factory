@@ -21,16 +21,16 @@ def msg(text, verbose = False):
 # execute subprocess
 def exec(command, verbose = False):
     if verbose:
-        subprocess.call(command)
+        subprocess.run(command.split(' '))
     else:
-        subprocess.call(command, stdout=subprocess.DEVNULL)
+        subprocess.run(command.split(' '), stdout=subprocess.DEVNULL)
 
 # execute subprocess in another working dir
 def exec_cwd(command, wd, verbose = False):
     if verbose:
-        subprocess.call(command, cwd=(wd))
+        subprocess.run(command.split(' '), cwd=(wd))
     else:
-        subprocess.call(command, cwd=(wd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(command.split(' '), cwd=(wd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 # grabs all required git repos
 def clone_repos(verbose = False):
