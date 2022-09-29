@@ -86,7 +86,7 @@ def install_dependencies(verbose = False):
 # perform real-esrgan setup
 def setup_esrgan(verbose = False):
     print('\nSetting up Real-ESRGAN:')
-    cmd = 'curl -L -o Real-ESRGAN/experiments/pretrained_models/RealESRGAN_x4plus.pth -C - \"https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth\"'
+    cmd = 'curl -L -o Real-ESRGAN/experiments/pretrained_models/RealESRGAN_x4plus.pth -C - https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'
     msg('   downloading pre-trained models...', verbose)
     exec(cmd, verbose)
 
