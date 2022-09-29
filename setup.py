@@ -7,6 +7,7 @@ import argparse
 import datetime
 import shlex
 import subprocess
+import shutil
 import glob
 import os
 from os.path import exists, isdir, basename
@@ -95,6 +96,11 @@ def setup_esrgan(verbose = False):
     msg('   running ESRGAN setup script...', verbose)
     exec_cwd(cmd, cwd + os.path.sep + 'Real-ESRGAN', verbose)
 
+# create config.txt file
+def create_config():
+    print('\nCreating config.txt containing default settings...')
+    shutil.copy2('config-default.txt', 'config.txt')
+
 # updates these repos to the latest version
 def update():
     print('\nChecking for updates:')
@@ -146,6 +152,7 @@ if __name__ == '__main__':
             install_pytorch(verbose)
             install_dependencies(verbose)
             setup_esrgan(verbose)
+            create_config()
 
             checkpoint_path = 'stable-diffusion\models\ldm\stable-diffusion-v1'
             if not os.path.exists(checkpoint_path):

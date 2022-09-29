@@ -40,7 +40,7 @@ WEBSERVER_OPEN_BROWSER = yes
 WEBSERVER_CONSOLE_LOG = no
 
 # gallery maximum images to display
-GALLERY_MAX_IMAGES = 50
+GALLERY_MAX_IMAGES = 200
 
 # gallery refresh interval in seconds; set to zero to disable auto-refresh of gallery
 GALLERY_REFRESH = 30
