@@ -106,3 +106,9 @@ Browse to 'Control Panel' in the top nav and select one of the two example promp
 
 To create your own prompt files, browse to 'Prompt Editor' in the top nav and open one of the example files and read through the comments to see how they work. Experiment with creating your own via one of the 'New ...' buttons at the top of the page. To execute your new prompt file, go back to 'Control Panel' and select it from the drop down. 
 
+You can update Dream Factory to the latest version by typing:
+```
+python setup.py --update
+```
+
+
