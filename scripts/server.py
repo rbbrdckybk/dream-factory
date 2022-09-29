@@ -9,7 +9,32 @@ import scripts.utils as utils
 from datetime import datetime, timedelta
 import cherrypy
 from cherrypy.lib import auth_basic, static
+from cherrypy.process.plugins import SimplePlugin
 
+
+# cherrypy already does signal handling, so if it's shutting down,
+# use that as a signal to shut down main thread
+class ShutdownPlugin(SimplePlugin):
+    control = None
+    shutdown = False
+    _sleep = None
+
+    def __init__(self, bus, control_ref, sleep = 2):
+        self.control = control_ref
+        SimplePlugin.__init__(self, bus)
+        self._sleep = sleep
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def exit(self):
+        #print('ShutdownPlugin sending shutdown signal...')
+        if not self.shutdown:
+            self.shutdown = True
+            self.control.shutdown()
 
 
 def build_prompt_editor_text(prompt_file):
@@ -472,6 +497,9 @@ class ArtServer:
         if not self.control_ref.config.get('webserver_console_log'):
             # disable console logging
             cherrypy.log.screen = False
+
+        ShutdownPlugin(cherrypy.engine, self.control_ref).subscribe()
+
         cherrypy.quickstart(webapp, '/', self.config)
 
     def stop(self):

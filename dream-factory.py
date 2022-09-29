@@ -28,11 +28,16 @@ from scripts.server import ArtServer
 
 # environment setup
 cwd = os.getcwd()
+python_path = ""
+env_paths = [ \
+    os.path.join(cwd, 'taming-transformers'),
+    os.path.join(cwd, 'CLIP')
+]
 
-if sys.platform == "win32" or os.name == 'nt':
-    os.environ['PYTHONPATH'] = os.pathsep + (cwd + "\latent-diffusion") + os.pathsep + (cwd + "\\taming-transformers") + os.pathsep + (cwd + "\CLIP")
-else:
-    os.environ['PYTHONPATH'] = os.pathsep + (cwd + "/latent-diffusion") + os.pathsep + (cwd + "/taming-transformers") + os.pathsep + (cwd + "/CLIP")
+for path in env_paths:
+    python_path += os.pathsep + path
+os.environ['PYTHONPATH'] = python_path
+
 
 # Prevent threads from printing at same time.
 print_lock = threading.Lock()
@@ -78,10 +83,8 @@ class Worker(threading.Thread):
             time.sleep(work_time)
         else:
             # invoke SD
-            if sys.platform == "win32" or os.name == 'nt':
-                subprocess.call(shlex.split(command), cwd=(cwd + '\stable-diffusion'))
-            else:
-                subprocess.call(shlex.split(command), cwd=(cwd + '/stable-diffusion'))
+            wd = cwd + os.path.sep + 'stable-diffusion'
+            subprocess.call(shlex.split(command), cwd=(wd))
 
         output_dir = command.split(" --outdir ",1)[1].strip('\"')
         output_dir = output_dir.replace("../","")
@@ -205,16 +208,13 @@ class Worker(threading.Thread):
 # TODO change worker_idle to array of bools to manage multiple threads/gpus
 class Controller:
     def __init__(self, config_file):
-
         self.config_file = config_file
         self.config = {}
         self.prompt_file = ""
         self.prompt_editor_file = ""
         self.temp_path = ""
-
         self.prompt_manager = None
         self.input_manager = None
-
         self.output_buffer = deque([], maxlen=300)
         self.work_queue = deque()
         self.workers = []
@@ -227,13 +227,7 @@ class Controller:
         self.repeat_jobs = False
         self.server = None
         self.server_startup_time = time.time()
-
-        if sys.platform == "win32" or os.name == 'nt':
-            signal.signal(signal.SIGBREAK, self.sigterm_handler)
-
-
-        signal.signal(signal.SIGINT, self.sigterm_handler)
-        signal.signal(signal.SIGTERM, self.sigterm_handler)
+        self.shutting_down = False
 
         # read config options
         self.init_config()
@@ -242,6 +236,9 @@ class Controller:
         if self.config.get('webserver_use'):
             x = threading.Thread(target=self.start_server, args=(), daemon=True)
             x.start()
+        else:
+            # cherrypy would otherwise catch ctrl-break for us
+            self.register_handlers()
 
         # create temp folder for backups/zips/etc - needs to be webserver-accessible
         self.temp_path = os.path.join('server', 'temp')
@@ -492,8 +489,16 @@ class Controller:
         self.server.start(self)
 
 
+    # if we're not running the webserver we'll use these
+    def register_handlers(self):
+        if sys.platform == "win32" or os.name == 'nt':
+            signal.signal(signal.SIGBREAK, self.sigterm_handler)
+        signal.signal(signal.SIGINT, self.sigterm_handler)
+        signal.signal(signal.SIGTERM, self.sigterm_handler)
+
+
     # handle graceful cleanup here
-    def sigterm_handler(self, signal, frame):
+    def sigterm_handler(self, *args):
         # save the state here or do whatever you want
         self.print('********** Exiting; handling clean up ***************')
         self.shutdown()
@@ -518,19 +523,20 @@ class Controller:
 
 
     def shutdown(self):
-        self.print("Server shutdown requested; cleaning up and shutting down...")
-        if self.server != None:
-            # stop the webserver if it's running
-            self.server.stop()
+        if not self.shutting_down:
+            self.shutting_down = True
+            self.print("Server shutdown requested; cleaning up and shutting down...")
+            if self.server != None:
+                # stop the webserver if it's running
+                self.server.stop()
 
-        # clean up temp directory
-        temp = os.path.join('server', 'temp')
-        if os.path.exists(temp):
-            shutil.rmtree(temp)
+            # clean up temp directory
+            temp = os.path.join('server', 'temp')
+            if os.path.exists(temp):
+                shutil.rmtree(temp)
 
-        self.is_paused = True
-        self.work_done = True
-
+            self.is_paused = True
+            self.work_done = True
 
 
     # adds a GPU to the list of workers
