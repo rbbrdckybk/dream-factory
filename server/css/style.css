@@ -81,12 +81,24 @@ a:hover {
 .header-title {
     display: flex;
     justify-content: flex-end;
+    text-align: right;
     height: 90px;
     font-size: 28px;
     font-weight: bold;
     margin-left: 5px;
     margin-right: 0px;
     text-shadow: 1px 1px 5px hotpink;
+}
+
+.header-right {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-sm {
+  font-size: 14px;
+  font-weight: normal;
+  text-align: center;
 }
 
 .header-nav {
@@ -111,14 +123,17 @@ a:hover {
 }
 
 .footer-text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: inline-block;
+    text-align: center;
     margin: 4px;
     padding: 4px;
     font-size: 12px;
     color: #777777;
     font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.footer-text > a {
+    color: #777777;
 }
 
 .worker-panel {
