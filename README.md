@@ -26,6 +26,16 @@ To illustrate, I've had an RTX 3060, RTX 3080Ti, and Tesla M40 running Dream Fac
  </tr>
 </table>
 
+Some UI screenshots:
+<table>
+ <tr>
+  <td><img src="/images/screen_monitor.png" width="152" height="152" alt="UI: status monitor" title="UI: status monitor"></td>
+  <td><img src="/images/screen_editor.png" width="152" height="152" alt="UI: prompt editor" title="UI: prompt editor"></td>
+  <td><img src="/images/screen_gallery.png" width="152" height="152" alt="UI: gallery" title="UI: gallery"></td>
+  <td><img src="/images/screen_gallery_image.png" width="152" height="152" alt="UI: image viewer" title="UI: image viewer"></td>
+ </tr>
+</table>
+
 # Features
 
  * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with an optional low-VRAM mode to enable support for GPUs with as little as 3GB of VRAM.
