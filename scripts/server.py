@@ -40,7 +40,7 @@ class ShutdownPlugin(SimplePlugin):
 def build_prompt_editor_text(prompt_file):
     buffer = ""
 
-    f = open(prompt_file,'r')
+    f = open(prompt_file, 'r', encoding = 'utf8')
     for line in f:
         buffer += line
     f.close()

@@ -99,7 +99,7 @@ class PromptManager():
 
     # init the prompts list
     def __init_prompts(self, which_list, search_text):
-        with open(self.control.prompt_file) as f:
+        with open(self.control.prompt_file, encoding = 'utf-8') as f:
             lines = f.readlines()
 
             found_header = False
@@ -163,7 +163,7 @@ class PromptManager():
 
     # init the config list
     def __init_config(self, which_list, search_text):
-        with open(self.control.prompt_file) as f:
+        with open(self.control.prompt_file, encoding = 'utf-8') as f:
             lines = f.readlines()
 
             search_header = '[' + search_text + ']'
@@ -514,7 +514,7 @@ class TextFile():
     def __init__(self, filename):
         self.lines = deque()
         if exists(filename):
-            with open(filename) as f:
+            with open(filename, encoding = 'utf-8') as f:
                 l = f.readlines()
 
             for x in l:
@@ -590,10 +590,12 @@ def create_command(command, output_dir_ext, gpu_id):
     if "cuda:" in gpu_id and gpu_id != "cuda:0":
         py_command += " --device \"" + gpu_id + "\""
 
+    prompt = str(command.get('prompt')).replace('\"', '\\"')
+
     py_command += " --skip_grid" \
         + " --n_iter " + str(command.get('samples')) \
         + " --n_samples " + str(command.get('batch_size')) \
-        + " --prompt \"" + str(command.get('prompt')).replace('\"', '') + "\"" \
+        + " --prompt \"" + prompt + "\"" \
         + " --ddim_steps " + str(command.get('steps')) \
         + " --scale " + str(command.get('scale'))
 
@@ -636,9 +638,19 @@ def extract_params_from_command(command):
                 temp = temp.split('--', 1)[0]
             params.update({'prompt' : temp.strip().strip('"')})
 
-        elif '"' in command:
-            params.update({'prompt' : command.split('"', 1)[0]})
-            command = command.split('"', 1)[1]
+        else:
+            # we'll assume anything before --ddim_steps is the prompt
+            temp = command.split('--ddim_steps', 1)[0]
+            temp = temp.strip()
+            if temp[-1] == '\"':
+                temp = temp[:-1]
+            temp = temp.replace('\\', '')
+            params.update({'prompt' : temp})
+            #command = command.split('"', 1)[1]
+
+        #elif '"' in command:
+        #    params.update({'prompt' : command.split('"', 1)[0]})
+        #    command = command.split('"', 1)[1]
 
         if '--ddim_steps' in command:
             temp = command.split('--ddim_steps', 1)[1]

@@ -79,7 +79,7 @@ class Worker(threading.Thread):
 
         if control.config.get('debug_test_mode'):
             # simulate SD work
-            work_time = round(random.uniform(2, 5), 2)
+            work_time = round(random.uniform(2, 6), 2)
             time.sleep(work_time)
         else:
             # invoke SD
@@ -593,7 +593,7 @@ class Controller:
         worker_list.append("cuda:0")
         worker_list.append("cuda:1")
         worker_list.append("cuda:2")
-        worker_list.append("cuda:3")
+        #worker_list.append("cuda:3")
         #worker_list.append("cpu")
 
         for worker in worker_list:
@@ -715,7 +715,7 @@ class Controller:
             backup_file = os.path.join(self.temp_path, utils.filename_from_abspath(self.prompt_editor_file))
             shutil.copy2(self.prompt_editor_file, backup_file)
             try:
-                with open(self.prompt_editor_file, 'w', encoding='utf-8') as f:
+                with open(self.prompt_editor_file, 'w', encoding = 'utf-8') as f:
                     f.write(new_text)
             except:
                 result = False
@@ -840,7 +840,7 @@ class Controller:
         buffer += "# you may also add additional [prompt] sections below, see 'example-" + type + ".prompts' for details\n"
 
         # write the buffer to a new file and return it
-        with open(new_file, 'w') as f:
+        with open(new_file, 'w', encoding = 'utf-8') as f:
             f.write(buffer)
 
         self.prompt_editor_file = new_file

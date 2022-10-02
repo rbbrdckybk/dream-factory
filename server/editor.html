@@ -139,6 +139,7 @@
             document.getElementById('panel-editor').style.display="flex";
             quill.setText(string);
             decorate_prompt_file_text();
+            quill.history.clear();
             var elapsed = Date.now() - start;
             if (elapsed > 1000) {
                 hide_msg_modal();
@@ -298,6 +299,7 @@
           document.getElementById('panel-editor').style.display="flex";
           quill.setText(string);
           decorate_prompt_file_text();
+          quill.history.clear();
           var elapsed = Date.now() - start;
           if (elapsed > 1000) {
               hide_msg_modal();
@@ -375,7 +377,7 @@
     function decorate_line(last_char = ' ') {
         var range = quill.getSelection();
         if (range) {
-            if (range.length == 0) {
+            if (range.length >= 0) {
               var loc = range.index;
               text = quill.getText();
               line = "";
