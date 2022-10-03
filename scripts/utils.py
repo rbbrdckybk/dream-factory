@@ -210,6 +210,8 @@ class PromptManager():
             'min_strength' : 0.75,
             'max_strength' : 0.75,
             'delim' : " ",
+            'ckpt_file' : "",
+            'sampler' : "",
             'use_upscale' : self.control.config['use_upscale'],
             'upscale_amount' : self.control.config['upscale_amount'],
             'upscale_face_enh' : self.control.config['upscale_face_enh'],
@@ -396,6 +398,12 @@ class PromptManager():
                 else:
                     print("*** WARNING: prompt file command DELIM value (" + value + ") not understood (make sure to put quotes around it)! ***")
                     time.sleep(1.5)
+
+        elif command == 'ckpt_file':
+            self.config.update({'ckpt_file' : value})
+
+        elif command == 'sampler':
+            self.config.update({'sampler' : value.lower()})
 
         else:
             print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
@@ -605,6 +613,14 @@ def create_command(command, output_dir_ext, gpu_id):
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
 
     py_command += " --seed " + str(command.get('seed'))
+
+    if command.get('ckpt_file') != '':
+        py_command += " --ckpt \"" + str(command.get('ckpt_file')) + "\""
+
+    if command.get('sampler') != '' and command.get('sd_low_memory') == "yes":
+        py_command += " --sampler " + str(command.get('sampler'))
+    elif command.get('sampler') == 'plms' and command.get('sd_low_memory') == "no":
+        py_command += " --plms"
 
     py_command += " --outdir \"../" + output_folder + "\""
 
