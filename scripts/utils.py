@@ -617,10 +617,12 @@ def create_command(command, output_dir_ext, gpu_id):
     if command.get('ckpt_file') != '':
         py_command += " --ckpt \"" + str(command.get('ckpt_file')) + "\""
 
-    if command.get('sampler') != '' and command.get('sd_low_memory') == "yes":
-        py_command += " --sampler " + str(command.get('sampler'))
-    elif command.get('sampler') == 'plms' and command.get('sd_low_memory') == "no":
-        py_command += " --plms"
+    # with img2img only ddim is supported so don't pass sampler options
+    if command.get('input_image') == "":
+        if command.get('sampler') != '' and command.get('sd_low_memory') == "yes":
+            py_command += " --sampler " + str(command.get('sampler'))
+        elif command.get('sampler') == 'plms' and command.get('sd_low_memory') == "no":
+            py_command += " --plms"
 
     py_command += " --outdir \"../" + output_folder + "\""
 
