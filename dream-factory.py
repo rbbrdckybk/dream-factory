@@ -266,7 +266,7 @@ class Controller:
         self.config = {
             'prompts_location' : 'prompts',
             'output_location' : 'output',
-            'use_gpu_sevices' : 'auto',
+            'use_gpu_devices' : 'auto',
             'webserver_use' : True,
             'webserver_port' : 80,
             'webserver_network_accessible' : False,
