@@ -445,8 +445,19 @@ ul {
   max-width: 850px;
   text-align: center;
   color: #eee;
-  padding: 10px 0;
+  padding-top: 10px;
   font-size: 16px;
+}
+
+#neg_caption {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 850px;
+  text-align: center;
+  color: #aaa;
+  padding-top: 10px;
+  font-size: 14px;
 }
 
 #subcaption {
@@ -457,6 +468,7 @@ ul {
   text-align: center;
   color: #aaa;
   padding-bottom: 10px;
+  padding-top: 10px;
   font-size: 14px;
 }
 
@@ -472,7 +484,7 @@ ul {
   font-size: 14px;
 }
 
-.modal-content, .modal-editor-content, #caption, #subcaption, #img-toolbar {
+.modal-content, .modal-editor-content, #caption, #neg_caption, #subcaption, #img-toolbar {
   animation-name: zoom;
   animation-duration: 0.33s;
 }

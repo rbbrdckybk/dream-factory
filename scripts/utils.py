@@ -211,7 +211,8 @@ class PromptManager():
             'max_strength' : 0.75,
             'delim' : " ",
             'ckpt_file' : "",
-            'sampler' : "",
+            'sampler' : "plms",
+            'neg_prompt' : "",
             'use_upscale' : self.control.config['use_upscale'],
             'upscale_amount' : self.control.config['upscale_amount'],
             'upscale_face_enh' : self.control.config['upscale_face_enh'],
@@ -404,6 +405,9 @@ class PromptManager():
 
         elif command == 'sampler':
             self.config.update({'sampler' : value.lower()})
+
+        elif command == 'neg_prompt':
+            self.config.update({'neg_prompt' : value})
 
         else:
             print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
@@ -599,6 +603,7 @@ def create_command(command, output_dir_ext, gpu_id):
         py_command += " --device \"" + gpu_id + "\""
 
     prompt = str(command.get('prompt')).replace('\"', '\\"')
+    neg_prompt = str(command.get('neg_prompt')).replace('\"', '\\"')
 
     py_command += " --skip_grid" \
         + " --n_iter " + str(command.get('samples')) \
@@ -607,12 +612,13 @@ def create_command(command, output_dir_ext, gpu_id):
         + " --ddim_steps " + str(command.get('steps')) \
         + " --scale " + str(command.get('scale'))
 
+    if neg_prompt != "":
+        py_command += " --neg_prompt \"" + neg_prompt + "\"" \
+
     if command.get('input_image') != "":
         py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
     else:
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
-
-    py_command += " --seed " + str(command.get('seed'))
 
     if command.get('ckpt_file') != '':
         py_command += " --ckpt \"" + str(command.get('ckpt_file')) + "\""
@@ -624,6 +630,10 @@ def create_command(command, output_dir_ext, gpu_id):
         elif command.get('sampler') == 'plms' and command.get('sd_low_memory') == "no":
             py_command += " --plms"
 
+    # the seed below, and everything before this point will be saved to metadata
+    # excluding anything that precedes the actual prompt
+    py_command += " --seed " + str(command.get('seed'))
+
     py_command += " --outdir \"../" + output_folder + "\""
 
     return py_command
@@ -633,13 +643,16 @@ def create_command(command, output_dir_ext, gpu_id):
 def extract_params_from_command(command):
     params = {
         'prompt' : "",
+        'neg_prompt' : "",
         'seed' : "",
         'width' : "",
         'height' : "",
         'steps' : "",
+        'sampler' : "ddim",
         'scale' : "",
         'input_image' : "",
-        'strength' : ""
+        'strength' : "",
+        'ckpt_file' : ""
     }
 
     if command != "":
@@ -669,6 +682,12 @@ def extract_params_from_command(command):
         #elif '"' in command:
         #    params.update({'prompt' : command.split('"', 1)[0]})
         #    command = command.split('"', 1)[1]
+
+        if '--neg_prompt' in command:
+            temp = command.split('--neg_prompt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'neg_prompt' : temp.strip().strip('"')})
 
         if '--ddim_steps' in command:
             temp = command.split('--ddim_steps', 1)[1]
@@ -713,6 +732,26 @@ def extract_params_from_command(command):
             if '--' in temp:
                 temp = temp.split('--', 1)[0]
             params.update({'strength' : temp.strip()})
+
+        if '--plms' in command:
+            # non-optimized version, ddim is default unless --plms specified
+            params.update({'sampler' : 'plms'})
+        else:
+            # optimized version
+            if '--sampler' in command:
+                temp = command.split('--sampler', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'sampler' : temp.strip()})
+
+        if '--ckpt' in command:
+            temp = command.split('--ckpt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('\"', '')
+            temp = filename_from_abspath(temp)
+            params.update({'ckpt_file' : temp.strip()})
+
 
     return params
 

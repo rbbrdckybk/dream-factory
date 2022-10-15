@@ -131,6 +131,7 @@
           </div>
           <img class="modal-content" id="img01">
           <div id="caption"></div>
+          <div id="neg_caption"></div>
           <div id="subcaption"></div>
         </div>
 
@@ -169,6 +170,7 @@
         var img = document.getElementById(img_id);
         var modalImg = document.getElementById("img01");
         var captionText = document.getElementById("caption");
+        var negText = document.getElementById("neg_caption");
         var subcaptionText = document.getElementById("subcaption");
         var downloadLink = document.getElementById("download-img");
         downloadLink.href = "/getimg?img=" + img.src;
@@ -176,6 +178,7 @@
         modal.style.display = "block";
         modalImg.src = img.src;
         captionText.innerHTML = document.getElementById(caption_id).innerHTML;
+        negText.innerHTML = document.getElementById(caption_id.replace('d_', 'n_')).innerHTML;
         subcaptionText.innerHTML = document.getElementById(subcaption_id).innerHTML;
 
         refreshImageList();

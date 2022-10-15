@@ -74,6 +74,10 @@ def build_gallery(control):
         params = utils.extract_params_from_command(details)
         param_string = ''
 
+        neg_prompt = params['neg_prompt']
+        if neg_prompt != "":
+            neg_prompt = "negative prompt: " + neg_prompt
+
         short_prompt = params['prompt']
         if len(params['prompt']) > 302:
             short_prompt = params['prompt'][:300] + '...'
@@ -83,6 +87,16 @@ def build_gallery(control):
                 param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
             elif params['input_image'] != "":
                 param_string += 'init image: ' + params['input_image'] + '  |  strength: ' + str(params['strength'])
+
+            if params['ckpt_file'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'model: ' + str(params['ckpt_file'])
+
+            if params['sampler'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'sampler: ' + str(params['sampler'])
 
             if params['steps'] != '':
                 if param_string != '':
@@ -114,6 +128,7 @@ def build_gallery(control):
             buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
         buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + utils.filename_from_abspath(img) + "\">" + short_prompt + "</span></div>\n"
         buffer += "\t\t<div class=\"hidden\" id=\"d_" + utils.filename_from_abspath(img) + "\">" + params['prompt'] + "</div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"n_" + utils.filename_from_abspath(img) + "\">" + neg_prompt + "</div>\n"
         buffer += "\t\t<div class=\"hidden\" id=\"p_" + utils.filename_from_abspath(img) + "\">" + param_string + "</div>\n"
         buffer += "\t</li>\n"
 

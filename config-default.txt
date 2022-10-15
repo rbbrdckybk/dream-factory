@@ -49,9 +49,6 @@ GALLERY_REFRESH = 30
 GALLERY_USER_FOLDER = 
 GALLERY_USER_FOLDER_ALIAS = favorites
 
-# for development; don't use this
-DEBUG_TEST_MODE = no
-
 # you can set your own defaults for prompt file settings below
 # settings specified in individual prompt files will always override these
 
@@ -59,6 +56,7 @@ PF_SD_LOW_MEMORY = yes				# low GPU VRAM mode (yes/no)? slower but far less VRAM
 PF_SD_LOW_MEM_TURBO = yes			# if you're still getting out-of-memory errors in low VRAM mode, set this to no
 PF_WIDTH = 512             			# output image width, default is 512
 PF_HEIGHT = 512            			# output image height, default is 512
+PF_SAMPLER = plms					# sampler to use (plms, ddim, lms, euler, euler_a, dpm2, dpm2_a, heun); not all are available in all modes
 PF_STEPS = 50              			# number of steps, default = 50
 PF_SCALE = 7.5              		# guidance scale, default = 7.5
 PF_SAMPLES = 1						# number of images to generate per prompt
@@ -66,3 +64,4 @@ PF_USE_UPSCALE = no					# use ESRGAN to upscale output images?
 PF_UPSCALE_AMOUNT = 2.0				# upscaling factor
 PF_UPSCALE_FACE_ENH = no			# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
 PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?
+PF_CKPT_FILE = 						# can specify alternative .ckpt (model) file to load (default = models/ldm/stable-diffusion-v1/model.ckpt)

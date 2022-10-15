@@ -16,10 +16,12 @@
 !WIDTH = 512							# output image width, default is 512
 !HEIGHT = 512							# output image height, default is 512
 !STEPS = 50							# number of steps, more may improve image but increase generation time
+!SAMPLER = plms						# sampler to use (plms, ddim, lms, euler, euler_a, dpm2, dpm2_a, heun)
 !SCALE = 7.5							# guidance scale, increase for stricter prompt adherence
 !SAMPLES = 2							# number of images to generate per prompt
 !INPUT_IMAGE = 						# can specify an input image here (output image will be same resolution)
 !STRENGTH = 0.75						# strength of input image influence (0-1, with 1 corresponding to least influence)
+!CKPT_FILE = 							# model to load (if not specified, default = models/ldm/stable-diffusion-v1/model.ckpt)
 
 # optional integrated ESRGAN/GFPGAN upscaling
 
@@ -27,6 +29,10 @@
 !UPSCALE_AMOUNT = 2.0					# upscaling factor
 !UPSCALE_FACE_ENH = no				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
 !UPSCALE_KEEP_ORG = no				# keep the original non-upscaled image (yes/no)?
+
+# optional negative prompt
+
+!NEG_PROMPT = 
 
 
 # *****************************************************************************************************
@@ -97,6 +103,7 @@ muted colors
 # ... and so on, for all 189 possibilities
 # be careful adding too many [prompt] sections with more than 1 item, as the 
 # increase in prompt combinations is exponential!
+
 
 
 

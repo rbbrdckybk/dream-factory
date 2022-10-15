@@ -60,7 +60,7 @@ class Worker(threading.Thread):
 
 
     def run(self):
-        if not self.command.get('seed') > 0:
+        if not int(self.command.get('seed')) > 0:
             self.command['seed'] = random.randint(1, 2**32) - 1000
 
         # if this is a random prompt, settle on random values
@@ -286,13 +286,15 @@ class Controller:
             'sd_low_mem_turbo' : "yes",
             'width' : 512,
             'height' : 512,
+            'sampler' : 'plms',
             'steps' : 50,
             'scale' : 7.5,
             'samples' : 1,
             'use_upscale' : "no",
             'upscale_amount' : 2.0,
             'upscale_face_enh' : "no",
-            'upscale_keep_org' : "no"
+            'upscale_keep_org' : "no",
+            'ckpt_file' : ""
         }
 
         file = utils.TextFile(self.config_file)
@@ -425,6 +427,12 @@ class Controller:
                         else:
                             self.config.update({'height' : int(value)})
 
+                    elif command == 'pf_sampler':
+                        samplers = ["ddim", "plms", "heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"]
+                        value = value.lower()
+                        if value in samplers:
+                            self.config.update({'sampler' : value})
+
                     elif command == 'pf_steps':
                         try:
                             int(value)
@@ -468,6 +476,9 @@ class Controller:
                     elif command == 'pf_upscale_keep_org':
                         if value == 'yes' or value == 'no':
                             self.config.update({'upscale_keep_org' : value})
+
+                    elif command == 'pf_ckpt_file':
+                        self.config.update({'ckpt_file' : value})
 
                     else:
                         self.print("warning: config file command not recognized: " + command.upper() + " (it will be ignored)!")
