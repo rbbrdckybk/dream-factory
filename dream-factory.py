@@ -824,6 +824,7 @@ class Controller:
         buffer += "!WIDTH = " + str(self.config['width']) + "							# output image width, default is 512\n"
         buffer += "!HEIGHT = " + str(self.config['height']) + "							# output image height, default is 512\n"
         buffer += "!STEPS = " + str(self.config['steps']) + "							# number of steps, more may improve image but increase generation time\n"
+        buffer += "!SAMPLER = " + str(self.config['sampler']) + "                       # sampler to use (plms, ddim, lms, euler, euler_a, dpm2, dpm2_a, heun)\n"
         buffer += "!SAMPLES = " + str(self.config['samples']) + "					      	# number of images to generate per prompt\n"
 
         if type == "standard":
@@ -837,11 +838,16 @@ class Controller:
             buffer += "!MIN_STRENGTH = 0.75					# min strength of starting image influence, (0-1, 1 is lowest influence)\n"
             buffer += "!MAX_STRENGTH = 0.75					# max strength of start image, set min and max to same number for no variance\n"
 
+        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"			            	# model to load (if not specified, default = models/ldm/stable-diffusion-v1/model.ckpt)\n"
+
         buffer += "\n# optional integrated upscaling\n\n"
         buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# use ESRGAN to upscale output images?\n"
         buffer += "!UPSCALE_AMOUNT = " + str(self.config['upscale_amount']) + "					# upscaling factor\n"
         buffer += "!UPSCALE_FACE_ENH = " + self.config['upscale_face_enh'] + "				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?\n"
         buffer += "!UPSCALE_KEEP_ORG = " + self.config['upscale_keep_org'] + "				# keep the original non-upscaled image (yes/no)?\n"
+
+        buffer += "\n# optional negative prompt\n\n"
+        buffer += "!NEG_PROMPT =\n"
 
         buffer += "\n# *****************************************************************************************************\n"
         buffer += "# prompt section\n"
