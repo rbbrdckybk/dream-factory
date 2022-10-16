@@ -2,6 +2,11 @@
 
 Dream Factory release notes.
 
+When updating to a new release, use the built-in setup.py script with the --update option to ensure all required repos are refreshed:
+```
+python setup.py --update
+```
+
 ## [2022.10.15]
 ### Added
 - Added negative prompt support, specify with **!NEG_PROMPT** directive in .prompt files.
