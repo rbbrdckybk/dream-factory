@@ -16,6 +16,7 @@ python setup.py --update
 - Updated example prompt files with **!CKPT_FILE**, **!SAMPLER**, and **!NEG_PROMPT** usage.
 
 ### Fixed
+- Corrected a bug when specifying a custom seed with **!SEED**.
 - Additional error-checking in setup.py for cases where required executables can't be located. Should handle gracefully now and prompt the user to re-run setup with a new **--shell** option.
 
 ## [2022.10.03]
