@@ -46,13 +46,13 @@ def clone_repos(verbose = False, shell = False):
 
     for repo in repos:
         msg('   fetching ' + repo + '...', verbose)
-        exec(base+repo, verbose)
+        exec(base+repo, verbose, shell)
 
 # installs all dependancies via pip
 def install_pytorch(verbose = False, shell = False):
     print('\nInstalling Pytorch (this may take a few minutes):')
     cmd = 'conda install -y pandas pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch'
-    exec(cmd, verbose)
+    exec(cmd, verbose, shell)
 
 # installs all dependancies via pip
 def install_dependencies(verbose = False, shell = False):
@@ -82,25 +82,25 @@ def install_dependencies(verbose = False, shell = False):
 
     for package in packages:
         msg('   installing ' + package + '...', verbose)
-        exec(base+package, verbose)
+        exec(base+package, verbose, shell)
 
 # perform real-esrgan setup
 def setup_esrgan(verbose = False, shell = False):
     print('\nSetting up Real-ESRGAN:')
     cmd = 'curl -L -o Real-ESRGAN/experiments/pretrained_models/RealESRGAN_x4plus.pth -C - https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'
     msg('   downloading pre-trained models...', verbose)
-    exec(cmd, verbose)
+    exec(cmd, verbose, shell)
 
     cwd = os.getcwd()
     cmd = 'python setup.py develop'
     msg('   running ESRGAN setup script...', verbose)
-    exec_cwd(cmd, cwd + os.path.sep + 'Real-ESRGAN', verbose)
+    exec_cwd(cmd, cwd + os.path.sep + 'Real-ESRGAN', verbose, shell)
 
 # for debugging
 def test(verbose = False, shell = False):
     print('\nTesting dummy call:')
     base = 'thiswillfail'
-    exec(base, verbose)
+    exec(base, verbose, shell)
 
 # create config.txt file
 def create_config():
