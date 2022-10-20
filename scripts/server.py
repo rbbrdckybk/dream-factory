@@ -413,8 +413,7 @@ class ArtGeneratorWebService(object):
         buffer_text += "<div>Server uptime: "
         diff = time.time() - self.control.server_startup_time
         buffer_text += "{}".format(str(timedelta(seconds = round(diff, 0))))
-        jobs = "{:,}".format(int(jobs_done))
-        buffer_text += "</div><div>Total jobs done: " + jobs + "</div>"
+        buffer_text += "</div><div>Total jobs done: " + jobs_done + "</div>"
         if self.control.config['debug_test_mode']:
             buffer_text += "<div style=\"color: yellow;\">*** TEST/DEBUG MODE ENABLED - NO ACTUAL IMAGES ARE BEING CREATED! ***</div>"
         return buffer_text
@@ -481,8 +480,8 @@ class ArtServer:
             }
         })
 
-        # if we're not in debug mode, enable production mode
-        if not self.control_ref.config['debug_test_mode']:
+        # if we're not in debug mode and not logging web requests, enable production mode
+        if not self.control_ref.config['debug_test_mode'] and not self.control_ref.config.get('webserver_console_log'):
             self.config.update({
                 'global': {
                     'environment' : 'production'
