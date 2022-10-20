@@ -7,6 +7,11 @@ When updating to a new release, use the built-in setup.py script with the --upda
 python setup.py --update
 ```
 
+## [2022.10.20]
+### Fixed
+- Corrected a fomatting bug that would cause the control panel and status monitor to fail to load in the web UI when total completed jobs became greater than 999.
+- Corrected an issue that wouldn't correctly enable webserver console logging in all cases when **WEBSERVER_CONSOLE_LOG = yes** was set in config.txt.
+
 ## [2022.10.15]
 ### Added
 - Added negative prompt support, specify with **!NEG_PROMPT** directive in .prompt files.
