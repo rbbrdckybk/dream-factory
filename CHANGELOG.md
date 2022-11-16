@@ -7,6 +7,11 @@ When updating to a new release, use the built-in setup.py script with the --upda
 python setup.py --update
 ```
 
+## [2022.11.15]
+### Fixed
+- Corrected an issue with setup.py that was causing pytorch to be installed incorrectly.
+- Corrected a bug that would throw an error when a single gpu id was manually specified in config.txt.
+
 ## [2022.10.20]
 ### Fixed
 - Corrected a fomatting bug that would cause the control panel and status monitor to fail to load in the web UI when total completed jobs became greater than 999.
