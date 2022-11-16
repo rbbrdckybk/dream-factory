@@ -580,7 +580,7 @@ class Controller:
                     self.add_gpu_worker(worker, name)
 
         elif ',' in self.config['use_gpu_devices']:
-            # we're specifying individual GPUs
+            # we're specifying multiple GPUs
             gpus = self.config['use_gpu_devices'].split(',')
             for gpu in gpus:
                 name = ""
@@ -594,8 +594,25 @@ class Controller:
                 if name != '':
                     self.add_gpu_worker(worker, name)
 
-        else :
-            self.print("ERROR: can't understand USE_GPU_DEVICES configuration: " + self.config['use_gpu_devices'])
+        else:
+            # add exactly 1 gpu
+            gpu = -1
+            try:
+                gpu = int(self.config['use_gpu_devices'].strip())
+            except ValueError:
+                self.print("ERROR: can't understand USE_GPU_DEVICES configuration: " + self.config['use_gpu_devices'])
+
+            if gpu > -1:
+                name = ""
+                worker = "cuda:" + str(gpu)
+                try:
+                    name = get_device_name(worker)
+                except AssertionError:
+                    self.print("unable to initialize device '" + worker + "'; removing it as a GPU candidate...")
+
+                # if we can see the gpu name, add it to the list of workers
+                if name != '':
+                    self.add_gpu_worker(worker, name)
 
 
     # build a list of dummy workers for debugging/testing
