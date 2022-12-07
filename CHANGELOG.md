@@ -7,6 +7,32 @@ When updating to a new release, use the built-in setup.py script with the --upda
 python setup.py --update
 ```
 
+## [2022.12.06]
+This is a major release; pretty much every piece of code has been touched and the entire backend has been re-done. **I highly recommend a fresh install!**
+
+### Added
+- Completely replaced the Stable Diffusion backend (which was previously a mix of my own SD repo and [basujindal's fork](https://github.com/basujindal/stable-diffusion), which seems to be mostly abandoned) with [Automatic1111's popular repo](https://github.com/AUTOMATIC1111/stable-diffusion-webui). This means that pretty much all of Automatic1111's [many features](https://github.com/AUTOMATIC1111/stable-diffusion-webui#features) are now available within Dream Factory! Some highlights:
+  - Support for many more samplers.
+  - Support for [prompt weighting](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#attentionemphasis) within prompt files.
+  - Support for the [highres fix](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#highres-fix), allowing for much more coherent images over 512x512.
+  - Support for [prompt editing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#prompt-editing).
+  - Support for [Codeformer](https://github.com/sczhou/CodeFormer) as a face enhancement/restoration option alongside GFPGAN.
+- Added staggered GPU startup for multi-GPU systems to help prevent system RAM issues during initialization.
+- Added a sampler and model reference to new prompt files created via the web interface.
+- Added !UPSCALE_GFPGAN_AMOUNT and !UPSCALE_CODEFORMER_AMOUNT as prompt file directives, allowing you to specify the degree of face enhancement you want (from 0.0 to 1.0 for either or both options).
+
+### Fixed
+- Corrected many bugs with multi-GPU operation. Just spent the past 36 hours watching Dream Factory churn out images non-stop on a 3-GPU machine powered by a circa-2013 single-core AMD Sempron with 6GB of physical RAM (16GB with a swap file to get through model loads). Mostly confident that everything is working properly now, but report issues if you find them!
+- Corrected a bug where setting !INPUT_IMAGE = in prompt files didn't properly clear an exisitng input image.
+
+### Changed
+- Models are now kept in memory on each GPU, instead of being discared after each prompt call. This results in much faster performance.
+- Dream Factory's setup script (setup.py) now installs far fewer python dependancies. Again, recommend a fresh install if you want to keep things lean.
+
+### Removed
+- !SD_LOW_MEMORY and !SD_LOW_MEM_TURBO have been removed as prompt file directives as they would no longer serve a purpose. Dream Factory will use whatever VRAM flags you've set for your Auto1111 installation, if any (most users won't need to worry about them).
+- !UPSCALE_FACE_ENH has been removed as a prompt file directive, replaced by !UPSCALE_GFPGAN_AMOUNT and !UPSCALE_CODEFORMER_AMOUNT (see above).
+
 ## [2022.11.15]
 ### Fixed
 - Corrected an issue with setup.py that was causing pytorch to be installed incorrectly.
