@@ -249,7 +249,7 @@ class SDI:
                         line += ' --device-id ' + str(self.gpu_id)
                         line += '\n'
 
-                    elif line.startswith('#export COMMANDLINE_ARGS='):
+                    elif line.startswith('#export COMMANDLINE_ARGS=') or line.startswith('export COMMANDLINE_ARGS='):
                         # modify Linux .sh script
                         line = line.replace('#export COMMANDLINE_ARGS=', 'export COMMANDLINE_ARGS=')
                         line = line.replace('\n', '')
