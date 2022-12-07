@@ -147,12 +147,13 @@ class Monitor(threading.Thread):
 
     # callback for alive check; whether or not server is ready for requests
     def alive_check_callback(self, response_code):
-        #self.log(str(response_code))
+        #self.sdi_ref.log(str(response_code))
         if response_code == 200:
             self.sdi_ref.ready = True
             self.sdi_ref.log("SD instance finished initialization; ready for work!")
         else:
             # not ready yet; check again
+            time.sleep(0.25)
             alive_check = AliveRequest(self.sdi_ref, self.alive_check_callback)
             alive_check.start()
 
@@ -251,6 +252,26 @@ class SDI:
 
                     elif line.startswith('#export COMMANDLINE_ARGS=') or line.startswith('export COMMANDLINE_ARGS='):
                         # modify Linux .sh script
+                        if line.startswith('export COMMANDLINE_ARGS='):
+                            # Dream Factory won't work with the original line uncommented under Linux as
+                            # it will override any changes we define here. Need to re-comment and inform user
+                            with open(original_file, 'r+') as o:
+                                ls = o.readlines()
+                                o.truncate(0)
+                                o.seek(0)
+                                for l in ls:
+                                    if l.startswith('export COMMANDLINE_ARGS='):
+                                        print("\nNotice: found uncommented COMMANDLINE_ARGS in your webui-user.sh script.")
+                                        print("Dream Factory requires its own COMMANDLINE_ARGS to be set, and an uncommented")
+                                        print("line here will override the settings that Dream Factory needs to work.")
+                                        print("The following change has been made to " + original_file + " :\n")
+                                        print("old:   " + l)
+                                        l = '#' + l
+                                        print("new:   " + l)
+                                        print("You'll need to uncomment this line if you wish to use Automatic1111 webui with the environment settings above.")
+                                        print("It will be re-commented automatically each time Dream Factory starts (and you'll receive this message again).\n")
+                                    o.write(l)
+
                         line = line.replace('#export COMMANDLINE_ARGS=', 'export COMMANDLINE_ARGS=')
                         line = line.replace('\n', '')
                         addQuote = False
