@@ -120,8 +120,8 @@ def update(shell = False):
     try:
         print('updating dream-factory...')
         exec(cmd, True, shell)
-        print('updating stable-diffusion...')
-        exec_cwd(cmd, cwd + os.path.sep + 'stable-diffusion', True, shell)
+        #print('updating stable-diffusion...')
+        #exec_cwd(cmd, cwd + os.path.sep + 'stable-diffusion', True, shell)
     except FileNotFoundError:
         print('\nUnable to find git executable - try re-running update with the --shell option, e.g.:')
         print('   python setup.py --shell --update\n')
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     shell = opt.shell
 
     if opt.update:
-        if os.path.exists('stable-diffusion'):
+        if os.path.exists('logs'):
             # user is requesting an update
             update(shell)
         else:
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 
             #print('\n\nAll done - don\'t forget to place your model.ckpt file in this directory! : ')
             #print(checkpoint_path + '\n')
-            print('\n\nAll done!')
+            print('\n\nAll done! - don\'t forget to add your automatic1111 repo location to config.txt!')
         else:
             print('\nPrevious installation detected; aborting setup.')
             print('If you really want to run setup again, use the --force switch.')
