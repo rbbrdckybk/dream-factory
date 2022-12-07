@@ -186,7 +186,11 @@ if __name__ == '__main__':
 
             #print('\n\nAll done - don\'t forget to place your model.ckpt file in this directory! : ')
             #print(checkpoint_path + '\n')
+            if not os.path.exists('output'):
+                os.makedirs('output')
+
             print('\n\nAll done! - don\'t forget to add your automatic1111 repo location to config.txt!')
+
         else:
             print('\nPrevious installation detected; aborting setup.')
             print('If you really want to run setup again, use the --force switch.')
