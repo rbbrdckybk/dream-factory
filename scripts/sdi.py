@@ -1,0 +1,513 @@
+# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# SPDX-License-Identifier: MIT
+
+import json
+import requests
+import io
+import base64
+import os
+import shlex
+import subprocess
+import time
+import sys
+import signal
+import threading
+import platform
+import shutil
+from os.path import exists
+from PIL import Image, PngImagePlugin
+from pprint import pprint
+
+
+# for making txt2img requests
+class Txt2ImgRequest(threading.Thread):
+    def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+        self.payload = payload
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/sdapi/v1/txt2img', json=self.payload)
+        self.callback(response)
+
+
+# for making img2img requests
+class Img2ImgRequest(threading.Thread):
+    def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+        self.payload = payload
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/sdapi/v1/img2img', json=self.payload)
+        self.callback(response)
+
+
+# for making upscale requests
+class UpscaleRequest(threading.Thread):
+    def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+        self.payload = payload
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/sdapi/v1/extra-single-image', json=self.payload)
+        self.callback(response)
+
+
+# for fetching valid samplers
+class GetSamplersRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/samplers')
+        self.callback(response)
+
+
+# for fetching valid model checkpoints
+class GetModelsRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/sd-models')
+        self.callback(response)
+
+
+# for changing server options, including model swaps
+class SetOptionsRequest(threading.Thread):
+    def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+        self.payload = payload
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/sdapi/v1/options', json=self.payload)
+        self.callback(response, self.payload)
+
+
+# for fetching valid model checkpoints
+class InterruptRequest(threading.Thread):
+    def __init__(self, sdi_ref, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/sdapi/v1/interrupt', json={})
+
+
+# for checking if the server is alive / ready for requests
+class AliveRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response_code = self.check_alive()
+        self.callback(response_code)
+
+    def check_alive(self):
+        code = -1
+        try:
+            response = requests.get(self.sdi_ref.url + '/docs', timeout = 300)
+            code = response.status_code
+        except:
+            code = 999
+        return code
+
+
+# for monitoring SD server status
+class Monitor(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+
+    def run(self):
+        #print("Monitor for GPU " + str(self.sdi_ref.gpu_id) + " starting!")
+        self.sdi_ref.log("waiting for SD instance to be ready...", True)
+        alive_check = AliveRequest(self.sdi_ref, self.alive_check_callback)
+        alive_check.start()
+
+        while self.sdi_ref.isRunning:
+            # monitor progress here
+            time.sleep(1)
+        self.callback()
+
+    # callback for alive check; whether or not server is ready for requests
+    def alive_check_callback(self, response_code):
+        #self.log(str(response_code))
+        if response_code == 200:
+            self.sdi_ref.ready = True
+            self.sdi_ref.log("SD instance finished initialization; ready for work!")
+        else:
+            # not ready yet; check again
+            alive_check = AliveRequest(self.sdi_ref, self.alive_check_callback)
+            alive_check.start()
+
+
+# Stable Diffusion Interface
+# manages the relationship between a GPU and an SD instance
+class SDI:
+    def __init__(self, gpu_id, port, path_to_sd, control_ref, worker_name):
+        os.makedirs('logs', exist_ok=True)
+
+        self.control_ref = control_ref
+        self.worker_name = worker_name
+        self.gpu_id = gpu_id
+        self.platform = platform.system().lower()
+        self.path_to_sd = path_to_sd
+        self.command = 'webui-user.bat'
+        self.target_command = 'df-start-gpu-' + str(gpu_id) + '.bat'
+        self.sd_port = port
+        self.url = 'http://localhost:' + str(self.sd_port)
+        self.isRunning = True
+        #self.logfilename = 'gpu-' + str(self.gpu_id) + '-log.txt'
+        self.logfilename = os.path.join('logs', 'gpu-' + str(self.gpu_id) + '-log.txt')
+        #self.errorfilename = 'gpu-' + str(self.gpu_id) + '-errors.txt'
+        self.errorfilename = os.path.join('logs', 'gpu-' + str(self.gpu_id) + '-errors.txt')
+        self.logfile = open(self.logfilename, 'w')
+        self.errorfile = open(self.errorfilename, 'w')
+        self.monitor = None
+        self.process = None
+        self.init = False           # has init() been run?
+        self.ready = False          # is our associated server ready (e.g. has init() finished)?
+        self.busy = False           # is this instance in the process of making a request?
+        self.status = ''            # TODO fill in % done here
+        self.request_count = 0
+        self.output_dir = ''
+        self.options_change_in_progress = False
+        self.model_loaded = ''
+        self.model_loading_now = ''
+
+        if self.platform == 'linux':
+            self.command = 'webui-user.sh'
+            self.target_command = 'df-start-gpu-' + str(gpu_id) + '.sh'
+
+
+    # starts up a new SD instance
+    def initialize(self):
+        self.init = True
+        full_target = os.path.join(self.path_to_sd, self.target_command)
+
+        # we don't have a startup script for this gpu; make one
+        #if not exists(full_target):
+        self.create_startup_batch_file()
+
+        self.log('starting new SD instance via: ' + full_target, True)
+
+        self.process = subprocess.Popen(full_target, \
+            cwd=self.path_to_sd, \
+            #stdout=subprocess.PIPE, \
+            stdout=self.logfile, \
+            stderr=self.errorfile, \
+            bufsize=0, \
+            universal_newlines=True
+        )
+
+        # start monitoring the SD subprocess's piped output
+        self.monitor = Monitor(self, self.monitor_done_callback)
+        self.monitor.start()
+
+
+    # creates a suitable startup .bat/.sh for this gpu
+    def create_startup_batch_file(self):
+        original_file = os.path.join(self.path_to_sd, self.command)
+        if exists(original_file):
+            # make a copy of the original
+            dst = os.path.join(self.path_to_sd, self.target_command)
+            shutil.copyfile(original_file, dst)
+            # modify the copy to suit our needs
+            with open(dst, 'r+') as f:
+                lines = f.readlines()
+                f.truncate(0)
+                f.seek(0)
+
+                for line in lines:
+                    if line.startswith('set COMMANDLINE_ARGS='):
+                        # modify Windows .bat file
+                        line = line.replace('\n', '')
+                        if not '--api' in line:
+                            line += ' --api'
+                        if not '--nowebui' in line:
+                            line += ' --nowebui'
+                        if not '--lowram' in line:
+                            line += ' --lowram'
+                        # TODO check for these and replace if they already exist
+                        line += ' --port ' + str(self.sd_port)
+                        line += ' --device-id ' + str(self.gpu_id)
+                        line += '\n'
+
+                    elif line.startswith('#export COMMANDLINE_ARGS='):
+                        # modify Linux .sh script
+                        line = line.replace('#export COMMANDLINE_ARGS=', 'export COMMANDLINE_ARGS=')
+                        line = line.replace('\n', '')
+                        addQuote = False
+                        if line.endswith('"'):
+                            line = line[:-1]
+                            addQuote = True
+
+                        if not '--api' in line:
+                            line += ' --api'
+                        if not '--nowebui' in line:
+                            line += ' --nowebui'
+                        if not '--lowram' in line:
+                            line += ' --lowram'
+                        line += ' --port ' + str(self.sd_port)
+                        line += ' --device-id ' + str(self.gpu_id)
+
+                        if addQuote:
+                            line += '"'
+                        line += '\n'
+
+                    f.write(line)
+
+                # add a call to start the webui under Linux
+                if self.platform == 'linux':
+                    f.write('source webui.sh')
+
+            # give the script execute permission on Linux
+            if self.platform == 'linux':
+                os.chmod(dst, 0o777)
+
+        else:
+            print('\nError - Stable Diffusion not found at the following location: ' + self.path_to_sd)
+            print('Make sure to set \'SD_LOCATION =\' in your config.txt with the path to your Automatic1111 SD repo installation!')
+            print('\nExiting...')
+            exit(0)
+
+
+    # callback for log monitor when finished
+    def monitor_done_callback(self, *args):
+        self.log("monitor for GPU " + str(self.gpu_id) + " shutting down!", True)
+        #self.logfile.close()
+
+
+    # make a txt2img request
+    def do_txt2img(self, payload, output_dir = ''):
+        self.busy = True
+        self.output_dir = output_dir
+        #self.log('Making a txt2img request!')
+        txt2img = Txt2ImgRequest(self, payload, self.handle_response)
+        txt2img.start()
+
+
+    # make a img2img request
+    def do_img2img(self, payload, output_dir = ''):
+        self.busy = True
+        self.output_dir = output_dir
+        #self.log('Making a img2img request!')
+        img2img = Img2ImgRequest(self, payload, self.handle_response)
+        img2img.start()
+
+
+    # make an upscale request
+    def do_upscale(self, payload, output_dir = ''):
+        self.busy = True
+        self.output_dir = output_dir
+        #self.log('Making an upscale request!')
+        upscale = UpscaleRequest(self, payload, self.handle_upscale_response)
+        upscale.start()
+
+
+    # gets valid samplers from server
+    def get_server_samplers(self):
+        self.busy = True
+        #self.log('Fetching samplers from server...')
+        self.log('querying SD for available samplers...', True)
+        query = GetSamplersRequest(self, self.sampler_response)
+        query.start()
+
+    # handle server sampler response
+    def sampler_response(self, response):
+        r = response.json()
+
+        samplers = []
+        sampler_str = ''
+        for i in r:
+            samplers.append(i['name'])
+            sampler_str += '   - ' + i['name'] + '\n'
+
+        #self.log('Server indicates the following samplers are available for use:\n' + sampler_str)
+        self.log('received sampler query response: SD indicates ' + str(len(samplers)) + ' samplers available for use...', True)
+        self.control_ref.sdi_samplers = samplers
+
+        # reload prompt file if we have one to validate it against samplers
+        if self.control_ref.prompt_file != '':
+            self.control_ref.new_prompt_file(self.control_ref.prompt_file)
+
+        self.busy = False
+
+
+    # gets valid models from server
+    def get_server_models(self):
+        self.busy = True
+        #self.log('Fetching models from server...')
+        self.log('querying SD for available models...', True)
+        query = GetModelsRequest(self, self.model_response)
+        query.start()
+
+    # handle server model response
+    def model_response(self, response):
+        r = response.json()
+
+        models = []
+        model_str = ''
+        for i in r:
+            models.append(i['title'])
+            model_str += '   - ' + i['title'] + '\n'
+
+        #self.log('Server indicates the following models are available for use:\n' + model_str)
+        self.log('received model query response: SD indicates ' + str(len(models)) + ' models available for use...', True)
+        self.control_ref.sdi_models = models
+
+        # reload prompt file if we have one to validate it against models
+        if self.control_ref.prompt_file != '':
+            self.control_ref.new_prompt_file(self.control_ref.prompt_file)
+
+        self.busy = False
+
+
+    # handle upscale responses
+    def handle_upscale_response(self, response):
+        # only handle if we're not already shutting down
+        if self.isRunning:
+            #self.log('Handling response from server...')
+            r = response.json()
+            os.makedirs(self.output_dir, exist_ok=True)
+
+            try:
+                i = r['image']
+                image = Image.open(io.BytesIO(base64.b64decode(i)))
+
+                png_payload = {
+                    "image": "data:image/png;base64," + i
+                }
+                response2 = requests.post(url=f'{self.url}/sdapi/v1/png-info', json=png_payload)
+
+                pnginfo = PngImagePlugin.PngInfo()
+                pnginfo.add_text("parameters", response2.json().get("info"))
+
+                seed = '0'
+                # get the actual seed used
+                if 'Seed:' in response2.json().get("info"):
+                    temp = response2.json().get("info").split('Seed:', 1)
+                    temp = temp[1].split(',', 1)
+                    seed = temp[0].strip()
+
+                filename = 'seed_' + seed + '_u.png'
+                image.save(os.path.join(self.output_dir, filename), pnginfo=pnginfo)
+                #self.log(filename + ' created!')
+            except KeyError:
+                self.log('*** Error response received! *** : ' + str(r['detail']), True)
+
+            self.request_count += 1
+            self.busy = False
+
+
+    # handle SD responses, callback for server requests
+    def handle_response(self, response):
+        # only handle if we're not already shutting down
+        if self.isRunning:
+            #self.log('Handling response from server...')
+            r = response.json()
+            os.makedirs(self.output_dir, exist_ok=True)
+
+            try:
+                for i in r['images']:
+                    image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                    png_payload = {
+                        "image": "data:image/png;base64," + i
+                    }
+                    response2 = requests.post(url=f'{self.url}/sdapi/v1/png-info', json=png_payload)
+
+                    pnginfo = PngImagePlugin.PngInfo()
+                    pnginfo.add_text("parameters", response2.json().get("info"))
+
+                    seed = '0'
+                    # get the actual seed used
+                    if 'Seed:' in response2.json().get("info"):
+                        temp = response2.json().get("info").split('Seed:', 1)
+                        temp = temp[1].split(',', 1)
+                        seed = temp[0].strip()
+
+                    filename = 'seed_' + seed + '.png'
+                    image.save(os.path.join(self.output_dir, filename), pnginfo=pnginfo)
+                    #self.log(filename + ' created!')
+            except KeyError:
+                self.log('*** Error response received! *** : ' + str(r['detail']), True)
+
+            self.request_count += 1
+            self.busy = False
+
+
+    # tells the SD instnace to load the indicated model
+    def load_model(self, new_model):
+        self.options_change_in_progress = True
+        self.model_loading_now = new_model
+        self.log("requesting a new model load: " + new_model, True)
+        payload = {
+            "sd_model_checkpoint": new_model
+        }
+        model_req = SetOptionsRequest(self, payload, self.handle_options_response)
+        model_req.start()
+
+
+    # handle option change responses
+    def handle_options_response(self, response, payload):
+        if response.status_code == 200:
+            # no errors
+            if "sd_model_checkpoint" in str(payload):
+                self.model_loaded = self.model_loading_now
+                self.model_loading_now = ''
+                self.log('new model successfully loaded!', True)
+            else:
+                self.log('options successfully changed!', True)
+        else:
+            # TODO handle error reporting
+            r = response.json()
+
+        self.options_change_in_progress = False
+
+
+    # shutdown and clean up
+    def cleanup(self):
+        self.isRunning = False
+        if self.busy:
+            # if we're busy, send an interrupt request
+            self.log("terminating current task...", True)
+            int = InterruptRequest(self)
+            int.start()
+
+        self.logfile.close()
+        self.errorfile.close()
+
+        if self.process != None:
+            self.process.terminate()
+            self.process.kill()
+
+        # cleanup gpu working dir
+        if self.output_dir != '':
+            if os.path.exists(self.output_dir):
+                shutil.rmtree(self.output_dir)
+
+    # logging function
+    # set webserver = True to also send it to the web UI log
+    def log(self, line, webserver = False):
+        #pre = '[GPU ' + str(self.gpu_id) + '] >>> '
+        pre = '[' + self.worker_name + '] >>> '
+        print(pre + line)
+        if webserver:
+            self.control_ref.output_buffer.append(pre + line + '\n')

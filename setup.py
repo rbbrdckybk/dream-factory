@@ -50,7 +50,7 @@ def clone_repos(verbose = False, shell = False):
 
 # installs all dependancies via pip
 def install_pytorch(verbose = False, shell = False):
-    print('\nInstalling Pytorch (this may take a few minutes):')
+    print('\nInstalling Pytorch (this may take several minutes - be patient do not abort!):')
     cmd = 'conda install -y pandas pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia'
     exec(cmd, verbose, shell)
 
@@ -59,24 +59,25 @@ def install_dependencies(verbose = False, shell = False):
     print('\nInstalling all required dependencies:')
     base = 'pip install --no-input '
     packages = [ \
-        'transformers', \
-        'diffusers', \
+        #'transformers', \
+        #'diffusers', \
         'cherrypy', \
-        'ftfy', \
-        'numpy', \
+        #'ftfy', \
+        #'numpy', \
         'pillow', \
-        'omegaconf', \
-        'pytorch-lightning', \
-        'kornia', \
-        'imageio', \
-        'imageio-ffmpeg', \
-        'einops', \
-        'torch-fidelity', \
-        'opencv-python', \
+        #'omegaconf', \
+        #'pytorch-lightning', \
+        #'kornia', \
+        #'imageio', \
+        #'imageio-ffmpeg', \
+        #'einops', \
+        #'torch-fidelity', \
+        #'opencv-python', \
         'datetime', \
-        'basicsr', \
-        'facexlib', \
-        'gfpgan'
+        #'basicsr', \
+        #'facexlib', \
+        #'gfpgan', \
+        'requests'
     ]
     packages.sort()
 
@@ -169,22 +170,23 @@ if __name__ == '__main__':
         if opt.force or not os.path.exists('stable-diffusion'):
             # either no previous installation or the user is forcing re-install
             try:
-                clone_repos(verbose, shell)
+                #clone_repos(verbose, shell)
                 install_pytorch(verbose, shell)
                 install_dependencies(verbose, shell)
-                setup_esrgan(verbose, shell)
+                #setup_esrgan(verbose, shell)
             except FileNotFoundError:
                 print('\nUnable to find executable - try re-running setup with the --shell option, e.g.:')
                 print('   python setup.py --shell --force\n')
                 exit(-1)
 
             create_config()
-            checkpoint_path = 'stable-diffusion\models\ldm\stable-diffusion-v1'
-            if not os.path.exists(checkpoint_path):
-                os.makedirs(checkpoint_path)
+            #checkpoint_path = 'stable-diffusion\models\ldm\stable-diffusion-v1'
+            #if not os.path.exists(checkpoint_path):
+            #    os.makedirs(checkpoint_path)
 
-            print('\n\nAll done - don\'t forget to place your model.ckpt file in this directory! : ')
-            print(checkpoint_path + '\n')
+            #print('\n\nAll done - don\'t forget to place your model.ckpt file in this directory! : ')
+            #print(checkpoint_path + '\n')
+            print('\n\nAll done!')
         else:
             print('\nPrevious installation detected; aborting setup.')
             print('If you really want to run setup again, use the --force switch.')

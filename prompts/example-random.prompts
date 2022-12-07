@@ -5,26 +5,26 @@
 [config]
 
 !MODE = random							# random mode; create random prompts from [prompt] sections below
-!SD_LOW_MEMORY = yes					# low GPU VRAM mode (yes/no)? slower but far less VRAM required
-!SD_LOW_MEM_TURBO = yes				# if you're still getting out-of-memory errors in low VRAM mode, set this to no
 !DELIM = " "							# delimiter to use between prompt sections, default is space
 !WIDTH = 512							# output image width, default is 512
 !HEIGHT = 512							# output image height, default is 512
+!HIGHRES_FIX = no						# enable for images significantly larger than 512x512
 !STEPS = 50							# number of steps, more may improve image
-!SAMPLER = plms						# sampler to use (plms, ddim, lms, euler, euler_a, dpm2, dpm2_a, heun)
+!SAMPLER = Euler						# sampler to use (create a new prompt file to see a reference list of options)
 !MIN_SCALE = 6							# minimum guidance scale, default = 7.5
 !MAX_SCALE = 18						# maximum guidance scale, set min and max to same number for no variance
 !SAMPLES = 3							# number of images to generate per prompt
 !RANDOM_INPUT_IMAGE_DIR =				# specify a directory of images here to randomly use them as inputs
 !MIN_STRENGTH = 0.65					# min strength of starting image influence, (0-1, 1 is lowest influence)
 !MAX_STRENGTH = 0.85					# max strength of start image, set min and max to same number for no variance
-!CKPT_FILE = 							# model to load (if not specified, default = models/ldm/stable-diffusion-v1/model.ckpt)
+!CKPT_FILE = 							# model to load (if not specified, defaults to config.txt)
 
 # optional integrated upscaling
 
 !USE_UPSCALE = no						# use ESRGAN to upscale output images?
 !UPSCALE_AMOUNT = 2.0					# upscaling factor
-!UPSCALE_FACE_ENH = no				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
+!UPSCALE_CODEFORMER_AMOUNT = 0.0		# how visible codeformer enhancement is, 0 = off, 1 = full effect
+!UPSCALE_GFPGAN_AMOUNT = 0.0			# how visible gfpgan enhancement is, 0 = off, 1 = full effect
 !UPSCALE_KEEP_ORG = no				# keep the original non-upscaled image (yes/no)?
 
 # optional negative prompt
@@ -112,6 +112,8 @@ highly detailed
 # when specifying multiple items can be picked from a [prompt] section, duplicates will be avoided
 # prompts will be continuously randomly generated until you stop
 # random is random - no attempt is made to guarantee an even distribution!
+
+
 
 
 

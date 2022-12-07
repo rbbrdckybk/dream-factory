@@ -246,6 +246,14 @@ def build_worker_panel(workers):
             clock_text = ""
             prompt_text = ""
             prompt_options_text = ""
+            if not worker['sdi_instance'].init:
+                prompt_text = "<div style=\"color: yellow; padding-top: 6px;\">" + "waiting to be initialized..."
+            if worker['sdi_instance'].init and not worker['sdi_instance'].ready:
+                prompt_text = "<div style=\"padding-top: 6px;\">" + "currently being initialized on port " + str(worker['sdi_instance'].sd_port) + "..."
+            if worker['sdi_instance'].ready and worker['sdi_instance'].busy:
+                # this should only happen in this case
+                prompt_text = "<div style=\"padding-top: 6px;\">" + "performing initial data exchange queries with SD instance..."
+
         else:
             prompt_text = worker["job_prompt_info"].get('prompt')
             if worker["work_state"] != "":

@@ -5,8 +5,6 @@
 [config]
 
 !MODE = standard						# standard mode; queue all possible prompt combos
-!SD_LOW_MEMORY = yes					# low GPU VRAM mode (yes/no)? slower but far less VRAM required
-!SD_LOW_MEM_TURBO = yes				# if you're still getting out-of-memory errors in low VRAM mode, set this to no
 !REPEAT = yes							# repeat when all work finished (yes/no)?
 !DELIM = " "							# delimiter to use between prompt sections, default is space
 
@@ -15,25 +13,27 @@
 
 !WIDTH = 512							# output image width, default is 512
 !HEIGHT = 512							# output image height, default is 512
-!STEPS = 50							# number of steps, more may improve image but increase generation time
-!SAMPLER = plms						# sampler to use (plms, ddim, lms, euler, euler_a, dpm2, dpm2_a, heun)
+!HIGHRES_FIX = no						# enable for images significantly larger than 512x512
+!STEPS = 20							# number of steps, more may improve image but increase generation time
+!SAMPLER = Euler						# sampler to use (create a new prompt file to see a reference list of options)
 !SCALE = 7.5							# guidance scale, increase for stricter prompt adherence
-!SAMPLES = 2							# number of images to generate per prompt
+!SAMPLES = 1							# number of images to generate per prompt
+!BATCH_SIZE = 1
 !INPUT_IMAGE = 						# can specify an input image here (output image will be same resolution)
 !STRENGTH = 0.75						# strength of input image influence (0-1, with 1 corresponding to least influence)
-!CKPT_FILE = 							# model to load (if not specified, default = models/ldm/stable-diffusion-v1/model.ckpt)
+!CKPT_FILE = 							# model to load (if not specified, defaults to config.txt)
 
-# optional integrated ESRGAN/GFPGAN upscaling
+# optional integrated upscaling
 
 !USE_UPSCALE = no						# use ESRGAN to upscale output images?
 !UPSCALE_AMOUNT = 2.0					# upscaling factor
-!UPSCALE_FACE_ENH = no				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?
+!UPSCALE_CODEFORMER_AMOUNT = 0.0		# how visible codeformer enhancement is, 0 = off, 1 = full effect
+!UPSCALE_GFPGAN_AMOUNT = 0.0			# how visible gfpgan enhancement is, 0 = off, 1 = full effect
 !UPSCALE_KEEP_ORG = no				# keep the original non-upscaled image (yes/no)?
 
 # optional negative prompt
 
 !NEG_PROMPT = 
-
 
 # *****************************************************************************************************
 # prompt section
@@ -103,6 +103,10 @@ muted colors
 # ... and so on, for all 189 possibilities
 # be careful adding too many [prompt] sections with more than 1 item, as the 
 # increase in prompt combinations is exponential!
+
+
+
+
 
 
 

@@ -193,8 +193,6 @@ class PromptManager():
     def reset_config_defaults(self):
         self.config = {
             'mode' : "standard",
-            'sd_low_memory' : self.control.config['sd_low_memory'],
-            'sd_low_mem_turbo' : self.control.config['sd_low_mem_turbo'],
             'seed' : -1,
             'width' : self.control.config['width'],
             'height' : self.control.config['height'],
@@ -211,11 +209,12 @@ class PromptManager():
             'max_strength' : 0.75,
             'delim' : " ",
             'ckpt_file' : "",
-            'sampler' : "plms",
+            'sampler' : "Euler",
             'neg_prompt' : "",
             'use_upscale' : self.control.config['use_upscale'],
             'upscale_amount' : self.control.config['upscale_amount'],
-            'upscale_face_enh' : self.control.config['upscale_face_enh'],
+            'upscale_codeformer_amount' : self.control.config['upscale_codeformer_amount'],
+            'upscale_gfpgan_amount' : self.control.config['upscale_gfpgan_amount'],
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
             'outdir' : self.control.config['output_location']
         }
@@ -249,6 +248,10 @@ class PromptManager():
                     print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'height' : value})
+
+        elif command == 'highres_fix':
+            if value == 'yes' or value == 'no':
+                self.config.update({'highres_fix' : value})
 
         elif command == 'seed':
             if value != '':
@@ -344,14 +347,6 @@ class PromptManager():
                 else:
                     self.config.update({'max_strength' : value})
 
-        elif command == 'sd_low_memory':
-            if value == 'yes' or value == 'no':
-                self.config.update({'sd_low_memory' : value})
-
-        elif command == 'sd_low_mem_turbo':
-            if value == 'yes' or value == 'no':
-                self.config.update({'sd_low_mem_turbo' : value})
-
         elif command == 'use_upscale':
             if value == 'yes' or value == 'no':
                 self.config.update({'use_upscale' : value})
@@ -365,9 +360,23 @@ class PromptManager():
                 else:
                     self.config.update({'upscale_amount' : value})
 
-        elif command == 'upscale_face_enh':
-            if value == 'yes' or value == 'no':
-                self.config.update({'upscale_face_enh' : value})
+        elif command == 'upscale_codeformer_amount':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'UPSCALE_CODEFORMER_AMOUNT' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'upscale_codeformer_amount' : value})
+
+        elif command == 'upscale_gfpgan_amount':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    print("*** WARNING: specified 'UPSCALE_GFPGAN_AMOUNT' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'upscale_gfpgan_amount' : value})
 
         elif command == 'upscale_keep_org':
             if value == 'yes' or value == 'no':
@@ -378,8 +387,7 @@ class PromptManager():
                 self.config.update({'mode' : value})
 
         elif command == 'input_image':
-            if value != '':
-                self.config.update({'input_image' : value})
+            self.config.update({'input_image' : value})
 
         elif command == 'random_input_image_dir':
             if value != '':
@@ -401,10 +409,12 @@ class PromptManager():
                     time.sleep(1.5)
 
         elif command == 'ckpt_file':
-            self.config.update({'ckpt_file' : value})
+            model = self.validate_model(value)
+            self.config.update({'ckpt_file' : model})
 
         elif command == 'sampler':
-            self.config.update({'sampler' : value.lower()})
+            sampler = self.validate_sampler(value)
+            self.config.update({'sampler' : sampler})
 
         elif command == 'neg_prompt':
             self.config.update({'neg_prompt' : value})
@@ -412,6 +422,50 @@ class PromptManager():
         else:
             print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
             time.sleep(1.5)
+
+
+    # passing samplers is case-sensitive; use this to make sure user-supplied
+    # sampler name is ok - otherwise use a default
+    def validate_sampler(self, sampler):
+        validated_sampler = sampler
+        validated = False
+        if self.control.sdi_samplers != None:
+            for s in self.control.sdi_samplers:
+                if sampler.lower() == s.lower():
+                    # case-insensitive match; use the exact casing from the server
+                    validated_sampler = s
+                    validated = True
+                    break
+
+            if not validated:
+                # user-supplied sampler doesn't closely match anything on server list
+                # use default
+                validated_sampler = 'Euler'
+                print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
+
+        return validated_sampler
+
+
+    # passing models must be exactly what SD expects; use this to make sure
+    # user-supplied model is ok - otherwise revert to default
+    def validate_model(self, model):
+        validated_model = ''
+        validated = False
+        if len(model) > 5:
+            if self.control.sdi_models != None:
+                for m in self.control.sdi_models:
+                    if model.lower() in m.lower():
+                        # case-insensitive partial match; use the exact casing from the server
+                        validated_model = m
+                        validated = True
+                        break
+
+                if not validated:
+                    # user-supplied model doesn't closely match anything on server list
+                    # use default
+                    print("*** WARNING: prompt file command CKPT_FILE value (" + model + ") doesn't match any server values; ignoring it! ***")
+
+        return validated_model
 
 
     # update config variables if there were changes in the prompt file [config]
@@ -422,7 +476,8 @@ class PromptManager():
                 ss = re.search('!(.+?)=', line)
                 if ss:
                     command = ss.group(1).lower().strip()
-                    value = line.split("=",1)[1].lower().strip()
+                    #value = line.split("=",1)[1].lower().strip()
+                    value = line.split("=",1)[1].strip()
                     self.handle_directive(command, value)
 
 
@@ -454,7 +509,8 @@ class PromptManager():
                 if ss:
                     # this is a directive, handle it and ignore this combination
                     command = ss.group(1).lower().strip()
-                    value = fragment.split("=",1)[1].lower().strip()
+                    #value = fragment.split("=",1)[1].lower().strip()
+                    value = fragment.split("=",1)[1].strip()
                     self.handle_directive(command, value)
                     is_directive = True
                     break
@@ -586,17 +642,19 @@ def create_command(command, output_dir_ext, gpu_id):
         output_dir_ext = output_dir_ext.split('.', 1)[0]
     output_folder = command.get('outdir') + '/' + str(date.today()) + '-' + str(output_dir_ext)
 
-    py_command = "python scripts_mod/txt2img.py"
-    if command.get('sd_low_memory') == "yes":
-        py_command = "python scripts_mod/optimized_txt2img.py"
+    #py_command = "python scripts_mod/txt2img.py"
+    py_command = "python scripts/txt2img.py"
+    #if command.get('sd_low_memory') == "yes":
+    #    py_command = "python scripts_mod/optimized_txt2img.py"
 
     if command.get('input_image') != "":
-        py_command = "python scripts_mod/img2img.py"
-        if command.get('sd_low_memory') == "yes":
-            py_command = "python scripts_mod/optimized_img2img.py"
+        #py_command = "python scripts_mod/img2img.py"
+        py_command = "python scripts/img2img.py"
+        #if command.get('sd_low_memory') == "yes":
+        #    py_command = "python scripts_mod/optimized_img2img.py"
 
-    if command.get('sd_low_memory') == "yes" and command.get('sd_low_mem_turbo') == "yes":
-        py_command += " --turbo"
+    #if command.get('sd_low_memory') == "yes" and command.get('sd_low_mem_turbo') == "yes":
+    #    py_command += " --turbo"
 
     # if this isn't happening on the default gpu, specify the device
     if "cuda:" in gpu_id and gpu_id != "cuda:0":
@@ -616,7 +674,8 @@ def create_command(command, output_dir_ext, gpu_id):
         py_command += " --neg_prompt \"" + neg_prompt + "\"" \
 
     if command.get('input_image') != "":
-        py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
+        #py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
+        py_command += " --init-img \"" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
     else:
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
 
@@ -624,17 +683,18 @@ def create_command(command, output_dir_ext, gpu_id):
         py_command += " --ckpt \"" + str(command.get('ckpt_file')) + "\""
 
     # with img2img only ddim is supported so don't pass sampler options
-    if command.get('input_image') == "":
-        if command.get('sampler') != '' and command.get('sd_low_memory') == "yes":
-            py_command += " --sampler " + str(command.get('sampler'))
-        elif command.get('sampler') == 'plms' and command.get('sd_low_memory') == "no":
-            py_command += " --plms"
+    py_command += " --sampler " + str(command.get('sampler'))
+    #if command.get('input_image') == "":
+    #    if command.get('sampler') != '' and command.get('sd_low_memory') == "yes":
+    #        py_command += " --sampler " + str(command.get('sampler'))
+    #    elif command.get('sampler') == 'plms' and command.get('sd_low_memory') == "no":
+    #        py_command += " --plms"
 
     # the seed below, and everything before this point will be saved to metadata
     # excluding anything that precedes the actual prompt
     py_command += " --seed " + str(command.get('seed'))
 
-    py_command += " --outdir \"../" + output_folder + "\""
+    py_command += " --outdir \"" + output_folder + "\""
 
     return py_command
 
@@ -771,7 +831,8 @@ def upscale(scale, dir, do_face_enhance, gpu_id):
         command += "2"
 
     # append the input/output dir
-    command += " -i ..//" + dir + " -o ..//" + dir
+    #command += " -i ..//" + dir + " -o ..//" + dir
+    command += " -i " + dir + " -o " + dir
 
     # whether to use GFPGAN for faces
     if do_face_enhance:

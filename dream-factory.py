@@ -16,6 +16,10 @@ import signal
 import webbrowser
 import argparse
 import shutil
+import base64
+import json
+from PIL import Image
+from io import BytesIO
 import scripts.utils as utils
 from os.path import exists
 from datetime import datetime as dt
@@ -25,6 +29,7 @@ from collections import deque
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from torch.cuda import get_device_name, device_count
 from scripts.server import ArtServer
+from scripts.sdi import SDI
 
 # environment setup
 cwd = os.getcwd()
@@ -61,7 +66,7 @@ class Worker(threading.Thread):
 
     def run(self):
         if not int(self.command.get('seed')) > 0:
-            self.command['seed'] = random.randint(1, 2**32) - 1000
+            self.command['seed'] = -1
 
         # if this is a random prompt, settle on random values
         if self.command.get('mode') == 'random':
@@ -73,9 +78,71 @@ class Worker(threading.Thread):
         command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
         self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
 
+        # check if a model change is needed
+        if self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded:
+            self.worker['sdi_instance'].load_model(self.command.get('ckpt_file'))
+            while self.worker['sdi_instance'].options_change_in_progress:
+                # wait for model change to complete
+                time.sleep(0.25)
+
+        # parameters to pass to SD instance
+        payload = {}
+        if self.command.get('input_image') != '':
+            #img2img
+            encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
+            encodedString = str(encoded, encoding='utf-8')
+            img_payload = 'data:image/png;base64,' + encodedString
+
+            payload = {
+              "init_images": [img_payload],
+              "sampler_index": str(self.command.get('sampler')),
+              #"resize_mode": 0,
+              "denoising_strength": self.command.get('strength'),
+              "prompt": str(self.command.get('prompt')),
+              "seed": self.command.get('seed'),
+              "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
+              "n_iter": self.command.get('samples'),            # number of iterations to run
+              "steps": self.command.get('steps'),
+              "cfg_scale": self.command.get('scale'),
+              "width": self.command.get('width'),
+              "height": self.command.get('height'),
+              #"restore_faces": False,
+              #"tiling": False,
+              "negative_prompt": str(self.command.get('neg_prompt'))
+            }
+        else:
+            # txt2img
+            payload = {
+              "enable_hr": self.command.get('highres_fix'),
+              "denoising_strength": self.command.get('strength'),
+              "sampler_index": str(self.command.get('sampler')),
+              "prompt": str(self.command.get('prompt')),
+              "seed": self.command.get('seed'),
+              "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
+              "n_iter": self.command.get('samples'),            # number of iterations to run
+              "steps": self.command.get('steps'),
+              "cfg_scale": self.command.get('scale'),
+              "width": self.command.get('width'),
+              "height": self.command.get('height'),
+              #"restore_faces": False,
+              #"tiling": False,
+              "negative_prompt": str(self.command.get('neg_prompt'))
+            }
+
         start_time = time.time()
         self.worker['job_start_time'] = start_time
         self.worker['job_prompt_info'] = self.command
+
+        output_dir = command.split(" --outdir ",1)[1].strip('\"')
+        #output_dir = output_dir.replace("../","")
+
+        if "cuda:" in self.worker['id']:
+            gpu_id = self.worker['id'].replace('cuda:', '')
+        else:
+            gpu_id = self.worker['id']
+
+        #samples_dir = os.path.join(output_dir, "gpu_" + str(gpu_id))
+        samples_dir = output_dir + '/' + "gpu_" + str(gpu_id)
 
         if control.config.get('debug_test_mode'):
             # simulate SD work
@@ -83,102 +150,123 @@ class Worker(threading.Thread):
             time.sleep(work_time)
         else:
             # invoke SD
-            wd = cwd + os.path.sep + 'stable-diffusion'
-            subprocess.call(shlex.split(command), cwd=(wd))
+            #wd = cwd + os.path.sep + 'stable-diffusion'
+            #subprocess.call(shlex.split(command), cwd=(wd))
+            if self.command.get('input_image') != '':
+                self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+            else:
+                self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+            while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
+                time.sleep(0.25)
 
-        output_dir = command.split(" --outdir ",1)[1].strip('\"')
-        output_dir = output_dir.replace("../","")
-
-        gpu_id = 0
-        if "cuda:" in self.worker['id']:
-            gpu_id = self.worker['id'].replace('cuda:', '')
-        else:
-            gpu_id = self.worker['id']
-
-        samples_dir = output_dir + "/gpu_" + str(gpu_id)
 
         # upscale here if requested
-        if self.command['use_upscale'] == 'yes':
-            self.worker['work_state'] = 'upscaling'
-            gpu_id = self.worker['id'].replace("cuda:", "")
+        if self.worker['sdi_instance'].isRunning:
+            # only if we're not shutting down
+            if self.command['use_upscale'] == 'yes':
+                self.worker['work_state'] = 'upscaling'
+                gpu_id = self.worker['id'].replace("cuda:", "")
 
-            if control.config.get('debug_test_mode'):
-                # simulate upscaling work
-                work_time = round(random.uniform(0.5, 2), 2)
-                time.sleep(work_time)
-
-            else:
-                new_files = os.listdir(samples_dir)
-                if len(new_files) > 0:
-                    if not control.config.get('debug_test_mode'):
-                        # invoke ESRGAN on entire directory
-                        utils.upscale(self.command['upscale_amount'], samples_dir, self.command['upscale_face_enh'], gpu_id)
-
-                    # remove originals if upscaled version present
+                if control.config.get('debug_test_mode'):
+                    # simulate upscaling work
+                    work_time = round(random.uniform(0.5, 2), 2)
+                    time.sleep(work_time)
+                else:
                     new_files = os.listdir(samples_dir)
-                    for f in new_files:
-                        if (".png" in f):
-                            basef = f.replace(".png", "")
-                            if basef[-2:] == "_u":
-                                # this is an upscaled image, delete the original
-                                # or save it in /original if desired
-                                if exists(samples_dir + "/" + basef[:-2] + ".png"):
-                                    if self.command['upscale_keep_org'] == 'yes':
-                                        # move the original to /original
-                                        orig_dir = output_dir + "/original"
-                                        Path(orig_dir).mkdir(parents=True, exist_ok=True)
-                                        os.replace(samples_dir + "/" + basef[:-2] + ".png", \
-                                            orig_dir + "/" + basef[:-2] + ".png")
-                                    else:
-                                        os.remove(samples_dir + "/" + basef[:-2] + ".png")
+                    if len(new_files) > 0:
+                        # invoke ESRGAN on entire directory
+                        #utils.upscale(self.command['upscale_amount'], samples_dir, self.command['upscale_face_enh'], gpu_id)
+
+                        # upscale each image
+                        self.worker['sdi_instance'].log('upscaling generated images...')
+                        for file in new_files:
+                            encoded = base64.b64encode(open(os.path.join(samples_dir, file), "rb").read())
+                            encodedString = str(encoded, encoding='utf-8')
+                            img_payload = 'data:image/png;base64,' + encodedString
+                            payload = {
+                                #"resize_mode": 0,
+                                #"show_extras_results": true,
+                                "gfpgan_visibility": self.command['upscale_gfpgan_amount'],
+                                "codeformer_visibility": self.command['upscale_codeformer_amount'],
+                                #"codeformer_weight": 0,
+                                "upscaling_resize": self.command['upscale_amount'],
+                                #"upscaling_resize_w": 512,
+                                #"upscaling_resize_h": 512,
+                                #"upscaling_crop": true,
+                                "upscaler_1": "ESRGAN_4x",
+                                #"upscaler_2": "None",
+                                #"extras_upscaler_2_visibility": 0,
+                                #"upscale_first": false,
+                                "image": img_payload
+                            }
+                            self.worker['sdi_instance'].do_upscale(payload, samples_dir)
+                            while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
+                                time.sleep(0.25)
+
+
+                        # remove originals if upscaled version present
+                        new_files = os.listdir(samples_dir)
+                        for f in new_files:
+                            if (".png" in f):
+                                basef = f.replace(".png", "")
+                                if basef[-2:] == "_u":
+                                    # this is an upscaled image, delete the original
+                                    # or save it in /original if desired
+                                    if exists(samples_dir + "/" + basef[:-2] + ".png"):
+                                        if self.command['upscale_keep_org'] == 'yes':
+                                            # move the original to /original
+                                            orig_dir = output_dir + "/original"
+                                            Path(orig_dir).mkdir(parents=True, exist_ok=True)
+                                            os.replace(samples_dir + "/" + basef[:-2] + ".png", \
+                                                orig_dir + "/" + basef[:-2] + ".png")
+                                        else:
+                                            os.remove(samples_dir + "/" + basef[:-2] + ".png")
 
 
         # find the new image(s) that SD created: re-name, process, and move them
-        self.worker['work_state'] = "+exif data"
-        if control.config.get('debug_test_mode'):
-            # simulate metadata work
-            work_time = round(random.uniform(1, 2), 2)
-            time.sleep(work_time)
-        else:
-            new_files = os.listdir(samples_dir)
-            nf_count = 0
-            for f in new_files:
-                if (".png" in f):
-                    # save just the essential prompt params to metadata
-                    meta_prompt = command.split(" --prompt ",1)[1]
-                    meta_prompt = meta_prompt.split(" --outdir ",1)[0]
+        if self.worker['sdi_instance'].isRunning:
+            # only if we're not shutting down
+            self.worker['work_state'] = "+exif data"
+            if control.config.get('debug_test_mode'):
+                # simulate metadata work
+                work_time = round(random.uniform(1, 2), 2)
+                time.sleep(work_time)
+            else:
+                new_files = os.listdir(samples_dir)
+                nf_count = 0
+                for f in new_files:
+                    if (".png" in f):
+                        # save just the essential prompt params to metadata
+                        meta_prompt = command.split(" --prompt ",1)[1]
+                        meta_prompt = meta_prompt.split(" --outdir ",1)[0]
 
-                    if 'seed_' in f:
-                        # grab seed from filename
-                        actual_seed = f.replace('seed_', '')
-                        actual_seed = actual_seed.split('_',1)[0]
+                        if 'seed_' in f:
+                            # grab seed from filename
+                            actual_seed = f.replace('seed_', '')
+                            actual_seed = actual_seed.split('_',1)[0]
 
-                        # replace the seed in the command with the actual seed used
-                        pleft = meta_prompt.split(" --seed ",1)[0]
-                        pright = meta_prompt.split(" --seed ",1)[1].strip()
-                        meta_prompt = pleft + " --seed " + actual_seed
+                            # replace the seed in the command with the actual seed used
+                            pleft = meta_prompt.split(" --seed ",1)[0]
+                            pright = meta_prompt.split(" --seed ",1)[1].strip()
+                            meta_prompt = pleft + " --seed " + actual_seed
 
-                    upscale_text = ""
-                    if self.command['use_upscale'] == 'yes':
-                        upscale_text = " (upscaled "
-                        upscale_text += str(self.command['upscale_amount']) + "x via "
-                        if self.command['upscale_face_enh'] == 'yes':
-                            upscale_text += "ESRGAN/GFPGAN)"
-                        else:
-                            upscale_text += "ESRGAN)"
+                        upscale_text = ""
+                        if self.command['use_upscale'] == 'yes':
+                            upscale_text = " (upscaled "
+                            upscale_text += str(self.command['upscale_amount']) + "x via ESRGAN"
 
-                    pngImage = PngImageFile(samples_dir + "/" + f)
-                    im = pngImage.convert('RGB')
-                    exif = im.getexif()
-                    exif[0x9286] = meta_prompt
-                    exif[0x9c9c] = meta_prompt.encode('utf16')
-                    exif[0x9c9d] = ('AI art' + upscale_text).encode('utf16')
-                    exif[0x0131] = "https://github.com/rbbrdckybk/dream-factory"
-                    newfilename = dt.now().strftime('%Y%m-%d%H-%M%S-') + str(nf_count)
-                    nf_count += 1
-                    im.save(output_dir + "/" + newfilename + ".jpg", exif=exif, quality=88)
-                    if exists(samples_dir + "/" + f):
-                        os.remove(samples_dir + "/" + f)
+                        pngImage = PngImageFile(samples_dir + "/" + f)
+                        im = pngImage.convert('RGB')
+                        exif = im.getexif()
+                        exif[0x9286] = meta_prompt
+                        exif[0x9c9c] = meta_prompt.encode('utf16')
+                        exif[0x9c9d] = ('AI art' + upscale_text).encode('utf16')
+                        exif[0x0131] = "https://github.com/rbbrdckybk/dream-factory"
+                        newfilename = dt.now().strftime('%Y%m-%d%H-%M%S-') + str(nf_count)
+                        nf_count += 1
+                        im.save(output_dir + "/" + newfilename + ".jpg", exif=exif, quality=88)
+                        if exists(samples_dir + "/" + f):
+                            os.remove(samples_dir + "/" + f)
 
 
         self.worker['work_state'] = ""
@@ -205,7 +293,6 @@ class Worker(threading.Thread):
 
 
 # controller manages worker thread(s) and user input
-# TODO change worker_idle to array of bools to manage multiple threads/gpus
 class Controller:
     def __init__(self, config_file):
         self.config_file = config_file
@@ -228,9 +315,21 @@ class Controller:
         self.server = None
         self.server_startup_time = time.time()
         self.shutting_down = False
+        self.sdi_ports_assigned = 0
+        self.sdi_sampler_request_made = False
+        self.sdi_samplers = None
+        self.sdi_model_request_made = False
+        self.sdi_models = None
 
         # read config options
         self.init_config()
+
+        if self.config['sd_location'] == '':
+            print('\nERROR: path to stable diffusion not specified in config file! ')
+            print('Make sure to set \'SD_LOCATION =\' in your config.txt with the path to your Automatic1111 SD repo installation!')
+            print('\nExiting...')
+            exit(0)
+
 
         # start the webserver if enabled
         if self.config.get('webserver_use'):
@@ -282,19 +381,23 @@ class Controller:
             'webserver_console_log' : False,
             'debug_test_mode' : False,
 
-            'sd_low_memory' : "yes",
-            'sd_low_mem_turbo' : "yes",
+            'highres_fix' : "no",
             'width' : 512,
             'height' : 512,
-            'sampler' : 'plms',
+            'sampler' : 'Euler',
             'steps' : 50,
             'scale' : 7.5,
             'samples' : 1,
             'use_upscale' : "no",
             'upscale_amount' : 2.0,
-            'upscale_face_enh' : "no",
             'upscale_keep_org' : "no",
-            'ckpt_file' : ""
+            'upscale_codeformer_amount' : 0.0,
+            'upscale_gfpgan_amount' : 0.0,
+            'ckpt_file' : "",       # TODO make this load specified model at SDI init
+
+            'sd_location' : "",
+            'sd_port' : 7861,
+            'gpu_init_stagger' : 1
         }
 
         file = utils.TextFile(self.config_file)
@@ -320,6 +423,26 @@ class Controller:
                     elif command == 'use_gpu_devices':
                         if value != '':
                             self.config.update({'use_gpu_devices' : value})
+
+                    elif command == 'sd_location':
+                        if value != '':
+                            self.config.update({'sd_location' : value})
+
+                    elif command == 'sd_port':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'SD_PORT' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'sd_port' : int(value)})
+
+                    elif command == 'gpu_init_stagger':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'GPU_INIT_STAGGER' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'gpu_init_stagger' : int(value)})
 
                     elif command == 'webserver_use':
                         if value == 'yes' or value == 'no':
@@ -403,13 +526,9 @@ class Controller:
                             else:
                                 self.config.update({'debug_test_mode' : False})
 
-                    elif command == 'pf_sd_low_memory':
+                    elif command == 'pf_highres_fix':
                         if value == 'yes' or value == 'no':
-                            self.config.update({'sd_low_memory' : value})
-
-                    elif command == 'pf_sd_low_mem_turbo':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'sd_low_mem_turbo' : value})
+                            self.config.update({'highres_fix' : value})
 
                     elif command == 'pf_width':
                         try:
@@ -428,9 +547,8 @@ class Controller:
                             self.config.update({'height' : int(value)})
 
                     elif command == 'pf_sampler':
-                        samplers = ["ddim", "plms", "heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"]
-                        value = value.lower()
-                        if value in samplers:
+                        # TODO validate this
+                        if value != '':
                             self.config.update({'sampler' : value})
 
                     elif command == 'pf_steps':
@@ -469,9 +587,21 @@ class Controller:
                         else:
                             self.config.update({'upscale_amount' : float(value)})
 
-                    elif command == 'pf_upscale_face_enh':
-                        if value == 'yes' or value == 'no':
-                            self.config.update({'upscale_face_enh' : value})
+                    elif command == 'pf_upscale_codeformer_amount':
+                        try:
+                            float(value)
+                        except:
+                            print("*** WARNING: specified 'PF_UPSCALE_CODEFORMER_AMOUNT' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'upscale_codeformer_amount' : float(value)})
+
+                    elif command == 'pf_upscale_gfpgan_amount':
+                        try:
+                            float(value)
+                        except:
+                            print("*** WARNING: specified 'PF_UPSCALE_GFPGAN_AMOUNT' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'upscale_gfpgan_amount' : float(value)})
 
                     elif command == 'pf_upscale_keep_org':
                         if value == 'yes' or value == 'no':
@@ -541,6 +671,10 @@ class Controller:
                 # stop the webserver if it's running
                 self.server.stop()
 
+            # clean up gpu sd instance threads
+            for worker in self.workers:
+                worker['sdi_instance'].cleanup()
+
             # clean up temp directory
             temp = os.path.join('server', 'temp')
             if os.path.exists(temp):
@@ -551,14 +685,33 @@ class Controller:
 
 
     # adds a GPU to the list of workers
-    def add_gpu_worker(self, id, name):
-        self.workers.append({'id': id, \
-            'name': name, \
-            'work_state': "", \
-            'jobs_done': 0, \
-            'job_prompt_info': '', \
-            'job_start_time': float(0), \
-            'idle': True})
+    def add_gpu_worker(self, id, name, dummy = False):
+        sdi_gpu_id = id.replace('cuda:', '')
+        sdi_port = self.config['sd_port'] + self.sdi_ports_assigned
+        self.sdi_ports_assigned += 1
+
+        if not dummy:
+            self.workers.append({'id': id, \
+                'name': name, \
+                'work_state': "", \
+                'jobs_done': 0, \
+                'job_prompt_info': '', \
+                'job_start_time': float(0), \
+                'idle': True, \
+                'sdi_instance': SDI(sdi_gpu_id, sdi_port, self.config['sd_location'], self, id) \
+            })
+        else:
+            # TODO fix dummy workers to work in sim mode
+            self.workers.append({'id': id, \
+                'name': name, \
+                'work_state': "", \
+                'jobs_done': 0, \
+                'job_prompt_info': '', \
+                'job_start_time': float(0), \
+                'idle': True, \
+                'sdi_instance': None \
+            })
+
         self.print("initialized worker '" + id + "': " + name)
 
 
@@ -639,7 +792,7 @@ class Controller:
 
             # if we're able to see the device, add it to the worker queue
             if name != '':
-                self.add_gpu_worker(worker, name)
+                self.add_gpu_worker(worker, name, True)
 
 
     # returns the first idle gpu worker if there is one, otherwise returns None
@@ -648,9 +801,11 @@ class Controller:
             if ':' in worker["id"]:
                 if worker["id"].split(':' ,1)[0] == 'cuda':
                     # this is a gpu worker
-                    if worker["idle"]:
-                        # worker is idle, return it
-                        return worker
+                    if worker['sdi_instance'].ready and not worker['sdi_instance'].busy:
+                        # the worker has been initialized and isn't performing tasks
+                        if worker["idle"]:
+                            # worker is idle, return it
+                            return worker
 
         # none of the gpu workers are idle
         return None
@@ -707,7 +862,6 @@ class Controller:
         else:
             self.work_queue = self.prompt_manager.build_combinations()
             self.orig_work_queue_size = len(self.work_queue)
-
 
         self.print("queued " + str(len(self.work_queue)) + " work items.")
 
@@ -829,19 +983,17 @@ class Controller:
         buffer += "# you may override anything in this section if you wish, otherwise skip down to the [prompts] section(s) below\n"
         buffer += "[config]\n\n"
         buffer += "!MODE = " + type + mode_desc + "\n"
-        buffer += "!SD_LOW_MEMORY = " + self.config['sd_low_memory'] + "					# low GPU VRAM mode (yes/no)? slower but far less VRAM required\n"
-        buffer += "!SD_LOW_MEM_TURBO = " + self.config['sd_low_mem_turbo'] + "				# if you're still getting out-of-memory errors in low VRAM mode, set this to no\n"
         buffer += "!DELIM = \" \"							# delimiter to use between prompt sections, default is space\n"
         if type == "standard":
             buffer += "!REPEAT = yes							# repeat when all work finished (yes/no)?\n\n"
             buffer += "# in standard mode, you may put also embed any of the following config directives into \n"
             buffer += "# the [prompt] sections below; they'll affect all prompts that follow the directive\n\n"
 
-
         buffer += "!WIDTH = " + str(self.config['width']) + "							# output image width, default is 512\n"
         buffer += "!HEIGHT = " + str(self.config['height']) + "							# output image height, default is 512\n"
+        buffer += "!HIGHRES_FIX = " + self.config['highres_fix'] + "				        # fix for images significantly larger than 512x512, if enabled uses !STRENGTH setting\n"
         buffer += "!STEPS = " + str(self.config['steps']) + "							# number of steps, more may improve image but increase generation time\n"
-        buffer += "!SAMPLER = " + str(self.config['sampler']) + "                       # sampler to use (plms, ddim, lms, euler, euler_a, dpm2, dpm2_a, heun)\n"
+        buffer += "!SAMPLER = " + str(self.config['sampler']) + "                      # sampler to use, see reference list below\n"
         buffer += "!SAMPLES = " + str(self.config['samples']) + "					      	# number of images to generate per prompt\n"
 
         if type == "standard":
@@ -855,16 +1007,30 @@ class Controller:
             buffer += "!MIN_STRENGTH = 0.75					# min strength of starting image influence, (0-1, 1 is lowest influence)\n"
             buffer += "!MAX_STRENGTH = 0.75					# max strength of start image, set min and max to same number for no variance\n"
 
-        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"			            	# model to load (if not specified, default = models/ldm/stable-diffusion-v1/model.ckpt)\n"
+        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"             # model to load, see reference below (if not specified, defaults to config.txt)\n"
 
         buffer += "\n# optional integrated upscaling\n\n"
         buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# use ESRGAN to upscale output images?\n"
         buffer += "!UPSCALE_AMOUNT = " + str(self.config['upscale_amount']) + "					# upscaling factor\n"
-        buffer += "!UPSCALE_FACE_ENH = " + self.config['upscale_face_enh'] + "				# use GFPGAN to attempt to enhance faces (may make some images blurry/worse)?\n"
+        buffer += "!UPSCALE_CODEFORMER_AMOUNT = " + str(self.config['upscale_codeformer_amount']) + "		# how visible codeformer enhancement is, 0-1\n"
+        buffer += "!UPSCALE_GFPGAN_AMOUNT = " + str(self.config['upscale_gfpgan_amount']) + "			# how visible gfpgan enhancement is, 0-1\n"
         buffer += "!UPSCALE_KEEP_ORG = " + self.config['upscale_keep_org'] + "				# keep the original non-upscaled image (yes/no)?\n"
 
         buffer += "\n# optional negative prompt\n\n"
         buffer += "!NEG_PROMPT =\n"
+
+        if self.sdi_samplers != None:
+            stxt = '\n# valid options for !SAMPLER :\n'
+            for s in self.sdi_samplers:
+                stxt += '# ' + s + '\n'
+            buffer += stxt
+
+        if self.sdi_models != None:
+            mtxt = '\n# valid options for !CKPT_FILE :\n'
+            mtxt += '# you can abbreviate these by using partial matches, e.g. \'sd-v1-5-vae\' would match \'sd-v1-5-vae.ckpt [a2a802b2]\'\n'
+            for m in self.sdi_models:
+                mtxt += '# ' + m + '\n'
+            buffer += mtxt
 
         buffer += "\n# *****************************************************************************************************\n"
         buffer += "# prompt section\n"
@@ -940,6 +1106,17 @@ class Controller:
         self.output_buffer.append(out_txt + '\n')
 
 
+    # returns how many worker inits are happening right now,
+    # used for staggered GPU startup
+    def current_active_inits(self):
+        active_inits = 0
+        for worker in self.workers:
+            if worker['sdi_instance'].init and not worker['sdi_instance'].ready:
+                # we started init but it isn't ready, therefore in process of init
+                active_inits += 1
+        return active_inits
+
+
 # entry point
 if __name__ == '__main__':
 
@@ -976,11 +1153,35 @@ if __name__ == '__main__':
 
     # main work loop
     while not control.work_done:
+        # check for un-initialized workers
+        for worker in control.workers:
+            if not worker['sdi_instance'].init:
+                if control.current_active_inits() < control.config['gpu_init_stagger']:
+                    # init this worker as long as we're not already at the init limit
+                    worker['sdi_instance'].initialize()
+
         # check for idle workers
         worker = control.get_idle_gpu_worker()
+        skip = False
+
         if worker != None:
+
+            if not control.sdi_sampler_request_made:
+                # get available samplers from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_samplers()
+                control.sdi_sampler_request_made = True
+                skip = True
+
+            if not control.sdi_model_request_made:
+                # get available models from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_models()
+                control.sdi_model_request_made = True
+                skip = True
+
             # worker is idle, start some work
-            if not control.is_paused:
+            if not control.is_paused and not skip:
                 if len(control.work_queue) > 0:
                     # get a new prompt or setting directive from the queue
                     new_work = control.work_queue.popleft()
