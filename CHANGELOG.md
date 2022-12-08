@@ -24,7 +24,7 @@ This is a major release; pretty much every piece of code has been touched and th
 
 ### Fixed
 - Corrected many bugs with multi-GPU operation. Just spent the past 36 hours watching Dream Factory churn out images non-stop on a 3-GPU machine powered by a circa-2013 single-core AMD Sempron with 6GB of physical RAM (16GB with a swap file to get through model loads). Mostly confident that everything is working properly now, but report issues if you find them!
-- Corrected a bug where setting **!INPUT_IMAGE =** in prompt files didn't properly clear an exisitng input image.
+- Corrected a bug where setting **!INPUT_IMAGE =** in prompt files didn't properly clear an existing input image.
 
 ### Changed
 - Models are now kept in memory on each GPU, instead of being discared after each prompt call. This results in much faster performance.
