@@ -85,7 +85,7 @@ python setup.py
  * On Windows, it should look something like **SD_LOCATION = C:\Applications\stable-diffusion-webui** when finished, depending on where you placed Automatic1111's webui.
  * On Linux, you'll want something like **SD_LOCATION = /home/[username]/stable-diffusion-webui**, where [username] is the linux user it was installed under, assuming you kept the default install location.
 
-You're done! Ensure that your [Automatic1111 installation works properly](https://github.com/AUTOMATIC1111/stable-diffusion-webui#installation-and-running) before attempting to test Dream Factory. Additionally, ensure that everything in the "settings" tab of Auto1111 is configured to your liking, as Dream Factory will automatically inherit these.
+You're done! Ensure that your [Automatic1111 installation works properly](https://github.com/AUTOMATIC1111/stable-diffusion-webui#installation-and-running) before attempting to test Dream Factory. Additionally, ensure that everything in the "settings" tab of Auto1111 is configured to your liking, as Dream Factory will automatically inherit any options you set there.
 
 Once you've verified that you can generate individual images with your Auto1111 installation, you can perform a test to make sure Dream Factory is working by running this (again, from the main **dream-factory** folder):
 ```
