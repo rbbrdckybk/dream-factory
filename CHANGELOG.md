@@ -27,8 +27,8 @@ This is a major release; pretty much every piece of code has been touched and th
 - Corrected a bug where setting **!INPUT_IMAGE =** in prompt files didn't properly clear an existing input image.
 
 ### Changed
-- Models are now kept in memory on each GPU, instead of being discared after each prompt call. This results in much faster performance.
-- Dream Factory's setup script (setup.py) now installs far fewer python dependancies. Again, recommend a fresh install if you want to keep things lean.
+- Models are now kept in memory on each GPU, instead of being discarded after each prompt call. This results in much faster performance.
+- Dream Factory's setup script (setup.py) now installs far fewer python dependancies. Again, recommend a fresh install if you want to keep things clean.
 
 ### Removed
 - !SD_LOW_MEMORY and !SD_LOW_MEM_TURBO have been removed as prompt file directives as they would no longer serve a purpose. Dream Factory will use whatever VRAM flags you've set for your Auto1111 installation, if any (most users won't need to worry about them).
