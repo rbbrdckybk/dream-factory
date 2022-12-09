@@ -7,6 +7,15 @@ When updating to a new release, use the built-in setup.py script with the --upda
 python setup.py --update
 ```
 
+## [2022.12.08]
+
+### Added
+- Added a model & sampler reference to the web GUI prompt editor. It shows a list of all samplers & models that are available to use; each item is clickable and will copy the appropriate prompt file directive to the clipboard. You can open it via the new button in the editor, or with ctrl+h.
+- Added some additional error-handling around the txt2img and img2img workflows that should prevent Dream Factory from going into a state where it needs to be restarted due to GPU errors, or Auto1111 returning error responses.
+
+### Fixed
+- Fixed an issue where '.png' could be appended to the seed value saved to image EXIF.
+
 ## [2022.12.06]
 This is a major release; pretty much every piece of code has been touched and the entire backend has been re-done. **I highly recommend a fresh install!**
 
