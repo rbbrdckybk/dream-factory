@@ -7,6 +7,19 @@ When updating to a new release, use the built-in setup.py script with the --upda
 python setup.py --update
 ```
 
+## [2022.12.09]
+
+If you're upgrading, you'll need to install **psutil**. You can either re-run setup.py, or just run this:
+```
+pip install psutil
+```
+### Added
+- Added the ability to have Dream Factory automatically add the appropriate trigger word(s) to your prompts when using custom models. See **model-triggers.txt** in your dream-factory folder for more info (you'll need to run Dream Factory at least once after upgrading to generate this file). There is a new config.txt option that controls this behavior (see config-defaults.txt if you're upgrading).
+- You can now put a 'catch-all' negative prompt in your config.txt file that will automatically be added to all new prompt files that you generate.
+
+### Fixed
+- Fixed an issue where the SD backend (auto1111) would leave child processes running in the background after Dream Factory was shut down.
+
 ## [2022.12.08]
 
 ### Added
