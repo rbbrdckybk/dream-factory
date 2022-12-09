@@ -725,3 +725,40 @@ ul {
   font-family: "Lucida Console", "Courier New", monospace;
   color: #AAAACC;
 }
+
+
+/* editor help modal */
+.modal-help-row {
+  width: 1050px;
+  padding-top: 25px;
+  display: flex;
+  justify-content: center;
+  margin: auto;
+}
+
+.modal-help-column-left {
+  flex: 35%;
+  font-size: 15px;
+}
+
+.modal-help-column-right {
+  flex: 65%;
+  font-size: 15px;
+}
+
+ul.no-bullets {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+li.no-bullets {
+  color: #bbc;
+  margin-top: 2px;
+}
+
+li.no-bullets:hover {
+  cursor: pointer;
+  transform: scale(1.02);
+  color: hotpink;
+}

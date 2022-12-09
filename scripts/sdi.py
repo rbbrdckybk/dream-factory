@@ -82,6 +82,18 @@ class GetModelsRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching hypernetworks
+class GetHyperNetworksRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/hypernetworks')
+        self.callback(response)
+
+
 # for changing server options, including model swaps
 class SetOptionsRequest(threading.Thread):
     def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
@@ -243,8 +255,8 @@ class SDI:
                             line += ' --api'
                         if not '--nowebui' in line:
                             line += ' --nowebui'
-                        if not '--lowram' in line:
-                            line += ' --lowram'
+                        #if not '--lowram' in line:
+                        #    line += ' --lowram'
                         # TODO check for these and replace if they already exist
                         line += ' --port ' + str(self.sd_port)
                         line += ' --device-id ' + str(self.gpu_id)
@@ -283,8 +295,8 @@ class SDI:
                             line += ' --api'
                         if not '--nowebui' in line:
                             line += ' --nowebui'
-                        if not '--lowram' in line:
-                            line += ' --lowram'
+                        #if not '--lowram' in line:
+                        #    line += ' --lowram'
                         line += ' --port ' + str(self.sd_port)
                         line += ' --device-id ' + str(self.gpu_id)
 
@@ -371,6 +383,36 @@ class SDI:
         self.busy = False
 
 
+    # gets valid hypernetworks from server
+    def get_server_hypernetworks(self):
+        self.busy = True
+        #self.log('Fetching models from server...')
+        self.log('querying SD for available hypernetworks...', True)
+        query = GetHyperNetworksRequest(self, self.hypernetwork_response)
+        query.start()
+
+
+    # handle server hypernetwork response
+    def hypernetwork_response(self, response):
+        r = response.json()
+
+        networks = []
+        network_str = ''
+        for i in r:
+            networks.append(i['name'])
+            network_str += '   - ' + i['name'] + '\n'
+
+        #self.log('Server indicates the following hypernetworks are available for use:\n' + network_str)
+        self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
+        self.control_ref.sdi_hypernetworks = networks
+
+        # reload prompt file if we have one to validate it against models
+        if self.control_ref.prompt_file != '':
+            self.control_ref.new_prompt_file(self.control_ref.prompt_file)
+
+        self.busy = False
+
+
     # gets valid models from server
     def get_server_models(self):
         self.busy = True
@@ -378,6 +420,7 @@ class SDI:
         self.log('querying SD for available models...', True)
         query = GetModelsRequest(self, self.model_response)
         query.start()
+
 
     # handle server model response
     def model_response(self, response):
@@ -405,10 +448,11 @@ class SDI:
         # only handle if we're not already shutting down
         if self.isRunning:
             #self.log('Handling response from server...')
-            r = response.json()
-            os.makedirs(self.output_dir, exist_ok=True)
-
+            success = True
             try:
+                r = response.json()
+                os.makedirs(self.output_dir, exist_ok=True)
+
                 i = r['image']
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
 
@@ -431,10 +475,19 @@ class SDI:
                 image.save(os.path.join(self.output_dir, filename), pnginfo=pnginfo)
                 #self.log(filename + ' created!')
             except KeyError:
-                self.log('*** Error response received! *** : ' + str(r['detail']), True)
+                self.log('*** Error response received during upscaling! *** : ' + str(r['detail']), True)
+                time.sleep(1)
+                success = False
+            except:
+                #e = sys.exc_info()[0]
+                #self.log('*** Error response received! *** : ' + str(e), True)
+                self.log('*** Error response received during upscaling! *** : if this persists, try lowering your settings', True)
+                time.sleep(1)
+                success = False
 
             self.request_count += 1
             self.busy = False
+            return success
 
 
     # handle SD responses, callback for server requests
@@ -442,10 +495,11 @@ class SDI:
         # only handle if we're not already shutting down
         if self.isRunning:
             #self.log('Handling response from server...')
-            r = response.json()
-            os.makedirs(self.output_dir, exist_ok=True)
-
+            success = True
             try:
+                r = response.json()
+                os.makedirs(self.output_dir, exist_ok=True)
+
                 for i in r['images']:
                     image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
 
@@ -469,9 +523,18 @@ class SDI:
                     #self.log(filename + ' created!')
             except KeyError:
                 self.log('*** Error response received! *** : ' + str(r['detail']), True)
+                time.sleep(1)
+                success = False
+            except:
+                #e = sys.exc_info()[0]
+                #self.log('*** Error response received! *** : ' + str(e), True)
+                self.log('*** Error response received! *** : if this persists, try lowering your settings', True)
+                time.sleep(1)
+                success = False
 
             self.request_count += 1
             self.busy = False
+            return success
 
 
     # tells the SD instnace to load the indicated model

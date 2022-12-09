@@ -41,7 +41,7 @@ env_paths = [ \
 
 for path in env_paths:
     python_path += os.pathsep + path
-os.environ['PYTHONPATH'] = python_path
+#os.environ['PYTHONPATH'] = python_path
 
 
 # Prevent threads from printing at same time.
@@ -144,6 +144,7 @@ class Worker(threading.Thread):
         #samples_dir = os.path.join(output_dir, "gpu_" + str(gpu_id))
         samples_dir = output_dir + '/' + "gpu_" + str(gpu_id)
 
+        success = True
         if control.config.get('debug_test_mode'):
             # simulate SD work
             work_time = round(random.uniform(2, 6), 2)
@@ -153,15 +154,15 @@ class Worker(threading.Thread):
             #wd = cwd + os.path.sep + 'stable-diffusion'
             #subprocess.call(shlex.split(command), cwd=(wd))
             if self.command.get('input_image') != '':
-                self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+                success = self.worker['sdi_instance'].do_img2img(payload, samples_dir)
             else:
-                self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+                success = self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                 time.sleep(0.25)
 
 
         # upscale here if requested
-        if self.worker['sdi_instance'].isRunning:
+        if success and self.worker['sdi_instance'].isRunning:
             # only if we're not shutting down
             if self.command['use_upscale'] == 'yes':
                 self.worker['work_state'] = 'upscaling'
@@ -224,7 +225,7 @@ class Worker(threading.Thread):
 
 
         # find the new image(s) that SD created: re-name, process, and move them
-        if self.worker['sdi_instance'].isRunning:
+        if success and self.worker['sdi_instance'].isRunning:
             # only if we're not shutting down
             self.worker['work_state'] = "+exif data"
             if control.config.get('debug_test_mode'):
@@ -242,8 +243,10 @@ class Worker(threading.Thread):
 
                         if 'seed_' in f:
                             # grab seed from filename
+                            # filename = seed_3542762265.png or seed_3542762265_u.png
                             actual_seed = f.replace('seed_', '')
-                            actual_seed = actual_seed.split('_',1)[0]
+                            actual_seed = actual_seed.replace('_u', '')
+                            actual_seed = actual_seed.split('.', 1)[0]
 
                             # replace the seed in the command with the actual seed used
                             pleft = meta_prompt.split(" --seed ",1)[0]
@@ -270,15 +273,19 @@ class Worker(threading.Thread):
 
 
         self.worker['work_state'] = ""
-        # remove the /samples dir if empty
+        # remove the samples dir to flush any unfinished work
         try:
-            os.rmdir(samples_dir)
+            # os.rmdir only removes empty directories
+            #os.rmdir(samples_dir)
+            shutil.rmtree(samples_dir)
         except OSError as e:
             pass
 
-
         exec_time = time.time() - start_time
-        self.print("finished job #" + str(self.worker['jobs_done']+1) + " in " + str(round(exec_time, 2)) + " seconds.")
+        if success:
+            self.print("finished job #" + str(self.worker['jobs_done']+1) + " in " + str(round(exec_time, 2)) + " seconds.")
+        else:
+            self.print("job #" + str(self.worker['jobs_done']+1) + " failed after " + str(round(exec_time, 2)) + " seconds.")
         self.callback(self.worker)
 
 
@@ -320,6 +327,8 @@ class Controller:
         self.sdi_samplers = None
         self.sdi_model_request_made = False
         self.sdi_models = None
+        self.sdi_hypernetwork_request_made = False
+        self.sdi_hypernetworks = None
 
         # read config options
         self.init_config()
@@ -989,28 +998,28 @@ class Controller:
             buffer += "# in standard mode, you may put also embed any of the following config directives into \n"
             buffer += "# the [prompt] sections below; they'll affect all prompts that follow the directive\n\n"
 
-        buffer += "!WIDTH = " + str(self.config['width']) + "							# output image width, default is 512\n"
-        buffer += "!HEIGHT = " + str(self.config['height']) + "							# output image height, default is 512\n"
+        buffer += "!WIDTH = " + str(self.config['width']) + "							# output image width\n"
+        buffer += "!HEIGHT = " + str(self.config['height']) + "							# output image height\n"
         buffer += "!HIGHRES_FIX = " + self.config['highres_fix'] + "				        # fix for images significantly larger than 512x512, if enabled uses !STRENGTH setting\n"
         buffer += "!STEPS = " + str(self.config['steps']) + "							# number of steps, more may improve image but increase generation time\n"
-        buffer += "!SAMPLER = " + str(self.config['sampler']) + "                      # sampler to use, see reference list below\n"
+        buffer += "!SAMPLER = " + str(self.config['sampler']) + "                      # sampler to use; press ctrl+h for reference\n"
         buffer += "!SAMPLES = " + str(self.config['samples']) + "					      	# number of images to generate per prompt\n"
 
         if type == "standard":
             buffer += "!SCALE = " + str(self.config['scale']) + "							# guidance scale, increase for stricter prompt adherence\n"
-            buffer += "!INPUT_IMAGE = 						# can specify an input image here (output image will be same resolution)\n"
+            buffer += "!INPUT_IMAGE = 						# specify an input image to use as a generation starting point\n"
             buffer += "!STRENGTH = 0.75						# strength of input image influence (0-1, with 1 corresponding to least influence)\n"
         else:
             buffer += "!MIN_SCALE = " + str(self.config['scale']) + "						# minimum guidance scale, default = 7.5\n"
             buffer += "!MAX_SCALE = " + str(self.config['scale']) + "						# maximum guidance scale, set min and max to same number for no variance\n"
-            buffer += "!RANDOM_INPUT_IMAGE_DIR =				# specify a directory of images here to randomly use them as inputs\n"
+            buffer += "!RANDOM_INPUT_IMAGE_DIR =				# specify directory of images here; a random image will be picked per prompt \n"
             buffer += "!MIN_STRENGTH = 0.75					# min strength of starting image influence, (0-1, 1 is lowest influence)\n"
             buffer += "!MAX_STRENGTH = 0.75					# max strength of start image, set min and max to same number for no variance\n"
 
-        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"             # model to load, see reference below (if not specified, defaults to config.txt)\n"
+        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"             # model to load, press ctrl+h for reference\n"
 
         buffer += "\n# optional integrated upscaling\n\n"
-        buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# use ESRGAN to upscale output images?\n"
+        buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# upscale output images?\n"
         buffer += "!UPSCALE_AMOUNT = " + str(self.config['upscale_amount']) + "					# upscaling factor\n"
         buffer += "!UPSCALE_CODEFORMER_AMOUNT = " + str(self.config['upscale_codeformer_amount']) + "		# how visible codeformer enhancement is, 0-1\n"
         buffer += "!UPSCALE_GFPGAN_AMOUNT = " + str(self.config['upscale_gfpgan_amount']) + "			# how visible gfpgan enhancement is, 0-1\n"
@@ -1018,19 +1027,6 @@ class Controller:
 
         buffer += "\n# optional negative prompt\n\n"
         buffer += "!NEG_PROMPT =\n"
-
-        if self.sdi_samplers != None:
-            stxt = '\n# valid options for !SAMPLER :\n'
-            for s in self.sdi_samplers:
-                stxt += '# ' + s + '\n'
-            buffer += stxt
-
-        if self.sdi_models != None:
-            mtxt = '\n# valid options for !CKPT_FILE :\n'
-            mtxt += '# you can abbreviate these by using partial matches, e.g. \'sd-v1-5-vae\' would match \'sd-v1-5-vae.ckpt [a2a802b2]\'\n'
-            for m in self.sdi_models:
-                mtxt += '# ' + m + '\n'
-            buffer += mtxt
 
         buffer += "\n# *****************************************************************************************************\n"
         buffer += "# prompt section\n"
@@ -1178,6 +1174,13 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_models()
                 control.sdi_model_request_made = True
+                skip = True
+
+            if not control.sdi_hypernetwork_request_made:
+                # get available hypernetworks from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_hypernetworks()
+                control.sdi_hypernetwork_request_made = True
                 skip = True
 
             # worker is idle, start some work

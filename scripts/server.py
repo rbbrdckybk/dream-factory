@@ -91,7 +91,10 @@ def build_gallery(control):
             if params['ckpt_file'] != '':
                 if param_string != '':
                     param_string += '  |  '
-                param_string += 'model: ' + str(params['ckpt_file'])
+                # remove the hash from the string
+                model = str(params['ckpt_file'])
+                model = model.split('[', 1)[0].strip()
+                param_string += 'model: ' + model
 
             if params['sampler'] != '':
                 if param_string != '':
@@ -226,6 +229,48 @@ def build_prompt_dropdown(control):
     buffer += "\t</div>\n"
     buffer += "\t<span class=\"tooltiptext\">All .prompt files in your&#xa;prompt folder appear here.</span>\n"
     buffer += "</div>\n"
+    return buffer
+
+
+def build_sampler_reference(control):
+    buffer = ""
+    if control.sdi_samplers == None:
+        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available samplers here."
+    else:
+        buffer += "<div style=\"font-weight: bold; font-size: 22px; margin-bottom: 8px;\">Samplers:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        for s in control.sdi_samplers:
+            cpy = '!SAMPLER = ' + s.replace("\\", "\\\\")
+            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + s + "</li>\n"
+        buffer += "</ul>\n"
+    return buffer
+
+
+def build_model_reference(control):
+    buffer = ""
+    if control.sdi_models == None:
+        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available models here."
+    else:
+        buffer += "<div style=\"font-weight: bold; font-size: 22px; margin-bottom: 8px;\">Models:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        for m in control.sdi_models:
+            m = m.split('[', 1)[0].strip()
+            cpy = '!CKPT_FILE = ' + m.replace("\\", "\\\\")
+            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "</li>\n"
+        buffer += "</ul>\n"
+    return buffer
+
+
+def build_hypernetwork_reference(control):
+    buffer = ""
+    if control.sdi_hypernetworks == None:
+        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available hypernetworks here."
+    else:
+        buffer += "<div style=\"font-weight: bold; font-size: 22px; margin-bottom: 8px;\">Hypernetworks:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        for h in control.sdi_hypernetworks:
+            buffer += "<li class=\"no-bullets\">" + h + "</li>\n"
+        buffer += "</ul>\n"
     return buffer
 
 
@@ -381,6 +426,18 @@ class ArtGeneratorWebService(object):
 
     def PROMPT_DROPDOWN_LOAD(self):
         buffer_text = build_prompt_dropdown(self.control)
+        return buffer_text
+
+    def SAMPLER_REFERENCE_LOAD(self):
+        buffer_text = build_sampler_reference(self.control)
+        return buffer_text
+
+    def MODEL_REFERENCE_LOAD(self):
+        buffer_text = build_model_reference(self.control)
+        return buffer_text
+
+    def HYPERNETWORK_REFERENCE_LOAD(self):
+        buffer_text = build_hypernetwork_reference(self.control)
         return buffer_text
 
     def PROMPT_FILE_DELETE(self):

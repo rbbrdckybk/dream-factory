@@ -14,6 +14,9 @@
 
     $(document).ready(function() {
         const prompt_dropdown = document.getElementById('prompt-select');
+        const samplers = document.getElementById('sampler_help_msg');
+        const models = document.getElementById('model_help_msg');
+        const hypernetworks = document.getElementById('hypernetwork_help_msg');
 
         function loadDropdown() {
             $.ajax({
@@ -24,8 +27,42 @@
               prompt_dropdown.innerHTML = string;
             });
         }
-        // just load this once per page load
+
+        function loadSamplers() {
+            $.ajax({
+              type: "SAMPLER_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              samplers.innerHTML = string;
+            });
+        }
+
+        function loadModels() {
+            $.ajax({
+              type: "MODEL_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              models.innerHTML = string;
+            });
+        }
+
+        function loadHyperNetworks() {
+            $.ajax({
+              type: "HYPERNETWORK_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              hypernetworks.innerHTML = string;
+            });
+        }
+
+        // just load these once per page load
         loadDropdown();
+        loadSamplers();
+        loadModels();
+        //loadHyperNetworks();
     });
 
     </script>
@@ -35,6 +72,20 @@
 
     <div id="myModal" class="modal">
       <div class="modal-editor-content" id="editor_msg">
+      </div>
+    </div>
+
+    <div id="helpModal" class="modal">
+      <div class="modal-help-row">
+        <div class="modal-help-column-left" id="sampler_help_msg">
+        </div>
+        <div class="modal-help-column-right" id="model_help_msg">
+        </div>
+        <!--div class="modal-editor-content" id="hypernetwork_help_msg">
+        </div-->
+      </div>
+      <div class="modal-help-row" style="margin-top: 15px; margin-bottom: 50px; font-size: 14px; color: #888;">
+        (press escape to close this reference)
       </div>
     </div>
 
@@ -69,7 +120,7 @@
                         <input type="text" id="prompt-file-name" class="prompt-file-name" maxlength="100" value="test"></input>
                         <span class="tooltiptext">The prompt filename.&#xa;Click to change.</span>
                     </div>
-                    <button id="rename-button" class="button-editor" style="display: none;">Rename</button>
+                    <button id="rename-button" class="button-editor" style="display: none; margin-bottom: 3px;">Rename</button>
                 </div>
                 <div id="toolbar" class="toolbar">
                     <div class="tooltip">
@@ -79,6 +130,10 @@
                     <div class="tooltip">
                         <button id="delete-button" class="button-editor">Delete</button>
                         <span class="tooltiptext">Permanently delete this file.</span>
+                    </div>
+                    <div class="tooltip">
+                        <img id="help-reference" src="/static/img/help-sm.png" class="edit-img" style="margin-top: -1px; margin-bottom: -1px; margin-right: 15px;" onclick="show_help_modal()">
+                        <span class="tooltiptext">Reference samplers/models&#xa;(hotkey: ctrl+h)</span>
                     </div>
                 </div>
             </div>
@@ -91,6 +146,10 @@
     <div data-include="footer"></div>
     <script type="text/javascript">
 
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt);
+    }
+
     function msg_modal(msg) {
       var modal = document.getElementById("myModal");
       var modalDiv = document.getElementById("editor_msg");
@@ -101,6 +160,16 @@
 
     function hide_msg_modal() {
         var modal = document.getElementById("myModal");
+        modal.style.display = "none";
+    }
+
+    function show_help_modal() {
+      var modal = document.getElementById("helpModal");
+      modal.style.display = "block";
+    }
+
+    function hide_help_modal() {
+        var modal = document.getElementById("helpModal");
         modal.style.display = "none";
     }
 
@@ -205,6 +274,16 @@
         e.preventDefault();
         save();
       }
+
+      if (e.ctrlKey && e.key === 'h') {
+        e.preventDefault();
+        show_help_modal("test");
+      }
+
+      if(event.key === "Escape"){
+         hide_help_modal();
+      }
+
     });
 
     function save() {
