@@ -209,8 +209,11 @@ class PromptManager():
             'max_strength' : 0.75,
             'delim' : " ",
             'ckpt_file' : "",
-            'sampler' : "Euler",
+            'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
+            'neg_prompt' : self.control.config['neg_prompt'],
+            'highres_fix' : self.control.config['highres_fix'],
+            'auto_insert_model_trigger' : self.control.config['auto_insert_model_trigger'],
             'use_upscale' : self.control.config['use_upscale'],
             'upscale_amount' : self.control.config['upscale_amount'],
             'upscale_codeformer_amount' : self.control.config['upscale_codeformer_amount'],
@@ -248,6 +251,10 @@ class PromptManager():
                     print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'height' : value})
+
+        elif command == 'auto_insert_model_trigger':
+            if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off':
+                self.config.update({'auto_insert_model_trigger' : value})
 
         elif command == 'highres_fix':
             if value == 'yes' or value == 'no':

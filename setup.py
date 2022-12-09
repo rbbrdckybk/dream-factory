@@ -74,6 +74,7 @@ def install_dependencies(verbose = False, shell = False):
         #'torch-fidelity', \
         #'opencv-python', \
         'datetime', \
+        'psutil', \
         #'basicsr', \
         #'facexlib', \
         #'gfpgan', \

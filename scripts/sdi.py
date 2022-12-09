@@ -14,6 +14,8 @@ import signal
 import threading
 import platform
 import shutil
+import atexit
+import psutil
 from os.path import exists
 from PIL import Image, PngImagePlugin
 from pprint import pprint
@@ -186,9 +188,7 @@ class SDI:
         self.sd_port = port
         self.url = 'http://localhost:' + str(self.sd_port)
         self.isRunning = True
-        #self.logfilename = 'gpu-' + str(self.gpu_id) + '-log.txt'
         self.logfilename = os.path.join('logs', 'gpu-' + str(self.gpu_id) + '-log.txt')
-        #self.errorfilename = 'gpu-' + str(self.gpu_id) + '-errors.txt'
         self.errorfilename = os.path.join('logs', 'gpu-' + str(self.gpu_id) + '-errors.txt')
         self.logfile = open(self.logfilename, 'w')
         self.errorfile = open(self.errorfilename, 'w')
@@ -229,6 +229,8 @@ class SDI:
             bufsize=0, \
             universal_newlines=True
         )
+
+        atexit.register(self.kill_sd_process)
 
         # start monitoring the SD subprocess's piped output
         self.monitor = Monitor(self, self.monitor_done_callback)
@@ -324,8 +326,8 @@ class SDI:
 
     # callback for log monitor when finished
     def monitor_done_callback(self, *args):
-        self.log("monitor for GPU " + str(self.gpu_id) + " shutting down!", True)
-        #self.logfile.close()
+        #self.log("monitor for GPU " + str(self.gpu_id) + " shutting down!", True)
+        pass
 
 
     # make a txt2img request
@@ -435,7 +437,9 @@ class SDI:
 
         #self.log('Server indicates the following models are available for use:\n' + model_str)
         self.log('received model query response: SD indicates ' + str(len(models)) + ' models available for use...', True)
-        self.control_ref.sdi_models = models
+
+        # send models to controller
+        self.control_ref.update_models(models)
 
         # reload prompt file if we have one to validate it against models
         if self.control_ref.prompt_file != '':
@@ -574,14 +578,31 @@ class SDI:
         self.logfile.close()
         self.errorfile.close()
 
-        if self.process != None:
-            self.process.terminate()
-            self.process.kill()
+        # the atexit call should get this, but will check here also
+        self.kill_sd_process()
 
         # cleanup gpu working dir
         if self.output_dir != '':
             if os.path.exists(self.output_dir):
                 shutil.rmtree(self.output_dir)
+
+
+    # kill the SD child process
+    def kill_sd_process(self):
+        if self.process != None:
+            #print("attempting to kill SD")
+            try:
+                #self.process.terminate()
+                #self.process.kill()
+                # this should kill all child processes spawned this SD instance
+                parent = psutil.Process(self.process.pid)
+                for child in parent.children(recursive=True):
+                    child.kill()
+                parent.kill()
+            except:
+                # we're exiting anyway
+                pass
+
 
     # logging function
     # set webserver = True to also send it to the web UI log

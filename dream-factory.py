@@ -75,15 +75,34 @@ class Worker(threading.Thread):
             if self.command.get('random_input_image_dir') != "":
                 self.command['input_image'] = utils.InputManager(self.command.get('random_input_image_dir')).pick_random()
 
-        command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
-        self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
-
         # check if a model change is needed
         if self.command.get('ckpt_file') != '' and (self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
             self.worker['sdi_instance'].load_model(self.command.get('ckpt_file'))
             while self.worker['sdi_instance'].options_change_in_progress:
                 # wait for model change to complete
                 time.sleep(0.25)
+
+        # check for auto-insertion of model trigger word
+        if (control.model_trigger_words != None) and (self.command.get('auto_insert_model_trigger') != 'off'):
+            # check to see if the model we're using has an associated trigger
+            if control.model_trigger_words.get(self.command.get('ckpt_file')) != None:
+                trigger = control.model_trigger_words.get(self.command.get('ckpt_file'))
+                p = self.command.get('prompt')
+                if trigger not in p:
+                    # trigger word isn't in prompt, we need to add it
+                    if self.command.get('auto_insert_model_trigger') == 'first_comma':
+                        if ',' in p:
+                            self.command['prompt'] = p.split(',', 1)[0] + ', ' + trigger + ',' + p.split(',', 1)[1]
+                        else:
+                            self.command['prompt'] = p + ', ' + trigger
+                    elif self.command.get('auto_insert_model_trigger') == 'end':
+                        self.command['prompt'] = p + ', ' + trigger
+                    elif self.command.get('auto_insert_model_trigger') == 'start':
+                        self.command['prompt'] = trigger + ', ' + p
+
+
+        command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
+        self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
 
         # parameters to pass to SD instance
         payload = {}
@@ -324,6 +343,8 @@ class Controller:
         self.sdi_ports_assigned = 0
         self.sdi_sampler_request_made = False
         self.sdi_samplers = None
+        self.models_filename = 'model-triggers.txt'
+        self.model_trigger_words = None
         self.sdi_model_request_made = False
         self.sdi_models = None
         self.sdi_hypernetwork_request_made = False
@@ -367,6 +388,7 @@ class Controller:
         else:
             return None
 
+
     # reads the config file
     def init_config(self):
         # set defaults
@@ -389,6 +411,8 @@ class Controller:
             'webserver_console_log' : False,
             'debug_test_mode' : False,
 
+            'auto_insert_model_trigger' : 'start',
+            'neg_prompt' : '',
             'highres_fix' : "no",
             'width' : 512,
             'height' : 512,
@@ -533,6 +557,13 @@ class Controller:
                                 self.config.update({'debug_test_mode' : True})
                             else:
                                 self.config.update({'debug_test_mode' : False})
+
+                    elif command == 'pf_auto_insert_model_trigger':
+                        if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off':
+                            self.config.update({'auto_insert_model_trigger' : value})
+
+                    elif command == 'pf_neg_prompt':
+                        self.config.update({'neg_prompt' : value})
 
                     elif command == 'pf_highres_fix':
                         if value == 'yes' or value == 'no':
@@ -874,7 +905,6 @@ class Controller:
         self.print("queued " + str(len(self.work_queue)) + " work items.")
 
 
-
     # loads a new prompt file
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
@@ -1015,7 +1045,7 @@ class Controller:
             buffer += "!MIN_STRENGTH = 0.75					# min strength of starting image influence, (0-1, 1 is lowest influence)\n"
             buffer += "!MAX_STRENGTH = 0.75					# max strength of start image, set min and max to same number for no variance\n"
 
-        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"             # model to load, press ctrl+h for reference\n"
+        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"                          # model to load, press ctrl+h for reference\n"
 
         buffer += "\n# optional integrated upscaling\n\n"
         buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# upscale output images?\n"
@@ -1025,7 +1055,7 @@ class Controller:
         buffer += "!UPSCALE_KEEP_ORG = " + self.config['upscale_keep_org'] + "				# keep the original non-upscaled image (yes/no)?\n"
 
         buffer += "\n# optional negative prompt\n\n"
-        buffer += "!NEG_PROMPT =\n"
+        buffer += "!NEG_PROMPT = " + self.config['neg_prompt'] + '\n'
 
         buffer += "\n# *****************************************************************************************************\n"
         buffer += "# prompt section\n"
@@ -1078,6 +1108,57 @@ class Controller:
             response = "image not found"
 
         return response
+
+
+    # sets the list of SD models available
+    # also creates/updates the model/trigger file
+    def update_models(self, models):
+        self.sdi_models = models
+        if exists(self.models_filename):
+            # already exists, check the models we already have in the file
+            with open(self.models_filename, 'r') as f:
+                lines = f.readlines()
+
+            # scan to see if any on the server are missing from the file
+            missing = []
+            for m in models:
+                found = False
+                for line in lines:
+                    if m in line:
+                        found = True
+                        break
+                if not found:
+                    missing.append(m)
+
+            # append missing models to file
+            with open(self.models_filename, 'a') as f:
+                for new_m in missing:
+                    f.write(new_m + ', \n')
+
+        else:
+            # creating for the first time
+            with open(self.models_filename, 'w') as f:
+                f.write('# Dream Factory model-trigger.txt file\n')
+                f.write('# This contains a list of all SD models available for use in Dream Factory.\n')
+                f.write('# Append the trigger word/phrase after the comma following each model to\n')
+                f.write('# allow Dream Factory to automatically add it to your prompts when using the model!\n\n')
+                for m in models:
+                    f.write(m + ', \n')
+
+        # build trigger words dict
+        self.model_trigger_words = {}
+        with open(self.models_filename, 'r') as f:
+            lines = f.readlines()
+
+        for line in lines:
+            if not line.startswith('#') and line.strip() != '' and line.strip() != '\n':
+                model = line.split(',', 1)[0].strip()
+                trigger = line.split(',', 1)[1].strip()
+                if trigger != '':
+                    self.model_trigger_words[model] = trigger
+
+        #for key, value in self.model_trigger_words.items():
+        #    print(f"{key}: {value}")
 
 
     # for debugging; prints a report of current worker status

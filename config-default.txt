@@ -84,3 +84,12 @@ PF_UPSCALE_AMOUNT = 2.0				# upscaling factor (2 means you'll get an image with 
 PF_UPSCALE_CODEFORMER_AMOUNT = 0.0	# visibility of codeformer face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_GFPGAN_AMOUNT = 0.0		# visibility of gfpgan face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?
+PF_NEG_PROMPT = 					# if you have a 'catch all' negative prompt you typically use, enter it here
+
+# automatically insert the trigger word when using custom models?
+# off = disable this
+# start = at the start of the prompt (the default)
+# end = at the end of the prompt
+# first_comma = after the first comma (or end if prompt contains no commas)
+# you must edit the model-triggers.txt file (auto-generated after first run) for these to work
+PF_AUTO_INSERT_MODEL_TRIGGER = start
