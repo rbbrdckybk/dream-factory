@@ -14,7 +14,7 @@ python setup.py --update
 - Added some additional error-handling around the txt2img and img2img workflows that should prevent Dream Factory from going into a state where it needs to be restarted due to GPU errors, or Auto1111 returning error responses.
 
 ### Fixed
-- Fixed an issue where '.png' could be appended to the seed value saved to image EXIF.
+- Fixed an issue where '.png' could be incorrectly appended to the seed value saved to image EXIF.
 
 ## [2022.12.06]
 This is a major release; pretty much every piece of code has been touched and the entire backend has been re-done. **I highly recommend a fresh install!**
