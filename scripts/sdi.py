@@ -203,6 +203,7 @@ class SDI:
         self.options_change_in_progress = False
         self.model_loaded = ''
         self.model_loading_now = ''
+        self.last_job_success = True
 
         if self.platform == 'linux':
             self.command = 'webui-user.sh'
@@ -448,7 +449,6 @@ class SDI:
         # only handle if we're not already shutting down
         if self.isRunning:
             #self.log('Handling response from server...')
-            success = True
             try:
                 r = response.json()
                 os.makedirs(self.output_dir, exist_ok=True)
@@ -477,17 +477,14 @@ class SDI:
             except KeyError:
                 self.log('*** Error response received during upscaling! *** : ' + str(r['detail']), True)
                 time.sleep(1)
-                success = False
             except:
                 #e = sys.exc_info()[0]
                 #self.log('*** Error response received! *** : ' + str(e), True)
                 self.log('*** Error response received during upscaling! *** : if this persists, try lowering your settings', True)
                 time.sleep(1)
-                success = False
 
             self.request_count += 1
             self.busy = False
-            return success
 
 
     # handle SD responses, callback for server requests
@@ -495,7 +492,7 @@ class SDI:
         # only handle if we're not already shutting down
         if self.isRunning:
             #self.log('Handling response from server...')
-            success = True
+            self.last_job_success = True
             try:
                 r = response.json()
                 os.makedirs(self.output_dir, exist_ok=True)
@@ -524,17 +521,16 @@ class SDI:
             except KeyError:
                 self.log('*** Error response received! *** : ' + str(r['detail']), True)
                 time.sleep(1)
-                success = False
+                self.last_job_success = False
             except:
                 #e = sys.exc_info()[0]
                 #self.log('*** Error response received! *** : ' + str(e), True)
                 self.log('*** Error response received! *** : if this persists, try lowering your settings', True)
                 time.sleep(1)
-                success = False
+                self.last_job_success = False
 
             self.request_count += 1
             self.busy = False
-            return success
 
 
     # tells the SD instnace to load the indicated model

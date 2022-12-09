@@ -79,7 +79,7 @@ class Worker(threading.Thread):
         self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
 
         # check if a model change is needed
-        if self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded:
+        if self.command.get('ckpt_file') != '' and (self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
             self.worker['sdi_instance'].load_model(self.command.get('ckpt_file'))
             while self.worker['sdi_instance'].options_change_in_progress:
                 # wait for model change to complete
@@ -144,7 +144,7 @@ class Worker(threading.Thread):
         #samples_dir = os.path.join(output_dir, "gpu_" + str(gpu_id))
         samples_dir = output_dir + '/' + "gpu_" + str(gpu_id)
 
-        success = True
+        #self.worker['sdi_instance'].last_job_success = True
         if control.config.get('debug_test_mode'):
             # simulate SD work
             work_time = round(random.uniform(2, 6), 2)
@@ -154,15 +154,14 @@ class Worker(threading.Thread):
             #wd = cwd + os.path.sep + 'stable-diffusion'
             #subprocess.call(shlex.split(command), cwd=(wd))
             if self.command.get('input_image') != '':
-                success = self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+                self.worker['sdi_instance'].do_img2img(payload, samples_dir)
             else:
-                success = self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+                self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                 time.sleep(0.25)
 
-
         # upscale here if requested
-        if success and self.worker['sdi_instance'].isRunning:
+        if self.worker['sdi_instance'].last_job_success and self.worker['sdi_instance'].isRunning:
             # only if we're not shutting down
             if self.command['use_upscale'] == 'yes':
                 self.worker['work_state'] = 'upscaling'
@@ -225,7 +224,7 @@ class Worker(threading.Thread):
 
 
         # find the new image(s) that SD created: re-name, process, and move them
-        if success and self.worker['sdi_instance'].isRunning:
+        if self.worker['sdi_instance'].last_job_success and self.worker['sdi_instance'].isRunning:
             # only if we're not shutting down
             self.worker['work_state'] = "+exif data"
             if control.config.get('debug_test_mode'):
@@ -282,7 +281,7 @@ class Worker(threading.Thread):
             pass
 
         exec_time = time.time() - start_time
-        if success:
+        if self.worker['sdi_instance'].last_job_success:
             self.print("finished job #" + str(self.worker['jobs_done']+1) + " in " + str(round(exec_time, 2)) + " seconds.")
         else:
             self.print("job #" + str(self.worker['jobs_done']+1) + " failed after " + str(round(exec_time, 2)) + " seconds.")
