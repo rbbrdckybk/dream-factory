@@ -148,6 +148,7 @@
 
     function copyText(txt) {
       navigator.clipboard.writeText(txt);
+      hide_help_modal();
     }
 
     function msg_modal(msg) {
@@ -467,7 +468,7 @@
                   if (char == '\n') {
                       if (count > loc) {
                           // user is on this line
-                          console.log(line);
+                          //console.log(line);
                           var line_start = count - line.length;
                           do_line_styling(line, line_start, last_char);
                           break;

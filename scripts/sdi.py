@@ -377,6 +377,7 @@ class SDI:
 
         #self.log('Server indicates the following samplers are available for use:\n' + sampler_str)
         self.log('received sampler query response: SD indicates ' + str(len(samplers)) + ' samplers available for use...', True)
+        samplers.sort()
         self.control_ref.sdi_samplers = samplers
 
         # reload prompt file if we have one to validate it against samplers
@@ -439,6 +440,7 @@ class SDI:
         self.log('received model query response: SD indicates ' + str(len(models)) + ' models available for use...', True)
 
         # send models to controller
+        models.sort()
         self.control_ref.update_models(models)
 
         # reload prompt file if we have one to validate it against models
