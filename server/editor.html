@@ -147,7 +147,15 @@
     <script type="text/javascript">
 
     function copyText(txt) {
-      navigator.clipboard.writeText(txt);
+      // janky copy to clipboard that doesn't require https
+      var tempInput = document.createElement("input");
+      tempInput.style = "position: absolute; left: -1000px; top: -1000px";
+      tempInput.value = txt;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+
       hide_help_modal();
     }
 

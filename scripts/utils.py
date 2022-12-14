@@ -116,8 +116,9 @@ class PromptManager():
 
                 # if we already found the header we want and we see another header,
                 if found_header and len(line) > 0 and line.startswith('['):
-                    # save PromptSection
-                    which_list.append(ps)
+                    # save PromptSection if not empty
+                    if len(ps.tokens) > 0:
+                        which_list.append(ps)
 
                     # start a new PS
                     tokens = list()
