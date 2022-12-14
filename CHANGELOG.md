@@ -10,7 +10,7 @@ python setup.py --update
 
 ### Fixed
 - Fixed an that would cause no work to be queued if the active prompt file had an empty [prompts] section under certain conditions.
-- Fixed an issue that would cause copying a sampler or model to the clipboard to fail from the prompt editor reference screen non non-https connections.
+- Fixed an issue that would cause copying a sampler or model to the clipboard to fail from the prompt editor reference screen on non-https connections.
 
 ### Changed
 - Sorted the reference samplers & models lists in the prompt editor to appear in alphabetical order.
