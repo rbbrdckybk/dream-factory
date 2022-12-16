@@ -429,13 +429,13 @@ class Controller:
     # dict key is filename, value is list of lines in file
     def read_wildcards(self):
         self.wildcards = {}
-        if self.config['wildcard_location'] != '':
+        if self.config['wildcard_location'] != '' and os.path.exists(self.config['wildcard_location']):
             for x in os.listdir(self.config['wildcard_location']):
                 if x.endswith('.txt'):
                     key = x.replace('.txt', '').strip()
                     #print(key) + ' :'
                     # read the contents of the wildcard file
-                    with open(os.path.join(self.config['wildcard_location'], x)) as f:
+                    with open(os.path.join(self.config['wildcard_location'], x), encoding = 'utf-8') as f:
                         lines = f.readlines()
                     # store the contents into a list
                     vals = []
@@ -474,7 +474,7 @@ class Controller:
         # set defaults
         self.config = {
             'prompts_location' : 'prompts',
-            'wildcard_location' : 'prompts\wildcards',
+            'wildcard_location' : 'prompts/wildcards',
             'output_location' : 'output',
             'use_gpu_devices' : 'auto',
             'webserver_use' : True,
@@ -531,8 +531,8 @@ class Controller:
 
                     elif command == 'wildcard_location':
                         if value != '':
-                            value = value.replace('/', os.path.sep)
-                            value = value.replace('\\', os.path.sep)
+                            #value = value.replace('/', os.path.sep)
+                            #value = value.replace('\\', os.path.sep)
                             self.config.update({'wildcard_location' : value})
 
                     elif command == 'output_location':
