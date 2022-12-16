@@ -6,6 +6,23 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2022.12.15]
+
+### Added
+- Added support for wildcards in prompt files. See prompts/wildcards/colors.txt for an example.
+- Added references to your available embeddings to the prompt editor's built-in help (if you have any).
+
+### Fixed
+- Fixed handling of 'PF_CKPT_FILE =' assignments in config.txt. Default model files set in config.txt will now be validated, and setting '!CKPT_FILE =' (e.g. setting the model to nothing) in prompt files will now properly default back to the validated config.txt setting.
+- If you have '--autolaunch' set in your Auto1111 startup script, it will be ignored when starting Dream Factory (so it won't open a browser to the Auto1111 API).
+
+### Changed
+- Sorted the prompt file dropdown lists in both the prompt editor and control panel to appear in alphabetical order.
+- Made significant improvements to the prompt editor's built-in help reference. Each help area now has its own button in the reference popup, and there is a bit of additional help context in each area regarding how to use models/wildcards/embeddings.
+
+### Changed
+- Sorted the reference samplers & models lists in the prompt editor to appear in alphabetical order.
+
 ## [2022.12.13]
 
 ### Fixed
