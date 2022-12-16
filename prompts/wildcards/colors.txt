@@ -1,0 +1,17 @@
+# Dream Factory example wildcard file
+#
+# You can refer to this wildcard by putting __colors__ in your prompt files (two underscores, followed 
+# by the filename without the .txt extension, followed by two more underscores). One of the below entries 
+# will be picked at random and inserted into your prompt in its place.
+# 
+# For example, if your prompt is: "children playing with a __colors__ ball", Dream Factory will replace
+# "__colors__" with one of the six colors below when the prompt is processed!
+#
+# Any .txt files you place here will be available in Dream Factory for use!
+
+red
+orange
+yellow
+green
+blue
+purple

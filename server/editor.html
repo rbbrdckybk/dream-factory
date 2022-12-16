@@ -17,6 +17,8 @@
         const samplers = document.getElementById('sampler_help_msg');
         const models = document.getElementById('model_help_msg');
         const hypernetworks = document.getElementById('hypernetwork_help_msg');
+        const wildcards = document.getElementById('wildcard_help_msg');
+        const embeddings = document.getElementById('embedding_help_msg');
 
         function loadDropdown() {
             $.ajax({
@@ -58,11 +60,38 @@
             });
         }
 
+        function loadWildcards() {
+            $.ajax({
+              type: "WILDCARD_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              wildcards.innerHTML = string;
+            });
+        }
+
+        function loadEmbeddings() {
+            $.ajax({
+              type: "EMBEDDING_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              if (string == "none") {
+                  var ebtn = document.getElementById('help-embeddings');
+                  ebtn.style.display = "none";
+              } else {
+                  embeddings.innerHTML = string;
+              }
+            });
+        }
+
         // just load these once per page load
         loadDropdown();
         loadSamplers();
         loadModels();
         //loadHyperNetworks();
+        loadWildcards();
+        loadEmbeddings();
     });
 
     </script>
@@ -76,12 +105,37 @@
     </div>
 
     <div id="helpModal" class="modal">
+      <div class="modal-help-buttons">
+          <div class="tooltip">
+              <button id="help-samplers" class="button-editor" onclick="help_content('sampler_help_msg')">Samplers</button>
+              <span class="tooltiptext">See sampers reference</span>
+          </div>
+          <div class="tooltip">
+              <button id="help-models" class="button-editor" onclick="help_content('model_help_msg')">Models</button>
+              <span class="tooltiptext">See models reference</span>
+          </div>
+          <div class="tooltip">
+              <button id="help-wildcards" class="button-editor" onclick="help_content('wildcard_help_msg')">Wildcards</button>
+              <span class="tooltiptext">See wildcards reference</span>
+          </div>
+          <div class="tooltip">
+              <button id="help-embeddings" class="button-editor" onclick="help_content('embedding_help_msg')">Embeddings</button>
+              <span class="tooltiptext">See embeddings reference</span>
+          </div>
+      </div>
       <div class="modal-help-row">
-        <div class="modal-help-column-left" id="sampler_help_msg">
+        <div class="modal-help-content" id="modal-help-content">
+            Click one of the buttons above to reference its associated help.
         </div>
-        <div class="modal-help-column-right" id="model_help_msg">
+        <div class="modal-help-hidden" id="sampler_help_msg">
         </div>
-        <!--div class="modal-editor-content" id="hypernetwork_help_msg">
+        <div class="modal-help-hidden" id="model_help_msg">
+        </div>
+        <div class="modal-help-hidden" id="wildcard_help_msg">
+        </div>
+        <div class="modal-help-hidden" id="embedding_help_msg">
+        </div>
+        <!--div class="modal-help-hidden" id="hypernetwork_help_msg">
         </div-->
       </div>
       <div class="modal-help-row" style="margin-top: 15px; margin-bottom: 50px; font-size: 14px; color: #888;">
@@ -157,6 +211,13 @@
       document.body.removeChild(tempInput);
 
       hide_help_modal();
+    }
+
+    function help_content(which) {
+        var source = document.getElementById(which);
+        var dest = document.getElementById("modal-help-content");
+
+        dest.innerHTML = source.innerHTML;
     }
 
     function msg_modal(msg) {

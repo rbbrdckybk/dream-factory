@@ -253,6 +253,7 @@ class SDI:
                 for line in lines:
                     if line.startswith('set COMMANDLINE_ARGS='):
                         # modify Windows .bat file
+                        line = line.replace('--autolaunch', '')
                         line = line.replace('\n', '')
                         if not '--api' in line:
                             line += ' --api'
@@ -289,6 +290,7 @@ class SDI:
 
                         line = line.replace('#export COMMANDLINE_ARGS=', 'export COMMANDLINE_ARGS=')
                         line = line.replace('\n', '')
+                        line = line.replace('--autolaunch', '')
                         addQuote = False
                         if line.endswith('"'):
                             line = line[:-1]

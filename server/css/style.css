@@ -587,7 +587,6 @@ ul {
   opacity: 1;
 }
 
-
 /* mouseover context tooltip popups BOTTOM */
 .tooltip-bottom {
   position: relative;
@@ -726,7 +725,6 @@ ul {
   color: #AAAACC;
 }
 
-
 /* editor help modal */
 .modal-help-row {
   width: 1050px;
@@ -736,14 +734,40 @@ ul {
   margin: auto;
 }
 
-.modal-help-column-left {
-  flex: 35%;
-  font-size: 15px;
+.modal-help-buttons {
+    width: 1050px;
+    flex: 100%;
+    padding-top: 33px;
+    font-size: 15px;
+    display: flex;
+    justify-content: center;
+    margin: auto;
 }
 
-.modal-help-column-right {
-  flex: 65%;
+.modal-help-hidden {
+  display: none;
+}
+
+.modal-help-content {
   font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-help-header-pre {
+  color: #ddd;
+  font-size: 14px;
+  margin-bottom: 2px;
+  margin-top: -18px;
+}
+
+.modal-help-header {
+  font-size: 22px;
+  margin-bottom: 8px;
+  justify-content: center;
+  align-items: center;
 }
 
 ul.no-bullets {

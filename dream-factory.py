@@ -81,6 +81,13 @@ class Worker(threading.Thread):
             while self.worker['sdi_instance'].options_change_in_progress:
                 # wait for model change to complete
                 time.sleep(0.25)
+        elif self.command.get('ckpt_file') == '':
+            # revert to default config.txt model if necessary
+            if control.config.get('ckpt_file') != '' and control.default_model_validated and (control.config.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
+                self.worker['sdi_instance'].load_model(control.config.get('ckpt_file'))
+                while self.worker['sdi_instance'].options_change_in_progress:
+                    # wait for model change to complete
+                    time.sleep(0.25)
 
         # check for auto-insertion of model trigger word
         if (control.model_trigger_words != None) and (self.command.get('auto_insert_model_trigger') != 'off'):
@@ -100,6 +107,26 @@ class Worker(threading.Thread):
                     elif self.command.get('auto_insert_model_trigger') == 'start':
                         self.command['prompt'] = trigger + ', ' + p
 
+        # check for wildcard replacements
+        p = self.command.get('prompt')
+        #print('before wildcard replace: ' + self.command['prompt'])
+        for k, v in control.wildcards.items():
+            key = '__' + k.lower() + '__'
+            if key in p.lower():
+                vcopy = v.copy()
+                # this will handle multiple replacements of the same key
+                while key in p.lower():
+                    if len(vcopy) > 0:
+                        # pick a random value & remove it from the copied list
+                        x = random.randint(0, len(vcopy)-1)
+                        replace = vcopy.pop(x)
+                        # replace the first occurence with the chosen value
+                        p = re.sub(key, replace, p, 1, flags=re.IGNORECASE)
+                    else:
+                        # not enough values to make all replacements, sub '' instead
+                        p = re.sub(key, '', p, flags=re.IGNORECASE)
+        self.command['prompt'] = p
+        #print('after wildcard replace: ' + self.command['prompt'])
 
         command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
         self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
@@ -349,6 +376,9 @@ class Controller:
         self.sdi_models = None
         self.sdi_hypernetwork_request_made = False
         self.sdi_hypernetworks = None
+        self.wildcards = None
+        self.default_model_validated = False
+        self.embeddings = []
 
         # read config options
         self.init_config()
@@ -380,6 +410,12 @@ class Controller:
             # create some dummy devices for testing
             self.init_dummy_workers()
 
+        # do an initial read of user wildcard files
+        self.read_wildcards()
+
+        # do an initial read of user embedding files
+        self.read_embeddings()
+
 
     # returns the current operation mode (standard or random)
     def get_mode(self):
@@ -389,11 +425,56 @@ class Controller:
             return None
 
 
+    # reads user-create wildcard files into a dictionary for use with prompting
+    # dict key is filename, value is list of lines in file
+    def read_wildcards(self):
+        self.wildcards = {}
+        if self.config['wildcard_location'] != '':
+            for x in os.listdir(self.config['wildcard_location']):
+                if x.endswith('.txt'):
+                    key = x.replace('.txt', '').strip()
+                    #print(key) + ' :'
+                    # read the contents of the wildcard file
+                    with open(os.path.join(self.config['wildcard_location'], x)) as f:
+                        lines = f.readlines()
+                    # store the contents into a list
+                    vals = []
+                    for line in lines:
+                        line = line.strip().split('#', 1)
+                        line = line[0]
+                        if len(line) > 0:
+                            vals.append(line.replace('\n', '').strip())
+                    # save the filename & contents as a dict entry
+                    self.wildcards[key] = vals
+        #self.print_wildcards()
+
+
+    # checks for user embedding files in Auto1111 embeddings dir
+    def read_embeddings(self):
+        embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
+        if os.path.exists(embed_dir):
+            for x in os.listdir(embed_dir):
+                if x.endswith('.pt') or x.endswith('.bin'):
+                    self.embeddings.append(x)
+        self.embeddings.sort()
+
+
+    # for debugging
+    def print_wildcards(self):
+        print('\nWildcard entries:')
+        for k, v in self.wildcards.items():
+            print('\n   ' + k + ' :')
+            for i in v:
+                print('      ' + i)
+        print('\n')
+
+
     # reads the config file
     def init_config(self):
         # set defaults
         self.config = {
             'prompts_location' : 'prompts',
+            'wildcard_location' : 'prompts\wildcards',
             'output_location' : 'output',
             'use_gpu_devices' : 'auto',
             'webserver_use' : True,
@@ -425,7 +506,7 @@ class Controller:
             'upscale_keep_org' : "no",
             'upscale_codeformer_amount' : 0.0,
             'upscale_gfpgan_amount' : 0.0,
-            'ckpt_file' : "",       # TODO make this load specified model at SDI init
+            'ckpt_file' : "",
 
             'sd_location' : "",
             'sd_port' : 7861,
@@ -447,6 +528,12 @@ class Controller:
                     if command == 'prompts_location':
                         if value != '':
                             self.config.update({'prompts_location' : value})
+
+                    elif command == 'wildcard_location':
+                        if value != '':
+                            value = value.replace('/', os.path.sep)
+                            value = value.replace('\\', os.path.sep)
+                            self.config.update({'wildcard_location' : value})
 
                     elif command == 'output_location':
                         if value != '':
@@ -647,6 +734,7 @@ class Controller:
                             self.config.update({'upscale_keep_org' : value})
 
                     elif command == 'pf_ckpt_file':
+                        # this is validated after we receive valid models from the server
                         self.config.update({'ckpt_file' : value})
 
                     else:
@@ -910,6 +998,7 @@ class Controller:
     def new_prompt_file(self, new_file):
         # TODO validate everything is ok before making the switch
 
+        self.read_wildcards()
         self.prompt_file = new_file
         self.prompt_manager = utils.PromptManager(self)
 
@@ -1157,8 +1246,31 @@ class Controller:
                 if trigger != '':
                     self.model_trigger_words[model] = trigger
 
-        #for key, value in self.model_trigger_words.items():
-        #    print(f"{key}: {value}")
+        # validate default model if there is one:
+        if self.config['ckpt_file'] != '':
+            model = self.config['ckpt_file']
+            validated_model = self.validate_model(model)
+            if validated_model != '':
+                self.config['ckpt_file'] = validated_model
+                print('[controller] >>> default model validated: ' + self.config['ckpt_file'])
+            else:
+                self.config['ckpt_file'] = ''
+                print("*** WARNING: config.txt file command PF_CKPT_FILE value (" + model + ") doesn't match any server values; ignoring it! ***")
+        self.default_model_validated = True
+
+
+    # passing models must be exactly what SD expects; use this to make sure
+    # user-supplied model is ok - otherwise revert to default
+    def validate_model(self, model):
+        validated_model = ''
+        if len(model) > 5:
+            if self.sdi_models != None:
+                for m in self.sdi_models:
+                    if model.lower() in m.lower():
+                        # case-insensitive partial match; use the exact casing from the server
+                        validated_model = m
+                        break
+        return validated_model
 
 
     # for debugging; prints a report of current worker status

@@ -220,6 +220,7 @@ def build_prompt_dropdown(control):
     buffer += "\t\t<select name=\"prompt-file\" id=\"prompt-file\" class=\"prompt-dropdown\" onchange=\"new_prompt_file()\">\n"
     buffer += "\t\t\t<option value=\"\">select</option>\n"
     files = os.listdir(control.config.get('prompts_location'))
+    files.sort()
     for f in files:
         if f.lower().endswith('.prompts'):
             full_path = os.path.abspath(control.config.get('prompts_location') + '/' + f)
@@ -237,7 +238,8 @@ def build_sampler_reference(control):
     if control.sdi_samplers == None:
         buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available samplers here."
     else:
-        buffer += "<div style=\"font-weight: bold; font-size: 22px; margin-bottom: 8px;\">Samplers:</div>\n"
+        buffer += "<div class=\"modal-help-header-pre\"><p>These samplers may be assigned to the !SAMPLER directive. Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">Samplers:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         for s in control.sdi_samplers:
             cpy = '!SAMPLER = ' + s.replace("\\", "\\\\")
@@ -251,12 +253,32 @@ def build_model_reference(control):
     if control.sdi_models == None:
         buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available models here."
     else:
-        buffer += "<div style=\"font-weight: bold; font-size: 22px; margin-bottom: 8px;\">Models:</div>\n"
+        buffer += "<div class=\"modal-help-header-pre\"><p>These models may be assigned to the !CKPT_FILE directive. Add additional .ckpt files to your Automatic1111 models folder and restart Dream Factory to have them appear here.</p>\n"
+        if control.model_trigger_words != None and len(control.model_trigger_words) > 0:
+            if control.config.get('auto_insert_model_trigger') != 'off':
+                buffer += "<p>Asterisked trigger words will be automatically added "
+                if control.config.get('auto_insert_model_trigger') == 'first_comma':
+                    buffer += "after the first comma in the prompt (or at the end, if there are no commas) when using the associated model."
+                else:
+                    buffer += "at the " + control.config.get('auto_insert_model_trigger') + " of the prompt when using the associated model."
+            else:
+                buffer += "<p>Asterisked trigger words will be automatically added to prompts when the associated model is in use."
+            buffer += " You may override the automatic placement of trigger words with the !AUTO_INSERT_MODEL_TRIGGER directive (off, start, end, first_comma).</p>"
+        else:
+            buffer += "<p>Note that you may add model trigger words to the 'model-triggers.txt' file in your Dream Factory directory to have them automatically added to your prompts.</p>"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">Models:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         for m in control.sdi_models:
+            trigger = None
+            if control.model_trigger_words != None:
+                trigger = control.model_trigger_words.get(m)
             m = m.split('[', 1)[0].strip()
             cpy = '!CKPT_FILE = ' + m.replace("\\", "\\\\")
-            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "</li>\n"
+            if trigger != None:
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*" + trigger + ")</li>\n"
+            else:
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "</li>\n"
         buffer += "</ul>\n"
     return buffer
 
@@ -266,10 +288,49 @@ def build_hypernetwork_reference(control):
     if control.sdi_hypernetworks == None:
         buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available hypernetworks here."
     else:
-        buffer += "<div style=\"font-weight: bold; font-size: 22px; margin-bottom: 8px;\">Hypernetworks:</div>\n"
+        buffer += "<div class=\"modal-help-header\">Hypernetworks:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         for h in control.sdi_hypernetworks:
             buffer += "<li class=\"no-bullets\">" + h + "</li>\n"
+        buffer += "</ul>\n"
+    return buffer
+
+
+def build_wildcard_reference(control):
+    buffer = ""
+    if control.wildcards == None:
+        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available wildcards here."
+    else:
+        buffer += "<div class=\"modal-help-header-pre\"><p>These wildcards may be included in your prompts. Add additional wildcard files to '" + control.config.get('wildcard_location') + "' and restart Dream Factory to have them appear here.</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">Wildcards:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        keys = []
+        for k, v in control.wildcards.items():
+            keys.append(k)
+        keys.sort()
+        for key in keys:
+            cpy = '__' + key + '__'
+            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + key + "</li>\n"
+        buffer += "</ul>\n"
+    return buffer
+
+
+def build_embedding_reference(control):
+    buffer = ""
+    if len(control.embeddings) == 0:
+        buffer = "none"
+    else:
+        buffer += "<div class=\"modal-help-header-pre\"><p>These embeddings may be included in your prompts (simply use the embedding name in the prompt to activate it). Add additional files to your Automatic1111 embeddings folder and restart Dream Factory to have them appear here.</p>\n"
+        buffer += "<p>Warning: attempting to use an embedding with an inappropriate model will cause errors (e.g. trying to use a SD v2.x embedding on a SD v1.x model, etc)!</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">Embeddings:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        keys = []
+        for e in control.embeddings:
+            embed = e.replace('.pt', '').replace('.bin', '')
+            cpy = embed
+            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + cpy + "</li>\n"
         buffer += "</ul>\n"
     return buffer
 
@@ -438,6 +499,14 @@ class ArtGeneratorWebService(object):
 
     def HYPERNETWORK_REFERENCE_LOAD(self):
         buffer_text = build_hypernetwork_reference(self.control)
+        return buffer_text
+
+    def WILDCARD_REFERENCE_LOAD(self):
+        buffer_text = build_wildcard_reference(self.control)
+        return buffer_text
+
+    def EMBEDDING_REFERENCE_LOAD(self):
+        buffer_text = build_embedding_reference(self.control)
         return buffer_text
 
     def PROMPT_FILE_DELETE(self):

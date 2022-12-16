@@ -28,6 +28,9 @@ GPU_INIT_STAGGER = 1
 # Locations are relative to Dream Factory's installation directory unless specified.
 PROMPTS_LOCATION = prompts
 
+# Directory containing your wildcard files.
+WILDCARD_LOCATION = prompts\wildcards
+
 # Directory where output images will be created.
 OUTPUT_LOCATION = output
 
@@ -75,8 +78,8 @@ GALLERY_USER_FOLDER_ALIAS = favorites
 PF_WIDTH = 512             			# output image width, default is 512
 PF_HEIGHT = 512            			# output image height, default is 512
 PF_HIGHRES_FIX = no					# helps a lot when generating images significantly larger than 512x512 at the cost of speed
-PF_SAMPLER = Euler					# sampler to use (create a new prompt file using the web UI to see a full list of options)
-PF_STEPS = 50              			# number of steps, default = 50
+PF_SAMPLER = DPM++ 2M Karras		# sampler to use (create a new prompt file using the web UI to see a full list of options)
+PF_STEPS = 20              			# number of steps, default = 50
 PF_SCALE = 7.5              		# guidance scale, default = 7.5
 PF_SAMPLES = 1						# number of images to generate per prompt
 PF_USE_UPSCALE = no					# use ESRGAN to upscale output images?
@@ -85,6 +88,10 @@ PF_UPSCALE_CODEFORMER_AMOUNT = 0.0	# visibility of codeformer face enhancement (
 PF_UPSCALE_GFPGAN_AMOUNT = 0.0		# visibility of gfpgan face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?
 PF_NEG_PROMPT = 					# if you have a 'catch all' negative prompt you typically use, enter it here
+
+# Set a default .ckpt file here so that whenever you set !CKPT_FILE to nothing (e.g. '!CKPT_FILE = '), this default 
+# will be loaded. If you don't set anything here, !CKPT_FILE= will just use whatever happens to be loaded in Auto1111.
+PF_CKPT_FILE =
 
 # automatically insert the trigger word when using custom models?
 # off = disable this

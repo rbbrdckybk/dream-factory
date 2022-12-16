@@ -209,7 +209,7 @@ class PromptManager():
             'min_strength' : 0.75,
             'max_strength' : 0.75,
             'delim' : " ",
-            'ckpt_file' : "",
+            'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
             'neg_prompt' : self.control.config['neg_prompt'],
@@ -417,7 +417,11 @@ class PromptManager():
                     time.sleep(1.5)
 
         elif command == 'ckpt_file':
-            model = self.validate_model(value)
+            model = ''
+            if value != '':
+                model = self.control.validate_model(value)
+                if model == '':
+                    print("*** WARNING: prompt file command CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
             self.config.update({'ckpt_file' : model})
 
         elif command == 'sampler':
@@ -452,28 +456,6 @@ class PromptManager():
                 print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
 
         return validated_sampler
-
-
-    # passing models must be exactly what SD expects; use this to make sure
-    # user-supplied model is ok - otherwise revert to default
-    def validate_model(self, model):
-        validated_model = ''
-        validated = False
-        if len(model) > 5:
-            if self.control.sdi_models != None:
-                for m in self.control.sdi_models:
-                    if model.lower() in m.lower():
-                        # case-insensitive partial match; use the exact casing from the server
-                        validated_model = m
-                        validated = True
-                        break
-
-                if not validated:
-                    # user-supplied model doesn't closely match anything on server list
-                    # use default
-                    print("*** WARNING: prompt file command CKPT_FILE value (" + model + ") doesn't match any server values; ignoring it! ***")
-
-        return validated_model
 
 
     # update config variables if there were changes in the prompt file [config]
