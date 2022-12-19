@@ -13,6 +13,7 @@ python setup.py --update
 
 ### Fixed
 - Fixed an issue where GPU workers could appear to freeze on the status monitor page while new models were loading. 
+- Fixed some malformed HTML on the status monitor page.
 
 ## [2022.12.15]
 
