@@ -6,6 +6,14 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2022.12.18]
+
+### Added
+- Added the ability to specify multiple models with the !CKPT_FILE directive. When specifying multiple models, all of your prompts will be run against the first model, then the second, and so on. You can either use a comma-separated list (e.g. !CKPT_FILE = model01.ckpt, model02.ckpt, etc) or simply use '!CKPT_FILE = all' to specify that all of your models should be iterated through. In random mode, models will be switched every x prompts, where x can be defined with a new config.txt option (see RANDOM_QUEUE_SIZE in config-default.txt).
+
+### Fixed
+- Fixed an issue where GPU workers could appear to freeze on the status monitor page while new models were loading. 
+
 ## [2022.12.15]
 
 ### Added
