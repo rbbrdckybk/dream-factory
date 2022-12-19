@@ -1417,7 +1417,18 @@ if __name__ == '__main__':
                         control.print('adding more random prompts to the work queue...')
                         control.init_work_queue()
                     else:
+                        should_stop = False
+                        # check for multiple model scenario, should go through all once
                         if not control.repeat_jobs:
+                            if len(control.models) > 0:
+                                if control.model_index == len(control.models)-1:
+                                    # we've reached the end of the models list
+                                    should_stop = True
+                            else:
+                                # not running multiple models, stop here
+                                should_stop = True
+
+                        if should_stop:
                             control.is_paused = True
                             # no more jobs, wait for all workers to finish
                             control.print('No more work in queue; waiting for all workers to finish...')
