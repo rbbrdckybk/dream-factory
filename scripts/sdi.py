@@ -565,7 +565,9 @@ class SDI:
                 self.log('options successfully changed!', True)
         else:
             # TODO handle error reporting
-            r = response.json()
+            #r = response.json()
+            #print('unexpected handle_options_response: ' + str(response.status_code))
+            pass
 
         self.options_change_in_progress = False
 

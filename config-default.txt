@@ -100,3 +100,10 @@ PF_CKPT_FILE =
 # first_comma = after the first comma (or end if prompt contains no commas)
 # you must edit the model-triggers.txt file (auto-generated after first run) for these to work
 PF_AUTO_INSERT_MODEL_TRIGGER = start
+
+
+# Set the number of prompts to queue at once when using prompt files set to random mode.
+# The only real reason you'd want to change this is if you're specifying multiple models (with !CKPT_FILE = model1, model2, etc).
+# In random mode the models will rotate every time a batch of prompts is queued, so you can effectively control how often 
+# your models will switch by setting this.
+RANDOM_QUEUE_SIZE = 50

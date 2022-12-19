@@ -379,6 +379,9 @@ class Controller:
         self.wildcards = None
         self.default_model_validated = False
         self.embeddings = []
+        # for queuing multiple models to apply to prompt files
+        self.models = []
+        self.model_index = 0
 
         # read config options
         self.init_config()
@@ -491,6 +494,7 @@ class Controller:
             'webserver_open_browser' : True,
             'webserver_console_log' : False,
             'debug_test_mode' : False,
+            'random_queue_size' : 50,
 
             'auto_insert_model_trigger' : 'start',
             'neg_prompt' : '',
@@ -655,6 +659,17 @@ class Controller:
                     elif command == 'pf_highres_fix':
                         if value == 'yes' or value == 'no':
                             self.config.update({'highres_fix' : value})
+
+                    elif command == 'random_queue_size':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'RANDOM_QUEUE_SIZE' is not a valid number; it will be ignored!")
+                        else:
+                            # shouldn't need to queue more than this ever
+                            if int(value) > 1000:
+                                value = '1000'
+                            self.config.update({'random_queue_size' : int(value)})
 
                     elif command == 'pf_width':
                         try:
@@ -976,9 +991,20 @@ class Controller:
 
     # build a work queue with the specified prompt and style files
     def init_work_queue(self):
+        # check for a multiple models scenario
+        if len(self.models) > 0:
+            # a models list was preserved, need to switch to next ckpt
+            # move to next model
+            if self.model_index < len(self.models)-1:
+                self.model_index += 1
+            else:
+                self.model_index = 0
+            new_model = self.models[self.model_index]
+            self.prompt_manager.config['ckpt_file'] = new_model
+
         # random mode; queue up a few random prompts
         if self.prompt_manager.config.get('mode') == 'random':
-            for i in range(50):
+            for i in range(self.config['random_queue_size']):
                 #work = "Test work item #" + str(i+1)
                 work = self.prompt_manager.config.copy()
                 work['prompt'] = self.prompt_manager.pick_random()
@@ -997,6 +1023,10 @@ class Controller:
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
         # TODO validate everything is ok before making the switch
+
+        # clear model queue
+        self.models = []
+        self.model_index = 0
 
         self.read_wildcards()
         self.prompt_file = new_file

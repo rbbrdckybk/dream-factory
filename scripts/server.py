@@ -353,29 +353,40 @@ def build_worker_panel(workers):
             prompt_text = ""
             prompt_options_text = ""
             if not worker['sdi_instance'].init:
-                prompt_text = "<div style=\"color: yellow; padding-top: 6px;\">" + "waiting to be initialized..."
+                prompt_text = "<div style=\"color: yellow; padding-top: 6px;\">" + "waiting to be initialized...</div>"
             if worker['sdi_instance'].init and not worker['sdi_instance'].ready:
-                prompt_text = "<div style=\"padding-top: 6px;\">" + "currently being initialized on port " + str(worker['sdi_instance'].sd_port) + "..."
+                prompt_text = "<div style=\"padding-top: 6px;\">" + "currently being initialized on port " + str(worker['sdi_instance'].sd_port) + "...</div>"
             if worker['sdi_instance'].ready and worker['sdi_instance'].busy:
                 # this should only happen in this case
-                prompt_text = "<div style=\"padding-top: 6px;\">" + "performing initial data exchange queries with SD instance..."
+                prompt_text = "<div style=\"padding-top: 6px;\">" + "performing initial data exchange queries with SD instance...</div>"
 
         else:
-            prompt_text = worker["job_prompt_info"].get('prompt')
+            prompt_text = ''
+            prompt_options_text = ''
+
             if worker["work_state"] != "":
                 working_text = worker["work_state"]
 
-            prompt_options_text = ""
-            if worker["job_prompt_info"].get('input_image') != "":
-                prompt_options_text = "init image: " + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image'))
-            else:
-                prompt_options_text = 'size: ' + str(worker["job_prompt_info"].get('width')) + 'x' + str(worker["job_prompt_info"].get('height'))
+            if worker["job_prompt_info"] != None and worker["job_prompt_info"] != '':
+                prompt_text = worker["job_prompt_info"].get('prompt')
 
-            prompt_options_text += ' | steps: ' + str(worker["job_prompt_info"].get('steps')) \
-                + ' | scale: ' + str(worker["job_prompt_info"].get('scale')) \
-                + ' | samples: ' + str(worker["job_prompt_info"].get('samples'))
-            exec_time = time.time() - worker["job_start_time"]
-            clock_text = time.strftime("%M:%S", time.gmtime(exec_time))
+                if worker["job_prompt_info"].get('input_image') != "":
+                    prompt_options_text = "init image: " + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image'))
+                else:
+                    prompt_options_text = 'size: ' + str(worker["job_prompt_info"].get('width')) + 'x' + str(worker["job_prompt_info"].get('height'))
+
+                prompt_options_text += ' | steps: ' + str(worker["job_prompt_info"].get('steps')) \
+                    + ' | scale: ' + str(worker["job_prompt_info"].get('scale')) \
+                    + ' | samples: ' + str(worker["job_prompt_info"].get('samples'))
+
+                exec_time = time.time() - worker["job_start_time"]
+                clock_text = time.strftime("%M:%S", time.gmtime(exec_time))
+            else:
+                # this should only happen during options change/model load
+                if worker['sdi_instance'].model_loading_now != '':
+                    prompt_text = "<div style=\"padding-top: 6px;\">" + 'loading new model: ' + worker['sdi_instance'].model_loading_now + '...</div>'
+                    clock_text = '-:-'
+                    working_text = "model load"
 
         buffer += "<div id=\"worker-" + str(worker["id"]) + "\" class=\"worker-info\">\n"
         buffer += "\t<div class=\"worker-info-header\">\n"

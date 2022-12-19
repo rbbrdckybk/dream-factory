@@ -419,9 +419,40 @@ class PromptManager():
         elif command == 'ckpt_file':
             model = ''
             if value != '':
-                model = self.control.validate_model(value)
-                if model == '':
-                    print("*** WARNING: prompt file command CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                if value == 'all':
+                    # we're queueing all the models; copy the validated model list
+                    if self.control.sdi_models != None and len(self.control.sdi_models) > 0:
+                        self.control.models = self.control.sdi_models.copy()
+                        model = self.control.models[0]
+                        # this is lazy but should always be incremented to zero on the first loop
+                        self.control.model_index = -1
+                    else:
+                        print("*** WARNING: unable to validate 'CKPT_FILE = all' (has your GPU finished initializing?)! ***")
+                elif ',' in value:
+                    # we're queuing multiple models
+                    models = value.split(',')
+                    validated_models = []
+                    for m in models:
+                        v = self.control.validate_model(m.strip())
+                        if v != '':
+                            validated_models.append(v)
+                        else:
+                            print("*** WARNING: ckpt in model list of !CKPT_FILE value (" + m.strip() + ") doesn't match any server values; ignoring it! ***")
+                    if len(validated_models) > 0:
+                        # we have at least one valid model, start with the first one
+                        # store list with the controller
+                        self.control.models = validated_models
+                        model = self.control.models[0]
+                        # this is lazy but should always be incremented to zero on the first loop
+                        self.control.model_index = -1
+                else:
+                    model = self.control.validate_model(value)
+                    if model == '':
+                        print("*** WARNING: prompt file command CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                    else:
+                        # to cover cases where there are multiple !CKPT_FILE directives in a single prompt file
+                        self.control.models = []
+                        self.control.model_index = 0
             self.config.update({'ckpt_file' : model})
 
         elif command == 'sampler':
