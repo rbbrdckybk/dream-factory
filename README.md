@@ -237,13 +237,15 @@ Sets the strength of the input image influence. Valid values are 0-1 (default = 
 ```
 #### !CKPT_FILE
 Sets the model to use. Any custom models should be installed to the appropriate models directory of your auto1111 installation. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available models (click on a model to copy it to the clipboard so that you can easily paste it into the editor). Setting this to nothing will default back to whatever model you have set in your config.txt file (if you haven't set a default, setting this to nothing won't do anything!).
+
 You many also set a list of comma-separated models here. In standard mode, Dream Factory will render all prompts with the first model, then the second, and so on. In random mode, Dream Factory will switch models every 50 prompts (this interval can be changed in your config.txt file).
+
 You may also use the reserved word "all" here, and Dream Factory will rotate through all of your available models automatically.
 ```
-!CKPT_FILE = analog-style.ckpt                        # sets a new model to use
-!CKPT_FILE = sd-v1-5-vae.ckpt, analog-style.ckpt      # sets 2 models to rotate between
-!CKPT_FILE = all                                      # will rotate between all of your models
-!CKPT_FILE =                                          # sets the default model specified in your config.txt
+!CKPT_FILE = analog-style.ckpt                           # sets a new model to use
+!CKPT_FILE = sd-v1-5-vae.ckpt, analog-style.ckpt         # sets 2 models to rotate between
+!CKPT_FILE = all                                         # will rotate between all of your models
+!CKPT_FILE =                                             # sets the default model specified in your config.txt
 ```
 
 #### !REPEAT
