@@ -152,13 +152,13 @@ These directives are valid in both the [config] section of both standard and ran
  * [!INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#input_image)
  * [!STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#strength)
  * [!CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#ckpt_file)
- * [!NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!SEED](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!USE_UPSCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!UPSCALE_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!UPSCALE_CODEFORMER_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#neg_prompt)
+ * [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_insert_model_trigger)
+ * [!SEED](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#seed)
+ * [!USE_UPSCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#use_upscale)
+ * [!UPSCALE_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_amount)
+ * [!UPSCALE_CODEFORMER_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_codeformer_amount)
+ * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_gfpgan_amount)
  * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
@@ -228,7 +228,9 @@ How many images you want each GPU to produce in parallel (default = 1). Each inc
 #### !INPUT_IMAGE
 Sets an image to use as a starting point for the denoising process, rather than the default random noise. This can be a relative (to the Dream Factory base directory) or absolute path, and setting this to nothing will clear any previously-set input image.
 ```
-!INPUT_IMAGE = 
+!INPUT_IMAGE = C:\images\dog.png                         # specifies the full path to an input image
+!INPUT_IMAGE = cat.jpg                                   # specifies an input image 'cat.jpg' in the DF home directory
+!INPUT_IMAGE =                                           # specifies no input image should be used
 ```
 #### !STRENGTH
 Sets the strength of the input image influence. Valid values are 0-1 (default = 0.75). Values close to 0 will result in an output image very similar to the input image, and values close to 1 will result in images with less resemblence. Generally, values between 0.2 - 0.8 are most useful. Note that this is also used when !HIGHRES_FIX = yes to indicate how closely the final image should mirror the low-res initialization image.
@@ -246,6 +248,46 @@ You may also use the reserved word "all" here, and Dream Factory will rotate thr
 !CKPT_FILE = sd-v1-5-vae.ckpt, analog-style.ckpt         # sets 2 models to rotate between
 !CKPT_FILE = all                                         # will rotate between all of your models
 !CKPT_FILE =                                             # sets the default model specified in your config.txt
+```
+#### !NEG_PROMPT
+Specifies a negative prompt to be used for all of the prompts that follow it (remember you can place most directives directly into [prompts] sections of standard prompt files!). If you have a 'catch-all' negative prompt that you tend to use, you can specify it in your config.txt file and it'll be populated as the default on new prompt files you create. Setting this to nothing will clear the negative prompt.
+```
+!NEG_PROMPT = watermark, blurry, out of focus
+```
+#### !AUTO_INSERT_MODEL_TRIGGER
+For use with custom models that require a 'trigger word' that has been set up in your model-triggers.txt file (see [Custom Models] below). This allows you to control the placement of the automatically-inserted trigger word. Valid options are **start** (default), **end**, **first_comma**, and **off**: 'start' will put the trigger word at the front of the prompt, 'end' will place it at the end, 'first_comma' will place it after the first comma (or at the end if there is no comma in the prompt), and 'off' will disable auto-insertion entirely.
+```
+!AUTO_INSERT_MODEL_TRIGGER = start
+```
+#### !SEED
+Specifies the seed value to be used in image creation. This value is normally chosen at random - using the same settings with the same seed value should produce exactly the same output image. Setting this to nothing will indicate that random seed values should be used (the default). This is an advanced setting and isn't included in new prompt file templates, however you may manually add it to your prompt files.
+```
+!SEED = 42
+```
+#### !USE_UPSCALE
+Whether or not every output image should automatically be upscaled. Upscaling can take a significant amount of time, so generally you'd only want to do this on a subset of selected images. Valid options are **yes** or **no** (default).
+```
+!USE_UPSCALE = no
+```
+#### !UPSCALE_AMOUNT
+The factor to upscale by. Setting !UPSCALE_AMOUNT = 2 will double the width and height of an image (resulting in quadruple the resolution). Has no effect unless !USE_UPSCALE = yes.
+```
+!UPSCALE_AMOUNT = 2
+```
+#### !UPSCALE_CODEFORMER_AMOUNT
+The visibility of [Codeformer face enhancement](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#face-restoration) on the output image. Valid values are between 0-1. Setting this to 0 disables Codeformer enhancement entirely. Has no effect unless !USE_UPSCALE = yes.
+```
+!UPSCALE_CODEFORMER_AMOUNT = 0.50
+```
+#### !UPSCALE_GFPGAN_AMOUNT
+The visibility of [GFPGAN face enhancement](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#face-restoration) on the output image. Valid values are between 0-1. Setting this to 0 disables GFPGAN enhancement entirely. Has no effect unless !USE_UPSCALE = yes.
+```
+!UPSCALE_GFPGAN_AMOUNT = 0.50
+```
+#### !UPSCALE_KEEP_ORG
+When upscaling, keep the original (non-upscaled) image as well? Valid options are **yes** or **no** (default). If set to yes, originals will be stored in an /originals sub-directory off the main output folder. Has no effect unless !USE_UPSCALE = yes.
+```
+!UPSCALE_KEEP_ORG = no
 ```
 
 #### !REPEAT
