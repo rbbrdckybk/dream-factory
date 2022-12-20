@@ -149,9 +149,9 @@ These directives are valid in both the [config] section of both standard and ran
  * [!SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#scale)
  * [!SAMPLES](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#samples)
  * [!BATCH_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#batch_size)
- * [!INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#input_image)
+ * [!STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#strength)
+ * [!CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#ckpt_file)
  * [!NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
  * [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
  * [!SEED](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
@@ -224,6 +224,26 @@ How many images to produce of each prompt before moving on to the next one (defa
 How many images you want each GPU to produce in parallel (default = 1). Each increase of BATCH_SIZE will require more GPU VRAM, and setting this value too high will cause GPUs to run out of memory and crash. However, as long as you know you have enough VRAM, you can achieve moderate speed gains by increasing this beyond 1. This is an advanced setting and isn't included in new prompt file templates, however you may manually add it to your prompt files.
 ```
 !BATCH_SIZE = 1
+```
+#### !INPUT_IMAGE
+Sets an image to use as a starting point for the denoising process, rather than the default random noise. This can be a relative (to the Dream Factory base directory) or absolute path, and setting this to nothing will clear any previously-set input image.
+```
+!INPUT_IMAGE = 
+```
+#### !STRENGTH
+Sets the strength of the input image influence. Valid values are 0-1 (default = 0.75). Values close to 0 will result in an output image very similar to the input image, and values close to 1 will result in images with less resemblence. Generally, values between 0.2 - 0.8 are most useful. Note that this is also used when !HIGHRES_FIX = yes to indicate how closely the final image should mirror the low-res initialization image.
+```
+!STRENGTH = 0.75
+```
+#### !CKPT_FILE
+Sets the model to use. Any custom models should be installed to the appropriate models directory of your auto1111 installation. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available models (click on a model to copy it to the clipboard so that you can easily paste it into the editor). Setting this to nothing will default back to whatever model you have set in your config.txt file (if you haven't set a default, setting this to nothing won't do anything!).
+You many also set a list of comma-separated models here. In standard mode, Dream Factory will render all prompts with the first model, then the second, and so on. In random mode, Dream Factory will switch models every 50 prompts (this interval can be changed in your config.txt file).
+You may also use the reserved word "all" here, and Dream Factory will rotate through all of your available models automatically.
+```
+!CKPT_FILE = analog-style.ckpt                        # sets a new model to use
+!CKPT_FILE = sd-v1-5-vae.ckpt, analog-style.ckpt      # sets 2 models to rotate between
+!CKPT_FILE = all                                      # will rotate between all of your models
+!CKPT_FILE =                                          # sets the default model specified in your config.txt
 ```
 
 #### !REPEAT
