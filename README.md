@@ -122,7 +122,7 @@ Before we get into creating new prompt files, let's take a look at the two examp
 
 You should see the prompt file load into the editor. Prompt files have an optional [config] section at the top with directives that define your Stable Diffusion settings, and at least one [prompts] section that contains prompts (or sections of prompts to be combined with other [prompts] sections).
 
-The example files contain comments that should make it fairly clear what each [config] directive does, and how the [prompts] sections will combine. See the [Command Reference] below for help on any directives that aren't clear.
+The example files contain comments that should make it fairly clear what each [config] directive does, and how the [prompts] sections will combine. See the [Command Reference](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#prompt-file-command-reference) below for help on any directives that aren't clear.
 
 ### Creating a New Prompt File
 
@@ -136,39 +136,42 @@ If you'd prefer, you can also create prompt files externally using a text editor
 
 These directives are valid only in the [config] section of both standard and random prompt files:
 
- * !MODE
- * !REPEAT
- * !DELIM
+ * [!MODE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#mode)
+ * [!DELIM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#delim)
 
 These directives are valid in both the [config] section of both standard and random prompt files **and** also in any [prompts] section of **standard** prompt files (!MODE = standard):
 
- * !WIDTH
- * !HEIGHT
- * !HIGHRES_FIX
- * !STEPS
- * !SAMPLER
- * !SCALE
- * !SAMPLES
- * !BATCH_SIZE
- * !INPUT_IMAGE
- * !STRENGTH
- * !CKPT_FILE
- * !NEG_PROMPT
- * !AUTO_INSERT_MODEL_TRIGGER
- * !SEED
- * !USE_UPSCALE
- * !UPSCALE_AMOUNT
- * !UPSCALE_CODEFORMER_AMOUNT
- * !UPSCALE_GFPGAN_AMOUNT
- * !UPSCALE_KEEP_ORG
+ * [!WIDTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#width)
+ * [!HEIGHT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#height)
+ * [!HIGHRES_FIX](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_fix)
+ * [!STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#steps)
+ * [!SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#sampler)
+ * [!SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#scale)
+ * [!SAMPLES](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#samples)
+ * [!BATCH_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#batch_size)
+ * [!INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!SEED](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!USE_UPSCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!UPSCALE_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!UPSCALE_CODEFORMER_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+
+These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
+
+ * [!REPEAT]((https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat))
 
 Finally, these directives are valid only in the [config] section of **random** prompt files (!MODE = random):
 
- * !MIN_SCALE
- * !MAX_SCALE
- * !MIN_STRENGTH
- * !MAX_STRENGTH 
- * !RANDOM_INPUT_IMAGE_DIR
+ * [!MIN_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!MAX_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!MIN_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!MAX_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!RANDOM_INPUT_IMAGE_DIR](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
 
 Command Help and Usage Examples:
 
@@ -176,6 +179,57 @@ Command Help and Usage Examples:
 Sets the prompt file mode to either **standard** (default) or **random**. Standard prompt files work by iterating through all possible [prompts] sections combinations, and random prompt files simply pick prompts at random from [prompts] sections. See prompts/example-standard.prompts and prompts/example-random.prompts for a detailed walkthrough of how each mode works.
 ```
 !MODE = standard
+```
+#### !DELIM
+Sets the delimiter that will be used when joining [prompts] sections (default is a space). For example, if you have two [prompts] sections, and the top entry in the first is "a portrait of" and the top entry in the second is "a cat", then when the two sections are combined, you'd end up with "a portrait of a cat" if !DELIM = " ". 
+```
+!DELIM = " "
+```
+#### !WIDTH
+Sets the output image width, in pixels (default is 512). Note that this must be a multiple of 64!
+```
+!WIDTH = 512
+```
+#### !HEIGHT
+Sets the output image height, in pixels (default is 512). Note that this must be a multiple of 64!
+```
+!HEIGHT = 512
+```
+#### !HIGHRES_FIX
+Enables or disables the Auto1111 [highres fix](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#highres-fix). Valid options are **yes** or **no** (default). This should be enabled when generating images at resolutions signficantly higher than 512x512.
+```
+!HIGHRES_FIX = no
+```
+#### !STEPS
+The number of denoising steps (default = 20). More steps will generally improve image quality to a point, at the cost of processing time.
+```
+!STEPS = 20
+```
+#### !SAMPLER
+The sampler to use (default is DPM++ 2M Karras). This must match an available option in your Auto1111 SD webui exactly. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available samplers (click on a sampler to copy it to the clipboard so that you can easily paste it into the editor).
+```
+!SAMPLER = DPM++ 2M Karras
+```
+#### !SCALE
+The guidance scale, or how closely you want Stable Diffusion to follow your text prompt. The default is 7.5, and generally speaking useful values are between 5 - 30.
+```
+!SCALE = 7.5
+```
+#### !SAMPLES
+How many images to produce of each prompt before moving on to the next one (default = 1). Unlike the below BATCH_SIZE option, there is no additional cost in terms of GPU memory when increasing this. There will be a liner increase in processing time when increasing this (e.g.: !SAMPLES = 10 will take ten times as long as !SAMPLES = 1).
+```
+!SAMPLES = 1
+```
+#### !BATCH_SIZE
+How many images you want each GPU to produce in parallel (default = 1). Each increase of BATCH_SIZE will require more GPU VRAM, and setting this value too high will cause GPUs to run out of memory and crash. However, as long as you know you have enough VRAM, you can achieve moderate speed gains by increasing this beyond 1. This is an advanced setting and isn't included in new prompt file templates, however you may manually add it to your prompt files.
+```
+!BATCH_SIZE = 1
+```
+
+#### !REPEAT
+Tells Dream Factory whether or not to continuing producing images after it has finished all possible combinations in the prompt file. Options are **yes** (default) or **no**. If set to no, Dream Factory will idle after it has completed all prompts.
+```
+!REPEAT = yes
 ```
 
 
