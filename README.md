@@ -1,5 +1,7 @@
 # Dream Factory
 
+
+
 Multi-threaded GUI manager for mass creation of AI-generated art with support for multiple GPUs.
 
 This is aimed at the user that wants to create a **lot** of AI artwork with minimal hands-on time. If you're looking for a repo that will allow you to spend hours tweaking a single image until it's perfect, [there are better options](https://github.com/AUTOMATIC1111/stable-diffusion-webui) (update 2022-12-06: Dream Factory now uses Automatic1111's repo on the backend so you'll get the best of both worlds!). If you have hundreds of prompt ideas and want to easily and quickly (well, as quickly as your GPUs can manage!) see them rendered in hundreds of different variations and/or styles, then this is for you.
@@ -98,19 +100,104 @@ Eventually you should see images appearing in your **\output** folder (or you ca
 
 # Usage
 
-Full instructions coming soon. Quick version:
+Instructions assume that you've completed [setup](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#setup) and verified that your installation works properly.
 
-After installation, open **config.txt** and make any desired edits.
+## Startup and Basic Usage
 
 Start Dream Factory with:
 ```
 python dream-factory.py
 ```
-The web UI should open automatically, if not go to http://localhost:8080 (assuming you didn't change the port in config.txt) via your browser.
+The web UI should open automatically, if not go to http://localhost:8080 (assuming you didn't change the port in config.txt) via your browser. Your GPU(s) will automatically start initializing (each GPU will take about as long as it takes to launch auto1111 in standalone mode).
 
-Browse to 'Control Panel' in the top nav and select one of the two example prompt files via the dropdown. Your GPU(s) should immediately start working on whichever one you choose. If you browse to 'Gallery' in the top nav you'll see images appearing as they're completed.
+Browse to 'Control Panel' in the top nav and select one of the two example prompt files via the dropdown. Your GPU(s) should start working on whichever one you choose as soon as they're finished initializing. You can browse back to 'Status Monitor' and should see that your GPU(s) are being assigned work from the selected prompt file. If you browse to 'Gallery' in the top nav you'll see images appearing as they're completed.
 
-To create your own prompt files, browse to 'Prompt Editor' in the top nav and open one of the example files and read through the comments to see how they work. Experiment with creating your own via one of the 'New ...' buttons at the top of the page. To execute your new prompt file, go back to 'Control Panel' and select it from the drop down. 
+## Creating and Editing Prompt Files
+
+Prompt files are the heart of Dream Factory and define the work that you want your GPU(s) to do. They can be as simple or as complex as you want.
+
+### Example Prompt Files
+
+Before we get into creating new prompt files, let's take a look at the two example prompt files that are included with Dream Factory. Start by clicking 'Prompt Editor' in the top nav, then choose 'example-standard' in the 'Choose a prompt file:' dropdown.
+
+You should see the prompt file load into the editor. Prompt files have an optional [config] section at the top with directives that define your Stable Diffusion settings, and at least one [prompts] section that contains prompts (or sections of prompts to be combined with other [prompts] sections).
+
+The example files contain comments that should make it fairly clear what each [config] directive does, and how the [prompts] sections will combine. See the [Command Reference] below for help on any directives that aren't clear.
+
+### Creating a New Prompt File
+
+You can create prompt files by using the integrated editor (click 'Prompt Editor' in the top nav, then click 'New Standard' or 'New Random' to start a new file). Prompt files will automatically be created with a skeleton containing common directives and the default settings contained in your config.txt.
+
+After creation, prompt files can be renamed by simply clicking on the name at the top of the editor, entering a new name, and then clicking 'Rename'.
+
+If you'd prefer, you can also create prompt files externally using a text editor of your choice (name them with a .prompt extension and place them in your prompts folder). If you happen to use [Notepad++](https://notepad-plus-plus.org/), there is a plugin in the **dream-factory/prompts/notepad_plugin** folder that will add context-sensitive highlighting to .prompt files.
+
+### Prompt File Command Reference
+
+These directives are valid only in the [config] section of both standard and random prompt files:
+
+ * !MODE
+ * !REPEAT
+ * !DELIM
+
+These directives are valid in both the [config] section of both standard and random prompt files **and** also in any [prompts] section of **standard** prompt files (!MODE = standard):
+
+ * !WIDTH
+ * !HEIGHT
+ * !HIGHRES_FIX
+ * !STEPS
+ * !SAMPLER
+ * !SCALE
+ * !SAMPLES
+ * !BATCH_SIZE
+ * !INPUT_IMAGE
+ * !STRENGTH
+ * !CKPT_FILE
+ * !NEG_PROMPT
+ * !AUTO_INSERT_MODEL_TRIGGER
+ * !SEED
+ * !USE_UPSCALE
+ * !UPSCALE_AMOUNT
+ * !UPSCALE_CODEFORMER_AMOUNT
+ * !UPSCALE_GFPGAN_AMOUNT
+ * !UPSCALE_KEEP_ORG
+
+Finally, these directives are valid only in the [config] section of **random** prompt files (!MODE = random):
+
+ * !MIN_SCALE
+ * !MAX_SCALE
+ * !MIN_STRENGTH
+ * !MAX_STRENGTH 
+ * !RANDOM_INPUT_IMAGE_DIR
+
+Command Help and Usage Examples:
+
+#### !MODE
+Sets the prompt file mode to either **standard** (default) or **random**. Standard prompt files work by iterating through all possible [prompts] sections combinations, and random prompt files simply pick prompts at random from [prompts] sections. See prompts/example-standard.prompts and prompts/example-random.prompts for a detailed walkthrough of how each mode works.
+```
+!MODE = standard
+```
+
+
+
+
+# Advanced Usage
+
+TODO
+
+## Wildcards
+
+TODO
+
+## Custom Models
+
+TODO
+
+## Embeddings
+
+TODO
+
+# Updating Dream Factory
 
 You can update Dream Factory to the latest version by typing:
 ```
