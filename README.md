@@ -255,7 +255,7 @@ Specifies a negative prompt to be used for all of the prompts that follow it (re
 !NEG_PROMPT = watermark, blurry, out of focus
 ```
 #### !AUTO_INSERT_MODEL_TRIGGER
-For use with custom models that require a 'trigger word' that has been set up in your model-triggers.txt file (see [Custom Models] below). This allows you to control the placement of the automatically-inserted trigger word. Valid options are **start** (default), **end**, **first_comma**, and **off**: 'start' will put the trigger word at the front of the prompt, 'end' will place it at the end, 'first_comma' will place it after the first comma (or at the end if there is no comma in the prompt), and 'off' will disable auto-insertion entirely.
+For use with custom models that require a 'trigger word' that has been set up in your model-triggers.txt file (see [Custom Models](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#custom-models) below). This allows you to control the placement of the automatically-inserted trigger word. Valid options are **start** (default), **end**, **first_comma**, and **off**: 'start' will put the trigger word at the front of the prompt, 'end' will place it at the end, 'first_comma' will place it after the first comma (or at the end if there is no comma in the prompt), and 'off' will disable auto-insertion entirely.
 ```
 !AUTO_INSERT_MODEL_TRIGGER = start
 ```
@@ -328,15 +328,21 @@ Some usage scenarios for more advanced users can be found here.
 
 ## Wildcards
 
-Wildcard files are simple text files placed into your dream-factory/prompts/wildcards directory. You can reference these wildcards by using \__[wildcard filename]__ (that's 2 underscores, following by the wildcard filename without the .txt extension, followed by 2 more underscores) from within any of your prompt file [prompts] sections. When Dream Factory builds the final prompt, it'll replace the wildcard reference with a random line from the file.
+Wildcard files are simple text files placed into your dream-factory/prompts/wildcards directory. You can reference these wildcards by using `__[wildcard filename]__` (that's 2 underscores, following by the wildcard filename without the .txt extension, followed by 2 more underscores) from within any of your prompt file [prompts] sections. When Dream Factory builds the final prompt, it'll replace the wildcard reference with a random line from the file.
 
 You can press ctrl+h or click the help button when editing prompts with the integrated editor to see a list of your available wildcards (click one to copy it to the clipboard for easy inclusion in your prompt files!).
 
-An example colors.txt file is included. Specifying \__colors__ in any of your prompts will pull in a random color.
+An example colors.txt file is included. Specifying `__colors__` in any of your prompts will pull in a random color.
 
 ## Custom Models
 
-TODO
+Any custom models that you've placed in your Auto1111 models directory are available to use within Dream Factory via the [!CKPT_FILE directive](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#ckpt_file). For models that require a trigger word (for example, the [Mo-Di model](https://huggingface.co/nitrosocke/mo-di-diffusion) requires you to place the phrase 'modern disney style' somewhere in your prompt), you can have Dream Factory automatically insert these for you.
+
+After each Dream Factory startup (after the first GPU is fully initialized), a **model-triggers.txt** file will be created/updated in your Dream Factory root folder. Each of your available models should show up in this file, followed by a comma. To associate a trigger phrase/token with a model, simply place it after the comma for that model's entry. For example, the following entry would associate 'modern disney style' with the model named 'moDi-v1-pruned.ckpt':
+```
+moDi-v1-pruned.ckpt [ccf3615f], modern disney style
+```
+You can control the placement of the auto-inserted trigger word with [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_insert_model_trigger).
 
 ## Embeddings
 
