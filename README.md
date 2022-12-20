@@ -159,19 +159,19 @@ These directives are valid in both the [config] section of both standard and ran
  * [!UPSCALE_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_amount)
  * [!UPSCALE_CODEFORMER_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_codeformer_amount)
  * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_gfpgan_amount)
- * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_keep_org)
 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
- * [!REPEAT]((https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat))
+ * [!REPEAT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat)
 
 Finally, these directives are valid only in the [config] section of **random** prompt files (!MODE = random):
 
- * [!MIN_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!MAX_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!MIN_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!MAX_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
- * [!RANDOM_INPUT_IMAGE_DIR](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#)
+ * [!MIN_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#min_scale)
+ * [!MAX_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#max_scale)
+ * [!MIN_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#min_strength)
+ * [!MAX_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#max_strength)
+ * [!RANDOM_INPUT_IMAGE_DIR](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#random_input_image_dir)
 
 Command Help and Usage Examples:
 
@@ -289,15 +289,38 @@ When upscaling, keep the original (non-upscaled) image as well? Valid options ar
 ```
 !UPSCALE_KEEP_ORG = no
 ```
-
 #### !REPEAT
 Tells Dream Factory whether or not to continuing producing images after it has finished all possible combinations in the prompt file. Options are **yes** (default) or **no**. If set to no, Dream Factory will idle after it has completed all prompts.
 ```
 !REPEAT = yes
 ```
-
-
-
+#### !MIN_SCALE
+When using random mode prompt files, sets the minimum !SCALE value to use. If !MIN_SCALE and !MAX_SCALE are set to different values, Dream Factory will choose a random value between them for each prompt.
+```
+!MIN_SCALE = 6.0
+```
+#### !MAX_SCALE
+When using random mode prompt files, sets the maximum !SCALE value to use. If !MIN_SCALE and !MAX_SCALE are set to different values, Dream Factory will choose a random value between them for each prompt.
+```
+!MIN_SCALE = 18.5
+```
+#### !MIN_STRENGTH
+When using random mode prompt files, sets the minimum !STRENGTH value to use. If !MIN_STRENGTH and !MAX_STRENGTH are set to different values, Dream Factory will choose a random value between them for each prompt.
+```
+!MIN_STRENGTH = 0.45
+```
+#### !MAX_STRENGTH
+When using random mode prompt files, sets the maximum !STRENGTH value to use. If !MIN_STRENGTH and !MAX_STRENGTH are set to different values, Dream Factory will choose a random value between them for each prompt.
+```
+!MAX_STRENGTH = 0.80
+```
+#### !RANDOM_INPUT_IMAGE_DIR
+When using random mode prompt files, sets a directory that random input images should be pulled from. If this is set, Dream Factory will choose a random input image to use for each prompt.
+```
+!RANDOM_INPUT_IMAGE_DIR = C:\images                      # specifies the full path to a directory containing input images
+!RANDOM_INPUT_IMAGE_DIR = images                         # specifies a relative path to a directory containing input images
+!RANDOM_INPUT_IMAGE_DIR =                                # specifies no input images should be used
+```
 
 # Advanced Usage
 
