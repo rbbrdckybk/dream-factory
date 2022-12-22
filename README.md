@@ -330,7 +330,7 @@ Some usage scenarios for more advanced users can be found here.
 
 ## Wildcards
 
-Wildcard files are simple text files placed into your dream-factory/prompts/wildcards directory. You can reference these wildcards by using `__[wildcard filename]__` (that's 2 underscores, following by the wildcard filename without the .txt extension, followed by 2 more underscores) from within any of your prompt file [prompts] sections. When Dream Factory builds the final prompt, it'll replace the wildcard reference with a random line from the file.
+Wildcard files are simple text files placed into your dream-factory/prompts/wildcards directory. You can reference these wildcards by using `__[wildcard filename]__` (that's 2 underscores, followed by the wildcard filename without the .txt extension, followed by 2 more underscores) from within any of your prompt file [prompts] sections. When Dream Factory builds the final prompt, it'll replace the wildcard reference with a random line from the file.
 
 You can press ctrl+h or click the help button when editing prompts with the integrated editor to see a list of your available wildcards (click one to copy it to the clipboard for easy inclusion in your prompt files!).
 
