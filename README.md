@@ -243,6 +243,8 @@ Sets the model to use. Any custom models should be installed to the appropriate 
 You many also set a list of comma-separated models here. In standard mode, Dream Factory will render all prompts with the first model, then the second, and so on. In random mode, Dream Factory will switch models every 50 prompts (this interval can be changed in your config.txt file).
 
 You may also use the reserved word "all" here, and Dream Factory will rotate through all of your available models automatically.
+
+**Note that you may only specify more than one model in the [config] section; model rotation is not supported anywhere else!**
 ```
 !CKPT_FILE = analog-style.ckpt                           # sets a new model to use
 !CKPT_FILE = sd-v1-5-vae.ckpt, analog-style.ckpt         # sets 2 models to rotate between
