@@ -427,6 +427,7 @@ ul {
   display: block;
   padding-left: 15px;
   max-width: 1025px;
+  max-height: 88vh;
 }
 
 .modal-editor-content {
