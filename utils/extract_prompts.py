@@ -36,7 +36,6 @@ filter_words = []
 # would replace all occurances of 'cottage cheese' with 'swiss cheese' in found prompts
 manual_replacements = []
 
-
 # checks model_triggers.txt for any trigger/token phrases
 def get_filter_words_from_trigger_file(filepath):
     filter_words = []
@@ -252,6 +251,13 @@ if __name__ == '__main__':
                     if params['prompt'] != '':
                         # we found a prompt, add it if this wasn't img2img
                         if params['input_image'] == "":
+                            # check if made with Auto1111, strip extra metadata if so
+                            if '\nNegative prompt' in params['prompt'] or '\nSteps:' in params['prompt']:
+                                if '\nNegative prompt' in params['prompt']:
+                                    params['prompt'] = params['prompt'].split('\nNegative prompt', 1)[0]
+                                if '\nSteps' in params['prompt']:
+                                    params['prompt'] = params['prompt'].split('\nSteps', 1)[0]
+                                params['prompt'] = params['prompt'].replace('\n', '')
 
                             # check for filter words
                             found_fw = False
@@ -286,12 +292,14 @@ if __name__ == '__main__':
                                 params['prompt'] = params['prompt'].replace(' ,', ',')
                                 params['prompt'] = params['prompt'].replace(',  style,', ',')
 
-                                prompts.append(params['prompt'])
+                                if params['prompt'].strip() != '':
+                                    prompts.append(params['prompt'])
 
             print(' found ' + str(len(prompts)) + ' prompts.')
             # final contains de-duped prompts
             final = [*set(prompts)]
             print('After removing dupes, there are ' + str(len(final)) + ' unique prompts.')
+
             print('Writing these to prompts.txt...')
 
             f = open('prompts.txt', 'w', encoding = 'utf-8')
