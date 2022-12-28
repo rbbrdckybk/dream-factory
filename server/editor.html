@@ -200,6 +200,20 @@
     <div data-include="footer"></div>
     <script type="text/javascript">
 
+    var maxchars = 80000;
+    function getEditorMaxChars() {
+        $.ajax({
+          type: "EDITOR_MAX_CHARS",
+          url: "/generator"
+        })
+        .done(function(string) {
+          maxchars = string;
+          //console.log('maxchars: ' + maxchars)
+        });
+    }
+    // janky way to do this but it should be fine
+    getEditorMaxChars();
+
     function copyText(txt) {
       // janky copy to clipboard that doesn't require https
       var tempInput = document.createElement("input");
@@ -446,8 +460,10 @@
           renameButton.style.display = "none";
           dropdown.selectedIndex = 0;
           document.getElementById('panel-editor').style.display="flex";
+          // this is very slow with large amounts of text
+          // TODO look into alternatives
           quill.setText(string);
-          decorate_prompt_file_text();
+          decorate_prompt_file_text(maxchars);
           quill.history.clear();
           var elapsed = Date.now() - start;
           if (elapsed > 1000) {
@@ -550,26 +566,28 @@
         }
     }
 
-    function decorate_prompt_file_text() {
+    function decorate_prompt_file_text(max_chars = 80000) {
         text = quill.getText();
-        line = "";
+        // don't attempt to stylize text over this char limit; it's too slow
+        if (text.length <= max_chars) {
+            line = "";
+            // total characters at the end of the last full line
+            var count_last_line = 0;
+            // characters on current line
+            var count = 0;
 
-        // total characters at the end of the last full line
-        var count_last_line = 0;
-        // characters on current line
-        var count = 0;
-
-        for (var char of text) {
-            count++;
-            if (char != '\n') {
-                line += char;
-            } else {
-                // end of line, check for styling
-                line += '\n';
-                do_line_styling(line, count_last_line);
-                count_last_line += count;
-                count = 0;
-                line = "";
+            for (var char of text) {
+                count++;
+                if (char != '\n') {
+                    line += char;
+                } else {
+                    // end of line, check for styling
+                    line += '\n';
+                    do_line_styling(line, count_last_line);
+                    count_last_line += count;
+                    count = 0;
+                    line = "";
+                }
             }
         }
     }

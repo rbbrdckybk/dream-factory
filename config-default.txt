@@ -72,6 +72,11 @@ GALLERY_REFRESH = 30
 GALLERY_USER_FOLDER = 
 GALLERY_USER_FOLDER_ALIAS = favorites
 
+# The editor won't attempt to apply context-sensitive color styling to prompt files over this character limit.
+# Values above 200000 will significantly increase loading time for prompt files that exceed that character threshold. 
+# If you're working with massive .prompt files, it's best to edit them using an external editor.
+EDITOR_MAX_STYLING_CHARS = 80000
+
 # You can set your own defaults for prompt file settings below.
 # Settings specified in individual prompt files will always override these.
 

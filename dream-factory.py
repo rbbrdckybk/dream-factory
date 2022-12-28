@@ -495,6 +495,7 @@ class Controller:
             'webserver_console_log' : False,
             'debug_test_mode' : False,
             'random_queue_size' : 50,
+            'editor_max_styling_chars' : 80000,
 
             'auto_insert_model_trigger' : 'start',
             'neg_prompt' : '',
@@ -641,6 +642,14 @@ class Controller:
                                 self.config.update({'webserver_console_log' : True})
                             else:
                                 self.config.update({'webserver_console_log' : False})
+
+                    elif command == 'editor_max_styling_chars':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'EDITOR_MAX_STYLING_CHARS' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'editor_max_styling_chars' : int(value)})
 
                     elif command == 'debug_test_mode':
                         if value == 'yes' or value == 'no':
@@ -1150,7 +1159,7 @@ class Controller:
         buffer += "!HEIGHT = " + str(self.config['height']) + "							# output image height\n"
         buffer += "!HIGHRES_FIX = " + self.config['highres_fix'] + "				        # fix for images significantly larger than 512x512, if enabled uses !STRENGTH setting\n"
         buffer += "!STEPS = " + str(self.config['steps']) + "							# number of steps, more may improve image but increase generation time\n"
-        buffer += "!SAMPLER = " + str(self.config['sampler']) + "                      # sampler to use; press ctrl+h for reference\n"
+        buffer += "!SAMPLER = " + str(self.config['sampler']) + "             # sampler to use; press ctrl+h for reference\n"
         buffer += "!SAMPLES = " + str(self.config['samples']) + "					      	# number of images to generate per prompt\n"
 
         if type == "standard":
@@ -1164,7 +1173,10 @@ class Controller:
             buffer += "!MIN_STRENGTH = 0.75					# min strength of starting image influence, (0-1, 1 is lowest influence)\n"
             buffer += "!MAX_STRENGTH = 0.75					# max strength of start image, set min and max to same number for no variance\n"
 
-        buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"                          # model to load, press ctrl+h for reference\n"
+        if self.config['ckpt_file'] != '':
+            buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"   # config.txt default; press ctrl+h for reference\n"
+        else:
+            buffer += "!CKPT_FILE = " + str(self.config['ckpt_file']) +	"                          # model to load, press ctrl+h for reference\n"
 
         buffer += "\n# optional integrated upscaling\n\n"
         buffer += "!USE_UPSCALE = " + self.config['use_upscale'] + "						# upscale output images?\n"

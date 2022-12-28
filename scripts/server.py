@@ -546,6 +546,9 @@ class ArtGeneratorWebService(object):
     def GALLERY_REFRESH_RATE(self):
         return str(self.control.config['gallery_refresh'])
 
+    def EDITOR_MAX_CHARS(self):
+        return str(self.control.config['editor_max_styling_chars'])
+
     def STATUS_REFRESH(self):
         jobs_done = "{:,}".format(self.control.total_jobs_done)
         # we'll pass back whether or not the server is paused as the first char
