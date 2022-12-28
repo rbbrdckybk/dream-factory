@@ -6,6 +6,14 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2022.12.27]
+
+### Added
+- Added the ability to specify EDITOR_MAX_STYLING_CHARS in config.txt. This is a cutoff (in number of characters) where the integrated editor will not attempt to add context-sensitive color styling when displaying prompt files. If you work with large prompt files, you may want to alter this depending on your tolerance for longer load times when working with lengthy files. Remember you can always use an external editor to edit your .prompt files directly (web interfaces aren't great with large amounts of text)!
+
+### Changed
+- Added a vertical size constraint to images in the integrated gallery. Images should fit approximately within whatever display device you're using.
+
 ## [2022.12.18]
 
 ### Added
