@@ -162,6 +162,7 @@
 
     <script type="text/javascript">
       var modal = document.getElementById("myModal");
+      var body = document.body;
       var currentImage = "";
       var imgList = null;
 
@@ -180,6 +181,7 @@
         captionText.innerHTML = document.getElementById(caption_id).innerHTML;
         negText.innerHTML = document.getElementById(caption_id.replace('d_', 'n_')).innerHTML;
         subcaptionText.innerHTML = document.getElementById(subcaption_id).innerHTML;
+        body.style["overscroll-behavior"] = "contain"
 
         refreshImageList();
         currentImage = img_id.split('_', 2)[1];
@@ -236,6 +238,48 @@
 
       });
 
+      let touchstartX = 0
+      let touchendX = 0
+      let touchstartY = 0
+      let touchendY = 0
+
+      function checkSwipe() {
+        // swipes only checked if img model is visible
+        if (modal.style.display == "block") {
+            // ignore swipes under min distance
+            if (Math.abs(touchendY - touchstartY) > 200) {
+                // down
+                if (touchendY > touchstartY) {
+                    if (niceAlertQuick("Delete this image?", "Tip: if you accidentally delete an image, you may recover it in the 'server\\temp' folder BEFORE you shut the server down!", deleteImage) == true) {
+                        // deleteImage function will be called if user confirms
+                    }
+                }
+            } else {
+                if (Math.abs(touchendX - touchstartX) > 100) {
+                    // left
+                    if (touchendX < touchstartX) {
+                        nextImage();
+                    }
+                    // right
+                    if (touchendX > touchstartX) {
+                        previousImage();
+                    }
+                }
+            }
+        }
+      }
+
+      document.addEventListener('touchstart', e => {
+        touchstartX = e.changedTouches[0].screenX
+        touchstartY = e.changedTouches[0].screenY
+      })
+
+      document.addEventListener('touchend', e => {
+        touchendX = e.changedTouches[0].screenX
+        touchendY = e.changedTouches[0].screenY
+        checkSwipe()
+      })
+
       document.getElementById('left-img').onclick = function() {
           previousImage();
       }
@@ -269,6 +313,7 @@
       function closeModal() {
           currentImage = "";
           modal.style.display = "none";
+          body.style["overscroll-behavior"] = "auto"
       }
 
       function refreshImageList() {
