@@ -324,6 +324,16 @@ When using random mode prompt files, sets a directory that random input images s
 !RANDOM_INPUT_IMAGE_DIR =                                # specifies no input images should be used
 ```
 
+## Viewing your Images
+
+You can click 'Gallery' in the top nav from any page to see the images that Dream Factory has produced for you. By default, you'll be looking at the most recently-created 200 images (the max number of images to display can be changed in your config.txt file via the GALLERY_MAX_IMAGES setting). You can also select a specific output folder to browse via the dropdown near the top of the page.
+
+When selecting a specific folder to browse, a zip icon will appear next to the folder name. Clicking this will download the entire folder of images as a .zip file.
+
+Clicking any image will open an expanded view of that image, and also display the selected image's associated metadata. While viewing an image, there are several additional commands available - these are represented by icons located over the image. Mousing over each icon will bring up a help bubble explaining the how each works, along with the command's associated hotkey (e.g.: left and right arrow keys to browse images, 'del' to delete an image, etc.).
+
+When deleting images via the hotkey (the 'del' key), note that the confirmation dialog is disabled to allow you to quickly delete large numbers of images (clicking the delete icon above the image will prompt you to confirm the deletion via an additional popup). If you accidentally delete images that you meant to keep, you can recover them in your ```[dream factory]/server/temp``` folder **before** you shut Dream Factory down (this folder is cleaned out on every shutdown!).
+
 # Advanced Usage
 
 Some usage scenarios for more advanced users can be found here.
@@ -332,7 +342,7 @@ Some usage scenarios for more advanced users can be found here.
 
 Wildcard files are simple text files placed into your dream-factory/prompts/wildcards directory. You can reference these wildcards by using `__[wildcard filename]__` (that's 2 underscores, followed by the wildcard filename without the .txt extension, followed by 2 more underscores) from within any of your prompt file [prompts] sections. When Dream Factory builds the final prompt, it'll replace the wildcard reference with a random line from the file.
 
-You can press ctrl+h or click the help button when editing prompts with the integrated editor to see a list of your available wildcards (click one to copy it to the clipboard for easy inclusion in your prompt files!).
+You can press ctrl+h or click the help button when editing prompt files with the integrated editor to see a list of your available wildcards (click one to copy it to the clipboard for easy inclusion in your prompt files!).
 
 An example colors.txt file is included. Specifying `__colors__` in any of your prompts will pull in a random color.
 
@@ -348,7 +358,9 @@ You can control the placement of the auto-inserted trigger word with [!AUTO_INSE
 
 ## Embeddings
 
-TODO
+If you've installed any [textual inversion embeddings into your Auto1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion) SD webui, you can reference them via the integrated prompt editor's built-in help.
+
+Just press ctrl+h or click the help button when editing prompt files with the integrated editor to see a list of your available embeddings (click one to copy it to the clipboard for easy inclusion in your prompt files!).
 
 # Updating Dream Factory
 
