@@ -334,6 +334,8 @@ Clicking any image will open an expanded view of that image, and also display th
 
 When deleting images via the hotkey (the 'del' key), note that the confirmation dialog is disabled to allow you to quickly delete large numbers of images (clicking the delete icon above the image will prompt you to confirm the deletion via an additional popup). If you accidentally delete images that you meant to keep, you can recover them in your ```[dream factory]/server/temp``` folder **before** you shut Dream Factory down (this folder is cleaned out on every shutdown!).
 
+While Dream Factory is not really intended to be used on mobile devices, you can swipe left and right when viewing images in the gallery to quickly browse. Swiping down while viewing an image will bring up the delete confirmation dialog. Swipe interactions have only been tested on Chrome for Android and aren't guaranteed to work properly on other mobile platforms.
+
 # Advanced Usage
 
 Some usage scenarios for more advanced users can be found here.
@@ -367,4 +369,17 @@ Just press ctrl+h or click the help button when editing prompt files with the in
 You can update Dream Factory to the latest version by typing:
 ```
 python setup.py --update
+```
+
+# Troubleshooting
+
+Fixes for common issues may be found here.
+
+## Compatibility with Automatic1111
+
+Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elected to not package Dream Factory with it's own version of the Automatic1111 SD webui. If Automatic makes significant changes to Automatic1111 in the future, it's possible that Dream Factory may stop working. I'll try to keep this updated with the hash to the latest known-working version of Automatic1111 in case issues arise.
+
+You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
+```
+git checkout fd4461d44c7256d56889f5b5ed9fb660a859172f
 ```
