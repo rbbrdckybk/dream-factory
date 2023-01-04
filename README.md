@@ -383,3 +383,6 @@ You can grab a known-compatible version of Automatic1111's SD webui by going to 
 ```
 git checkout fd4461d44c7256d56889f5b5ed9fb660a859172f
 ```
+If you get an error that the hash reference is not a tree, run ```git fetch``` and try again.
+
+If/when you want to go back to the latest version, you can just run ```git checkout master```.
