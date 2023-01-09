@@ -242,10 +242,12 @@
       let touchendX = 0
       let touchstartY = 0
       let touchendY = 0
+      let startTime = 0
+      let elapsedTime = 0
 
       function checkSwipe() {
-        // swipes only checked if img model is visible
-        if (modal.style.display == "block") {
+        // swipes only checked if img model is visible and they occur in 0.25 sec or less
+        if (modal.style.display == "block" && elapsedTime <= 250) {
             // ignore swipes under min distance
             if (Math.abs(touchendY - touchstartY) > 200) {
                 // down
@@ -272,11 +274,13 @@
       document.addEventListener('touchstart', e => {
         touchstartX = e.changedTouches[0].screenX
         touchstartY = e.changedTouches[0].screenY
+        startTime = new Date().getTime()
       })
 
       document.addEventListener('touchend', e => {
         touchendX = e.changedTouches[0].screenX
         touchendY = e.changedTouches[0].screenY
+        elapsedTime = new Date().getTime() - startTime
         checkSwipe()
       })
 
