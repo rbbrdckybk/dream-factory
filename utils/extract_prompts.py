@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 # Dream Factory extract_prompts utility
@@ -286,6 +286,8 @@ if __name__ == '__main__':
                                 while params['prompt'].endswith(' ') or params['prompt'].endswith(','):
                                     params['prompt'] = params['prompt'][:-1]
                                 # fix double commas & other misc issues
+                                if params['prompt'].endswith('.'):
+                                    params['prompt'] = params['prompt'][:-1].strip()
                                 params['prompt'] = params['prompt'].replace('|', ',')
                                 params['prompt'] = params['prompt'].replace(',,', ',')
                                 params['prompt'] = params['prompt'].replace(', ,', ',')
