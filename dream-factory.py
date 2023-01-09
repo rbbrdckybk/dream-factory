@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import threading
@@ -1207,6 +1207,7 @@ class Controller:
 
     # delete an image
     def delete_gallery_img(self, web_path):
+        web_path = web_path.replace('%20', ' ')
         web_path = web_path.replace('/', os.path.sep)
         web_path = web_path.replace('\\', os.path.sep)
         response = ""
