@@ -6,6 +6,12 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.01.09]
+
+### Fixed
+- Corrected an issue that could cause the gallery page's image deletion function to fail if the output directory/prompt file name contained spaces.
+- Added some additional touch checks on mobile to help prevent pinch/zoom motions from being confused with swiping left/right/down.
+
 ## [2022.12.27]
 
 ### Added
