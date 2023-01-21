@@ -6,6 +6,11 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.01.23]
+
+### Added
+- Several changes to bring compatibility up to the current latest Automatic1111 version (hash e33cace2c2074ef342d027c1f31ffc4b3c3e877e). Note that Dream Factory will operate with the original 'hires fix' behavior enabled (Auto1111 Settings -> Compatibility -> For hires fix...) to maintain compatibility with people running older versions of Auto1111. 
+
 ## [2023.01.09]
 
 ### Fixed
