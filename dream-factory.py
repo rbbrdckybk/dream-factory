@@ -368,6 +368,7 @@ class Controller:
         self.server_startup_time = time.time()
         self.shutting_down = False
         self.sdi_ports_assigned = 0
+        self.sdi_setup_request_made = False
         self.sdi_sampler_request_made = False
         self.sdi_samplers = None
         self.models_filename = 'model-triggers.txt'
@@ -1242,6 +1243,24 @@ class Controller:
         return response
 
 
+    # checks for updated model strings from server
+    # non-empty return value indicates the local txt file should be updated
+    def hash_check(self, old_model, new_model):
+        retval = ''
+        if ',' in old_model:
+            pre_old = old_model.split(',', 1)[0]
+            post_old = old_model.split(',', 1)[1]
+
+            if pre_old != new_model:
+                #print('Models do not match!: ' + pre_old + ', ' + new_model)
+                retval = new_model + ',' + post_old
+                #print(' -> Should be updated to: ' + retval)
+            else:
+                #print('Models match: ' + pre_old + ', ' + new_model)
+                pass
+
+        return retval
+
     # sets the list of SD models available
     # also creates/updates the model/trigger file
     def update_models(self, models):
@@ -1253,18 +1272,48 @@ class Controller:
 
             # scan to see if any on the server are missing from the file
             missing = []
+            updates = []
             for m in models:
                 found = False
                 for line in lines:
-                    if m in line:
+                    # remove hash from m if present for compare
+                    compare_m = m
+                    if '[' in m and ']' in m:
+                        compare_m = m.split('[', 1)[0].strip()
+                    if compare_m in line:
                         found = True
+                        new_line = self.hash_check(line, m)
+                        if new_line != '':
+                            updates.append([line, new_line])
                         break
                 if not found:
                     missing.append(m)
 
+            # handle updates if necessary
+            if len(updates) > 0:
+                # first make a backup of the existing model-triggers.txt file
+                try:
+                    if exists(self.models_filename + '.bak'):
+                        os.remove(self.models_filename + '.bak')
+                    os.rename(self.models_filename, self.models_filename + '.bak')
+                except:
+                    print('Error creating backup of model-triggers.txt!')
+
+                with open(self.models_filename, 'w') as f:
+                    for line in lines:
+                        found = False
+                        for update in updates:
+                            if update[0] == line:
+                                found = True
+                                f.write(update[1])
+                                break
+                        if not found:
+                            f.write(line)
+
             # append missing models to file
             with open(self.models_filename, 'a') as f:
                 for new_m in missing:
+                    pass
                     f.write(new_m + ', \n')
 
         else:
@@ -1396,6 +1445,11 @@ if __name__ == '__main__':
         skip = False
 
         if worker != None:
+            if not control.sdi_setup_request_made:
+                # sets initial config options necessary for Dream Factory to operate
+                worker['sdi_instance'].set_initial_options()
+                control.sdi_setup_request_made = True
+                skip = True
 
             if not control.sdi_sampler_request_made:
                 # get available samplers from the server

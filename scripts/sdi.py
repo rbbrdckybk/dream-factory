@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import json
@@ -541,13 +541,24 @@ class SDI:
             self.busy = False
 
 
-    # tells the SD instnace to load the indicated model
+    # tells the SD instance to load the indicated model
     def load_model(self, new_model):
         self.options_change_in_progress = True
         self.model_loading_now = new_model
         self.log("requesting a new model load: " + new_model, True)
         payload = {
             "sd_model_checkpoint": new_model
+        }
+        model_req = SetOptionsRequest(self, payload, self.handle_options_response)
+        model_req.start()
+
+
+    # tells the SD instance to use the legacy highres_fix behavior
+    def set_initial_options(self):
+        self.options_change_in_progress = True
+        self.log("passing initial setup options to SD instance...", True)
+        payload = {
+            "use_old_hires_fix_width_height": True
         }
         model_req = SetOptionsRequest(self, payload, self.handle_options_response)
         model_req.start()
@@ -562,7 +573,9 @@ class SDI:
                 self.model_loading_now = ''
                 self.log('new model successfully loaded!', True)
             else:
-                self.log('options successfully changed!', True)
+                pass
+                # TODO uncomment this if used beyond initial setup
+                #self.log('options successfully changed!', True)
         else:
             # TODO handle error reporting
             #r = response.json()
