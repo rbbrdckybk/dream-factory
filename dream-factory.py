@@ -106,6 +106,12 @@ class Worker(threading.Thread):
                         self.command['prompt'] = p + ', ' + trigger
                     elif self.command.get('auto_insert_model_trigger') == 'start':
                         self.command['prompt'] = trigger + ', ' + p
+                    elif 'keyword:' in self.command.get('auto_insert_model_trigger'):
+                        keyword = self.command.get('auto_insert_model_trigger')
+                        keyword = keyword.split('keyword:', 1)[1].strip()
+                        if keyword in p:
+                            # the keyword we need to replace with the trigger is in the prompt, replace it
+                            self.command['prompt'] = p.replace(keyword, trigger)
 
         # check for wildcard replacements
         p = self.command.get('prompt')
@@ -660,7 +666,7 @@ class Controller:
                                 self.config.update({'debug_test_mode' : False})
 
                     elif command == 'pf_auto_insert_model_trigger':
-                        if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off':
+                        if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off' or 'keyword:' in value:
                             self.config.update({'auto_insert_model_trigger' : value})
 
                     elif command == 'pf_neg_prompt':

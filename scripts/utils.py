@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import threading
@@ -254,7 +254,7 @@ class PromptManager():
                     self.config.update({'height' : value})
 
         elif command == 'auto_insert_model_trigger':
-            if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off':
+            if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off' or 'keyword:' in value:
                 self.config.update({'auto_insert_model_trigger' : value})
 
         elif command == 'highres_fix':
