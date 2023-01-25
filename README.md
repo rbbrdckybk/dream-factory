@@ -257,7 +257,7 @@ Specifies a negative prompt to be used for all of the prompts that follow it (re
 !NEG_PROMPT = watermark, blurry, out of focus
 ```
 #### !AUTO_INSERT_MODEL_TRIGGER
-For use with custom models that require a 'trigger word' that has been set up in your model-triggers.txt file (see [Custom Models](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#custom-models) below). This allows you to control the placement of the automatically-inserted trigger word. Valid options are **start** (default), **end**, **first_comma**, and **off**: 'start' will put the trigger word at the front of the prompt, 'end' will place it at the end, 'first_comma' will place it after the first comma (or at the end if there is no comma in the prompt), and 'off' will disable auto-insertion entirely.
+For use with custom models that require a 'trigger word' that has been set up in your model-triggers.txt file (see [Custom Models](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#custom-models) below). This allows you to control the placement of the automatically-inserted trigger word. Valid options are **start** (default), **end**, **first_comma**, **keyword:[keyword to replace]** and **off**: 'start' will put the trigger word at the front of the prompt, 'end' will place it at the end, 'first_comma' will place it after the first comma (or at the end if there is no comma in the prompt), 'keyword:' will replace the specified keyword/phrase in the prompt with the model trigger word, and 'off' will disable auto-insertion entirely.
 ```
 !AUTO_INSERT_MODEL_TRIGGER = start
 ```
