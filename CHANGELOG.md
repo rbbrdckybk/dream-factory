@@ -6,6 +6,15 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.01.25]
+
+### Added
+- Support for 'keyword:' when using the !AUTO_INSERT_MODEL_TRIGGER prompt file directive. For example, the following directive would replace the phrase 'replace_me' in prompts with the active model's configured trigger word:
+```
+!AUTO_INSERT_MODEL_TRIGGER = keyword:replace_me
+```
+This is mostly useful if you've trained a bunch of Dreambooth models and want to easily share a prompt file between them (e.g.: you have two models trained with tokens 'john man' and 'bob person'), or if you just want a high-degree of placement control over model token triggers.
+
 ## [2023.01.23]
 
 ### Added
