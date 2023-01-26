@@ -15,6 +15,9 @@ python setup.py --update
 ```
 This is mostly useful if you've trained a bunch of Dreambooth models and want to easily share a prompt file between them (e.g.: you have two models trained with tokens 'john man' and 'bob person'), or if you just want a high-degree of placement control over model token triggers.
 
+### Fixed
+- Corrected an issue that could cause the gallery page to fail to load if there were recent images with empty positive prompt metadata.
+
 ## [2023.01.23]
 
 ### Added
