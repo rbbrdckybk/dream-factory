@@ -103,7 +103,8 @@ def extract_params_from_command(command):
         'steps' : "",
         'scale' : "",
         'input_image' : "",
-        'strength' : ""
+        'strength' : "",
+        'neg_prompt' : ""
     }
 
     if command != "":
@@ -128,6 +129,15 @@ def extract_params_from_command(command):
                 temp = temp[:-1]
             temp = temp.replace('\\', '')
             params.update({'prompt' : temp})
+
+        if '--neg_prompt \"' in command:
+            temp = command.split('--neg_prompt \"', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.strip()
+            if temp[-1] == '\"':
+                temp = temp[:-1]
+            params.update({'neg_prompt' : temp.strip()})
 
         if '--ddim_steps' in command:
             temp = command.split('--ddim_steps', 1)[1]
@@ -195,6 +205,11 @@ if __name__ == '__main__':
         "--ignore_subdirs",
         action='store_true',
         help="don't search sub-directories for images"
+    )
+    parser.add_argument(
+        "--ignore_neg_prompts",
+        action='store_true',
+        help="don't extract negative prompts"
     )
     opt = parser.parse_args()
 
@@ -293,9 +308,15 @@ if __name__ == '__main__':
                                 params['prompt'] = params['prompt'].replace(', ,', ',')
                                 params['prompt'] = params['prompt'].replace(' ,', ',')
                                 params['prompt'] = params['prompt'].replace(',  style,', ',')
+                                params['prompt'] = params['prompt'].strip(',')
 
                                 if params['prompt'].strip() != '':
-                                    prompts.append(params['prompt'])
+                                    if not opt.ignore_neg_prompts:
+                                        temp = '\n!NEG_PROMPT = ' + params['neg_prompt'].strip() + '\n\n'
+                                        temp += params['prompt']
+                                        prompts.append(temp)
+                                    else:
+                                        prompts.append(params['prompt'])
 
             print(' found ' + str(len(prompts)) + ' prompts.')
             # final contains de-duped prompts
