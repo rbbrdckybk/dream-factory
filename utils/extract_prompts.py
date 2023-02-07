@@ -344,6 +344,8 @@ if __name__ == '__main__':
                                 if params['prompt'].strip() != '':
                                     temp = params['prompt']
                                     if opt.extract_neg_prompts:
+                                        if params['neg_prompt'] == '':
+                                            params['neg_prompt'] = ' # no negative prompt'
                                         temp = '!NEG_PROMPT = ' + params['neg_prompt'] + '\n\n' + temp
                                     if opt.extract_cfg_scale:
                                         temp = '!SCALE = ' + params['scale'] + '\n' + temp
