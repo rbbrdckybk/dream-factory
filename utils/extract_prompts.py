@@ -103,7 +103,10 @@ def extract_params_from_command(command):
         'steps' : "",
         'scale' : "",
         'input_image' : "",
-        'strength' : ""
+        'strength' : "",
+        'neg_prompt' : "",
+        'model' : "",
+        'sampler' : ""
     }
 
     if command != "":
@@ -128,6 +131,24 @@ def extract_params_from_command(command):
                 temp = temp[:-1]
             temp = temp.replace('\\', '')
             params.update({'prompt' : temp})
+
+        if '--neg_prompt' in command:
+            temp = command.split('--neg_prompt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'neg_prompt' : temp.strip().strip('"')})
+
+        if '--ckpt' in command:
+            temp = command.split('--ckpt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'model' : temp.strip().strip('"')})
+
+        if '--sampler' in command:
+            temp = command.split('--sampler', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'sampler' : temp.strip()})
 
         if '--ddim_steps' in command:
             temp = command.split('--ddim_steps', 1)[1]
@@ -196,9 +217,27 @@ if __name__ == '__main__':
         action='store_true',
         help="don't search sub-directories for images"
     )
+    parser.add_argument(
+        "--extract_neg_prompts",
+        action='store_true',
+        help="include negative prompts in the output"
+    )
+    parser.add_argument(
+        "--extract_cfg_scale",
+        action='store_true',
+        help="include config scale setting in the output"
+    )
+    parser.add_argument(
+        "--extract_models",
+        action='store_true',
+        help="include original model(s) in the output"
+    )
     opt = parser.parse_args()
 
-    prompts = []
+    prompts = {}
+    if not opt.extract_models:
+        prompts['all'] = []
+
     if opt.imgdir != '':
         print('\nStarting...')
 
@@ -252,7 +291,14 @@ if __name__ == '__main__':
                         # we found a prompt, add it if this wasn't img2img
                         if params['input_image'] == "":
                             # check if made with Auto1111, strip extra metadata if so
-                            if '\nNegative prompt' in params['prompt'] or '\nSteps:' in params['prompt']:
+                            if '\nNegative prompt:' in params['prompt'] or '\nSteps:' in params['prompt']:
+                                # grab neg prompt
+                                if '\nNegative prompt:' in params['prompt']:
+                                    params['neg_prompt'] = params['prompt'].split('\nNegative prompt:', 1)[1].strip()
+                                    params['neg_prompt'] = params['neg_prompt'].split('\nSteps:', 1)[0].strip()
+                                    #print(params['neg_prompt'])
+
+                                # grab prompt
                                 if '\nNegative prompt' in params['prompt']:
                                     params['prompt'] = params['prompt'].split('\nNegative prompt', 1)[0]
                                 if '\nSteps' in params['prompt']:
@@ -293,25 +339,60 @@ if __name__ == '__main__':
                                 params['prompt'] = params['prompt'].replace(', ,', ',')
                                 params['prompt'] = params['prompt'].replace(' ,', ',')
                                 params['prompt'] = params['prompt'].replace(',  style,', ',')
+                                params['prompt'] = params['prompt'].strip('\"').strip(",").strip()
 
                                 if params['prompt'].strip() != '':
-                                    prompts.append(params['prompt'])
+                                    temp = params['prompt']
+                                    if opt.extract_neg_prompts:
+                                        temp = '!NEG_PROMPT = ' + params['neg_prompt'] + '\n\n' + temp
+                                    if opt.extract_cfg_scale:
+                                        temp = '!SCALE = ' + params['scale'] + '\n' + temp
+                                    if opt.extract_models:
+                                        model = params['model']
+                                        model = model.split('[', 1)[0].strip()
+                                        if '\\' in model:
+                                            model = model.rsplit('\\', 1)[1].strip()
+                                        if '/' in model:
+                                            model = model.rsplit('/', 1)[1].strip()
+                                        if model not in prompts:
+                                            prompts[model] = []
+                                        prompts[model].append(temp)
+                                    else:
+                                        prompts['all'].append(temp)
 
-            print(' found ' + str(len(prompts)) + ' prompts.')
-            # final contains de-duped prompts
-            final = [*set(prompts)]
-            print('After removing dupes, there are ' + str(len(final)) + ' unique prompts.')
+
+            length = 0
+            for key in prompts:
+                length += len(prompts[key])
+            print(' found ' + str(length) + ' prompts.')
+
+            # de-dupe and sort
+            length = 0
+            for key in prompts:
+                prompts[key] = [*set(prompts[key])]
+                prompts[key].sort()
+                length += len(prompts[key])
+
+            print('After removing dupes, there are ' + str(length) + ' unique prompts.')
 
             print('Writing these to prompts.txt...')
 
             f = open('prompts.txt', 'w', encoding = 'utf-8')
             f.write('#######################################################################################################\n')
             f.write('# Created with utils\extract_prompts.py\n')
-            f.write('# ' + str(len(final)) + ' unique prompts from images in ' + opt.imgdir + '\n')
+            f.write('# ' + str(length) + ' unique prompts from images in ' + opt.imgdir + '\n')
             f.write('# Copy and paste these into any Dream Factory .prompt file.\n')
             f.write('#######################################################################################################\n\n')
-            for p in final:
-                f.write(p + '\n\n')
+            #for p in final:
+            #    f.write(p + '\n\n')
+            for key in prompts:
+                if opt.extract_models:
+                    if key != '':
+                        f.write('\n!CKPT_FILE = ' + key + '\n\n')
+                    else:
+                        f.write('\n# no model specified for the following prompts\n\n')
+                for p in prompts[key]:
+                    f.write(p + '\n\n')
             f.close()
 
         print('Done!')
