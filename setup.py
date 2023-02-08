@@ -185,7 +185,7 @@ if __name__ == '__main__':
             #if not os.path.exists(checkpoint_path):
             #    os.makedirs(checkpoint_path)
 
-            #print('\n\nAll done - don\'t forget to place your model.ckpt file in this directory! : ')
+            #print('\n\nAll done - don\'t forget to place your model.ckpt or model.safetensors file in this directory! : ')
             #print(checkpoint_path + '\n')
             if not os.path.exists('output'):
                 os.makedirs('output')

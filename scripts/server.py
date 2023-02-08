@@ -253,7 +253,7 @@ def build_model_reference(control):
     if control.sdi_models == None:
         buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available models here."
     else:
-        buffer += "<div class=\"modal-help-header-pre\"><p>These models may be assigned to the !CKPT_FILE directive. Add additional .ckpt files to your Automatic1111 models folder and restart Dream Factory to have them appear here.</p>\n"
+        buffer += "<div class=\"modal-help-header-pre\"><p>These models may be assigned to the !CKPT_FILE directive. Add additional .ckpt or .safetensors files to your Automatic1111 models folder and restart Dream Factory to have them appear here.</p>\n"
         if control.model_trigger_words != None and len(control.model_trigger_words) > 0:
             if control.config.get('auto_insert_model_trigger') != 'off':
                 buffer += "<p>Asterisked trigger words will be automatically added "
