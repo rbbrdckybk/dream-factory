@@ -6,6 +6,18 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.02.09]
+
+### Added
+- Support for custom output filenames via a new **!FILENAME** prompt file directive. See [docs](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#filename) for usage example and reference.
+- Hypernetwork reference within the integrated prompt editor (Lora reference will be added as soon as it's available via the Auto1111 API).
+
+### Fixed
+- The image gallery will now properly show any hypernetwork/lora references within prompts (previously they were stripped out since <> tags were being treated as HTML).
+
+### Changed
+- When specifying custom seeds (via **!SEED = xxx**) within standard prompt files in combination with **!REPEAT = yes**, seed values will now be incremented on each completed loop to avoid creating duplicate images.
+
 ## [2023.01.25]
 
 ### Added
