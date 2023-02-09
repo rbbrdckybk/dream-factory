@@ -160,6 +160,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!UPSCALE_CODEFORMER_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_codeformer_amount)
  * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_gfpgan_amount)
  * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_keep_org)
+ * [!FILENAME](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#filename)
 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
@@ -291,6 +292,26 @@ When upscaling, keep the original (non-upscaled) image as well? Valid options ar
 ```
 !UPSCALE_KEEP_ORG = no
 ```
+#### !FILENAME
+Allows you to specify a custom output filename. You may use the following variables; they will be filled in when the image is created:
+* ```<date-year>```
+* ```<date-month>```
+* ```<date-day>```
+* ```<height>```
+* ```<model>```
+* ```<neg_prompt>```
+* ```<prompt>```
+* ```<sampler>```
+* ```<scale>```
+* ```<seed>```
+* ```<steps>```
+* ```<width>```
+
+The file extension (.jpg) will be added automatically.
+```
+!FILENAME = <date-year><date-month><date-day>-<model>-<width>x<height>-<prompt>
+```
+The above example might produce an output filename of **20230209-deliberate_v11-768x1280-a-photo-of-a-cute-cat.jpg**, for example.
 #### !REPEAT
 Tells Dream Factory whether or not to continuing producing images after it has finished all possible combinations in the prompt file. Options are **yes** (default) or **no**. If set to no, Dream Factory will idle after it has completed all prompts.
 ```
