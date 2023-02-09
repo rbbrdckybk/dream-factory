@@ -89,7 +89,7 @@
         loadDropdown();
         loadSamplers();
         loadModels();
-        //loadHyperNetworks();
+        loadHyperNetworks();
         loadWildcards();
         loadEmbeddings();
     });
@@ -122,6 +122,10 @@
               <button id="help-embeddings" class="button-editor" onclick="help_content('embedding_help_msg')">Embeddings</button>
               <span class="tooltiptext">See embeddings reference</span>
           </div>
+          <div class="tooltip">
+              <button id="help-hypernetworks" class="button-editor" onclick="help_content('hypernetwork_help_msg')">Hypernetworks</button>
+              <span class="tooltiptext">See hypernetworks reference</span>
+          </div>
       </div>
       <div class="modal-help-row">
         <div class="modal-help-content" id="modal-help-content">
@@ -135,8 +139,8 @@
         </div>
         <div class="modal-help-hidden" id="embedding_help_msg">
         </div>
-        <!--div class="modal-help-hidden" id="hypernetwork_help_msg">
-        </div-->
+        <div class="modal-help-hidden" id="hypernetwork_help_msg">
+        </div>
       </div>
       <div class="modal-help-row" style="margin-top: 15px; margin-bottom: 50px; font-size: 14px; color: #888;">
         (press escape to close this reference)

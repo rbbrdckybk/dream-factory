@@ -209,6 +209,7 @@ class PromptManager():
             'min_strength' : 0.75,
             'max_strength' : 0.75,
             'delim' : " ",
+            'filename' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
@@ -461,6 +462,9 @@ class PromptManager():
 
         elif command == 'neg_prompt':
             self.config.update({'neg_prompt' : value})
+
+        elif command == 'filename':
+            self.config.update({'filename' : value})
 
         else:
             print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")

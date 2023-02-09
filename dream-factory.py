@@ -67,6 +67,10 @@ class Worker(threading.Thread):
     def run(self):
         if not int(self.command.get('seed')) > 0:
             self.command['seed'] = -1
+        else:
+            # increment seed if we've finished one or more loops
+            seed = int(self.command.get('seed')) + control.loops
+            self.command['seed'] = seed
 
         # if this is a random prompt, settle on random values
         if self.command.get('mode') == 'random':
@@ -316,8 +320,54 @@ class Worker(threading.Thread):
                         exif[0x9c9c] = meta_prompt.encode('utf16')
                         exif[0x9c9d] = ('AI art' + upscale_text).encode('utf16')
                         exif[0x0131] = "https://github.com/rbbrdckybk/dream-factory"
-                        newfilename = dt.now().strftime('%Y%m-%d%H-%M%S-') + str(nf_count)
-                        nf_count += 1
+                        newfilename = ''
+
+                        if self.command['filename'] != '':
+                            # user specified custom filename format
+
+                            model = self.command.get('ckpt_file')
+                            model = model.split('[', 1)[0].strip()
+                            if '\\' in model:
+                                model = model.rsplit('\\', 1)[1].strip()
+                            if '/' in model:
+                                model = model.rsplit('/', 1)[1].strip()
+                            if '.' in model:
+                                model = model.rsplit('.', 1)[0].strip()
+
+                            newfilename = self.command['filename']
+                            newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<height>', str(self.command.get('height')), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<sampler>', self.command.get('sampler'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<model>', model, newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<date-year>', dt.now().strftime('%Y'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<date-month>', dt.now().strftime('%m'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
+
+                            # remove all unrecognized variables
+                            while '<' in newfilename and '>' in newfilename:
+                                 front = newfilename.split('<', 1)[0]
+                                 back = newfilename.split('>', 1)[1]
+                                 newfilename = front + back
+
+                            # make the final name filesystem-safe
+                            newfilename = utils.slugify(newfilename)
+
+                            x = 0
+                            testname = newfilename
+                            while exists(output_dir + "/" + testname + ".jpg"):
+                                testname = newfilename + '-' + str(x)
+                                x += 1
+                            newfilename = testname
+                        else:
+                            # use default filename format
+                            newfilename = dt.now().strftime('%Y%m%d-%H%M%S-') + str(nf_count)
+                            nf_count += 1
+
                         im.save(output_dir + "/" + newfilename + ".jpg", exif=exif, quality=88)
                         if exists(samples_dir + "/" + f):
                             os.remove(samples_dir + "/" + f)

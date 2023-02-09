@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import os, os.path
@@ -76,13 +76,16 @@ def build_gallery(control):
 
         neg_prompt = params['neg_prompt']
         if neg_prompt != "":
+            neg_prompt = neg_prompt.replace('<', '&lt;').replace('>', '&gt;')
             neg_prompt = "negative prompt: " + neg_prompt
 
         short_prompt = params['prompt']
         if len(params['prompt']) > 302:
             short_prompt = params['prompt'][:300] + '...'
 
+        prompt = ''
         if params['prompt'] != '':
+            prompt = params['prompt'].replace('<', '&lt;').replace('>', '&gt;')
             if params['width'] != '':
                 param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
             elif params['input_image'] != "":
@@ -130,7 +133,7 @@ def build_gallery(control):
         else:
             buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
         buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + utils.filename_from_abspath(img) + "\">" + short_prompt + "</span></div>\n"
-        buffer += "\t\t<div class=\"hidden\" id=\"d_" + utils.filename_from_abspath(img) + "\">" + params['prompt'] + "</div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"d_" + utils.filename_from_abspath(img) + "\">" + prompt + "</div>\n"
         buffer += "\t\t<div class=\"hidden\" id=\"n_" + utils.filename_from_abspath(img) + "\">" + neg_prompt + "</div>\n"
         buffer += "\t\t<div class=\"hidden\" id=\"p_" + utils.filename_from_abspath(img) + "\">" + param_string + "</div>\n"
         buffer += "\t</li>\n"
@@ -253,7 +256,7 @@ def build_model_reference(control):
     if control.sdi_models == None:
         buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available models here."
     else:
-        buffer += "<div class=\"modal-help-header-pre\"><p>These models may be assigned to the !CKPT_FILE directive. Add additional .ckpt files to your Automatic1111 models folder and restart Dream Factory to have them appear here.</p>\n"
+        buffer += "<div class=\"modal-help-header-pre\"><p>These models may be assigned to the !CKPT_FILE directive. Add additional model files to your Automatic1111 models folder and restart Dream Factory to have them appear here.</p>\n"
         if control.model_trigger_words != None and len(control.model_trigger_words) > 0:
             if control.config.get('auto_insert_model_trigger') != 'off':
                 buffer += "<p>Asterisked trigger words will be automatically added "
@@ -288,10 +291,13 @@ def build_hypernetwork_reference(control):
     if control.sdi_hypernetworks == None:
         buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available hypernetworks here."
     else:
+        buffer += "<div class=\"modal-help-header-pre\"><p>These hypernetworks may be included in your prompts (use &lt;hypernet:[hypernetwork name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\hypernetworks\' folder and restart Dream Factory to have them appear here.</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
         buffer += "<div class=\"modal-help-header\">Hypernetworks:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         for h in control.sdi_hypernetworks:
-            buffer += "<li class=\"no-bullets\">" + h + "</li>\n"
+            cpy = '<hypernet:' + h + ':1.0>'
+            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + h + "</li>\n"
         buffer += "</ul>\n"
     return buffer
 
