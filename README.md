@@ -294,6 +294,7 @@ When upscaling, keep the original (non-upscaled) image as well? Valid options ar
 ```
 #### !FILENAME
 Allows you to specify a custom output filename. You may use the following variables; they will be filled in when the image is created:
+* ```<date>```
 * ```<date-year>```
 * ```<date-month>```
 * ```<date-day>```
@@ -305,6 +306,7 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<scale>```
 * ```<seed>```
 * ```<steps>```
+* ```<time>```
 * ```<width>```
 
 The file extension (.jpg) will be added automatically.
