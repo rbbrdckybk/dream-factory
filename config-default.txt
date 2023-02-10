@@ -93,6 +93,7 @@ PF_UPSCALE_CODEFORMER_AMOUNT = 0.0	# visibility of codeformer face enhancement (
 PF_UPSCALE_GFPGAN_AMOUNT = 0.0		# visibility of gfpgan face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?
 PF_NEG_PROMPT = 					# if you have a 'catch all' negative prompt you typically use, enter it here
+PF_FILENAME =						# set a default custom filename: https://github.com/rbbrdckybk/dream-factory#filename
 
 # Set a default .ckpt file here so that whenever you set !CKPT_FILE to nothing (e.g. '!CKPT_FILE = '), this default 
 # will be loaded. If you don't set anything here, !CKPT_FILE= will just use whatever happens to be loaded in Auto1111.

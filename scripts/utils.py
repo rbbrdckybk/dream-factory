@@ -209,7 +209,6 @@ class PromptManager():
             'min_strength' : 0.75,
             'max_strength' : 0.75,
             'delim' : " ",
-            'filename' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
@@ -221,6 +220,7 @@ class PromptManager():
             'upscale_codeformer_amount' : self.control.config['upscale_codeformer_amount'],
             'upscale_gfpgan_amount' : self.control.config['upscale_gfpgan_amount'],
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
+            'filename' : self.control.config['filename'],
             'outdir' : self.control.config['output_location']
         }
 

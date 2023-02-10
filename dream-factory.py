@@ -344,6 +344,8 @@ class Worker(threading.Thread):
                             newfilename = re.sub('<height>', str(self.command.get('height')), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<sampler>', self.command.get('sampler'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<model>', model, newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<date>', dt.now().strftime('%Y%m%d'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<time>', dt.now().strftime('%H%M%S'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-year>', dt.now().strftime('%Y'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-month>', dt.now().strftime('%m'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
@@ -569,6 +571,7 @@ class Controller:
             'upscale_codeformer_amount' : 0.0,
             'upscale_gfpgan_amount' : 0.0,
             'ckpt_file' : "",
+            'filename' : "",
 
             'sd_location' : "",
             'sd_port' : 7861,
@@ -817,6 +820,9 @@ class Controller:
                     elif command == 'pf_ckpt_file':
                         # this is validated after we receive valid models from the server
                         self.config.update({'ckpt_file' : value})
+
+                    elif command == 'pf_filename':
+                        self.config.update({'filename' : value})
 
                     else:
                         self.print("warning: config file command not recognized: " + command.upper() + " (it will be ignored)!")

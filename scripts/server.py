@@ -127,15 +127,18 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += upscale_info
 
-        buffer += "\t<li id=\"" + utils.filename_from_abspath(img) + "\" onclick=\"img_modal('i_" + utils.filename_from_abspath(img) + "', 'd_" + utils.filename_from_abspath(img) + "', 'p_" + utils.filename_from_abspath(img) + "')\">\n"
+        #img_identifier = utils.filename_from_abspath(img)
+        img_identifier = utils.slugify(img)
+
+        buffer += "\t<li id=\"" + img_identifier + "\" onclick=\"img_modal('i_" + img_identifier + "', 'd_" + img_identifier + "', 'p_" + img_identifier + "')\">\n"
         if control.config['gallery_current'] == 'user_gallery':
-            buffer += "\t\t<img src=\"/user_gallery/" + utils.filename_from_abspath(img) + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
+            buffer += "\t\t<img src=\"/user_gallery/" + img_identifier + "\" id=\"i_" + img_identifier + "\"/>\n"
         else:
-            buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + utils.filename_from_abspath(img) + "\"/>\n"
-        buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + utils.filename_from_abspath(img) + "\">" + short_prompt + "</span></div>\n"
-        buffer += "\t\t<div class=\"hidden\" id=\"d_" + utils.filename_from_abspath(img) + "\">" + prompt + "</div>\n"
-        buffer += "\t\t<div class=\"hidden\" id=\"n_" + utils.filename_from_abspath(img) + "\">" + neg_prompt + "</div>\n"
-        buffer += "\t\t<div class=\"hidden\" id=\"p_" + utils.filename_from_abspath(img) + "\">" + param_string + "</div>\n"
+            buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + img_identifier + "\"/>\n"
+        buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + img_identifier + "\">" + short_prompt + "</span></div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"d_" + img_identifier + "\">" + prompt + "</div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"n_" + img_identifier + "\">" + neg_prompt + "</div>\n"
+        buffer += "\t\t<div class=\"hidden\" id=\"p_" + img_identifier + "\">" + param_string + "</div>\n"
         buffer += "\t</li>\n"
 
     buffer += "</ul>\n"
