@@ -253,6 +253,7 @@ class SDI:
                 for line in lines:
                     if line.startswith('set COMMANDLINE_ARGS='):
                         # modify Windows .bat file
+                        line = line.replace('--autolaunch ', '')
                         line = line.replace('--autolaunch', '')
                         line = line.replace('\n', '')
                         if not '--api' in line:
@@ -261,7 +262,27 @@ class SDI:
                             line += ' --nowebui'
                         #if not '--lowram' in line:
                         #    line += ' --lowram'
-                        # TODO check for these and replace if they already exist
+
+                        # ignore existing --device-id
+                        if '--device-id' in line:
+                            start = line.split('--device-id', 1)[0]
+                            end = line.split('--device-id', 1)[1]
+                            if '--' in end:
+                                end = '--' + end.split('--', 1)[1]
+                            else:
+                                end = ''
+                            line = start + end
+
+                        # ignore existing --port
+                        if '--port' in line:
+                            start = line.split('--port', 1)[0]
+                            end = line.split('--port', 1)[1]
+                            if '--' in end:
+                                end = '--' + end.split('--', 1)[1]
+                            else:
+                                end = ''
+                            line = start + end
+
                         line += ' --port ' + str(self.sd_port)
                         line += ' --device-id ' + str(self.gpu_id)
                         line += '\n'
