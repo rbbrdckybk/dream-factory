@@ -184,7 +184,10 @@
         body.style["overscroll-behavior"] = "contain"
 
         refreshImageList();
-        currentImage = img_id.split('_', 2)[1];
+
+        // this breaks when there is an underscore in the filename
+        //currentImage = img_id.split('_', 2)[1];
+        currentImage = img_id.split(/_(.*)/s)[1];
       }
 
       document.getElementById('delete-img').onclick = function() {
