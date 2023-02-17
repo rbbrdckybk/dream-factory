@@ -377,7 +377,7 @@ def build_worker_panel(workers):
                 working_text = worker["work_state"]
 
             if worker["job_prompt_info"] != None and worker["job_prompt_info"] != '':
-                prompt_text = worker["job_prompt_info"].get('prompt')
+                prompt_text = worker["job_prompt_info"].get('prompt').replace('<', '&lt').replace('>', '&gt')
 
                 if worker["job_prompt_info"].get('input_image') != "":
                     prompt_options_text = "init image: " + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image'))

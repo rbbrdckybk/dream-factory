@@ -241,7 +241,7 @@ class PromptManager():
                 try:
                     int(value)
                 except:
-                    print("*** WARNING: specified 'WIDTH' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'WIDTH' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'width' : value})
 
@@ -250,7 +250,7 @@ class PromptManager():
                 try:
                     int(value)
                 except:
-                    print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'height' : value})
 
@@ -267,7 +267,7 @@ class PromptManager():
                 try:
                     int(value)
                 except:
-                    print("*** WARNING: specified 'SEED' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'SEED' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'seed' : value})
 
@@ -276,7 +276,7 @@ class PromptManager():
                 try:
                     int(value)
                 except:
-                    print("*** WARNING: specified 'STEPS' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'STEPS' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'steps' : value})
 
@@ -285,7 +285,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'scale' : value})
                     self.config.update({'min_scale' : value})
@@ -296,7 +296,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'MIN_SCALE' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'MIN_SCALE' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'min_scale' : value})
 
@@ -305,7 +305,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'MAX_SCALE' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'MAX_SCALE' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'max_scale' : value})
 
@@ -314,7 +314,7 @@ class PromptManager():
                 try:
                     int(value)
                 except:
-                    print("*** WARNING: specified 'SAMPLES' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'SAMPLES' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'samples' : value})
 
@@ -323,7 +323,7 @@ class PromptManager():
                 try:
                     int(value)
                 except:
-                    print("*** WARNING: specified 'BATCH_SIZE' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'BATCH_SIZE' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'batch_size' : value})
 
@@ -332,7 +332,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'strength' : value})
                     self.config.update({'min_strength' : value})
@@ -343,7 +343,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'MIN_STRENGTH' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'MIN_STRENGTH' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'min_strength' : value})
 
@@ -352,7 +352,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'MAX_STRENGTH' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'MAX_STRENGTH' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'max_strength' : value})
 
@@ -365,7 +365,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'UPSCALE_AMOUNT' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'UPSCALE_AMOUNT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'upscale_amount' : value})
 
@@ -374,7 +374,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'UPSCALE_CODEFORMER_AMOUNT' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'UPSCALE_CODEFORMER_AMOUNT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'upscale_codeformer_amount' : value})
 
@@ -383,7 +383,7 @@ class PromptManager():
                 try:
                     float(value)
                 except:
-                    print("*** WARNING: specified 'UPSCALE_GFPGAN_AMOUNT' is not a valid number; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'UPSCALE_GFPGAN_AMOUNT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'upscale_gfpgan_amount' : value})
 
@@ -396,11 +396,18 @@ class PromptManager():
                 self.config.update({'mode' : value})
 
         elif command == 'input_image':
-            self.config.update({'input_image' : value})
+            if value != '':
+                if os.path.exists(value):
+                    self.config.update({'input_image' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'INPUT_IMAGE' does not exist; it will be ignored!")
 
         elif command == 'random_input_image_dir':
             if value != '':
-                self.config.update({'random_input_image_dir' : value})
+                if os.path.exists(value):
+                    self.config.update({'random_input_image_dir' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' does not exist; it will be ignored!")
 
         elif command == 'repeat':
             if value == 'yes':
@@ -414,7 +421,7 @@ class PromptManager():
                     self.config.update({'delim' : value.strip('\"')})
                     #print("New delim: \"" + self.config.get('delim')  + "\"")
                 else:
-                    print("*** WARNING: prompt file command DELIM value (" + value + ") not understood (make sure to put quotes around it)! ***")
+                    self.control.print("*** WARNING: prompt file command DELIM value (" + value + ") not understood (make sure to put quotes around it)! ***")
                     time.sleep(1.5)
 
         elif command == 'ckpt_file':
@@ -428,7 +435,7 @@ class PromptManager():
                         # this is lazy but should always be incremented to zero on the first loop
                         self.control.model_index = -1
                     else:
-                        print("*** WARNING: unable to validate 'CKPT_FILE = all' (has your GPU finished initializing?)! ***")
+                        self.control.print("*** WARNING: unable to validate 'CKPT_FILE = all' (has your GPU finished initializing?)! ***")
                 elif ',' in value:
                     # we're queuing multiple models
                     models = value.split(',')
@@ -438,7 +445,7 @@ class PromptManager():
                         if v != '':
                             validated_models.append(v)
                         else:
-                            print("*** WARNING: ckpt in model list of !CKPT_FILE value (" + m.strip() + ") doesn't match any server values; ignoring it! ***")
+                            self.control.print("*** WARNING: ckpt in model list of !CKPT_FILE value (" + m.strip() + ") doesn't match any server values; ignoring it! ***")
                     if len(validated_models) > 0:
                         # we have at least one valid model, start with the first one
                         # store list with the controller
@@ -449,7 +456,7 @@ class PromptManager():
                 else:
                     model = self.control.validate_model(value)
                     if model == '':
-                        print("*** WARNING: prompt file command CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                        self.control.print("*** WARNING: prompt file command CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
                     else:
                         # to cover cases where there are multiple !CKPT_FILE directives in a single prompt file
                         self.control.models = []
@@ -467,7 +474,7 @@ class PromptManager():
             self.config.update({'filename' : value})
 
         else:
-            print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
+            self.control.print("*** WARNING: prompt file command not recognized: " + command.upper() + " (it will be ignored)! ***")
             time.sleep(1.5)
 
 
