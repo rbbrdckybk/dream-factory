@@ -118,23 +118,28 @@ class Worker(threading.Thread):
                             self.command['prompt'] = p.replace(keyword, trigger)
 
         # check for wildcard replacements
+        replacements_made = 1
         p = self.command.get('prompt')
         #print('before wildcard replace: ' + self.command['prompt'])
-        for k, v in control.wildcards.items():
-            key = '__' + k.lower() + '__'
-            if key in p.lower():
-                vcopy = v.copy()
-                # this will handle multiple replacements of the same key
-                while key in p.lower():
-                    if len(vcopy) > 0:
-                        # pick a random value & remove it from the copied list
-                        x = random.randint(0, len(vcopy)-1)
-                        replace = vcopy.pop(x)
-                        # replace the first occurence with the chosen value
-                        p = re.sub(key, replace, p, 1, flags=re.IGNORECASE)
-                    else:
-                        # not enough values to make all replacements, sub '' instead
-                        p = re.sub(key, '', p, flags=re.IGNORECASE)
+        while replacements_made > 0:
+            replacements_made = 0
+            for k, v in control.wildcards.items():
+                key = '__' + k.lower() + '__'
+                if key in p.lower():
+                    vcopy = v.copy()
+                    # this will handle multiple replacements of the same key
+                    while key in p.lower():
+                        if len(vcopy) > 0:
+                            # pick a random value & remove it from the copied list
+                            x = random.randint(0, len(vcopy)-1)
+                            replace = vcopy.pop(x)
+                            # replace the first occurence with the chosen value
+                            p = re.sub(key, replace, p, 1, flags=re.IGNORECASE)
+                            replacements_made += 1
+                        else:
+                            # not enough values to make all replacements, sub '' instead
+                            p = re.sub(key, '', p, flags=re.IGNORECASE)
+
         self.command['prompt'] = p
         #print('after wildcard replace: ' + self.command['prompt'])
 
