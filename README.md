@@ -371,6 +371,8 @@ You can press ctrl+h or click the help button when editing prompt files with the
 
 An example colors.txt file is included. Specifying `__colors__` in any of your prompts will pull in a random color.
 
+Nested wildcards (references to wildcards within a wildcard file) are permitted (as of 2023-02-16).
+
 ## Custom Models
 
 Any custom models that you've placed in your Auto1111 models directory are available to use within Dream Factory via the [!CKPT_FILE directive](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#ckpt_file). For models that require a trigger word (for example, the [Mo-Di model](https://huggingface.co/nitrosocke/mo-di-diffusion) requires you to place the phrase 'modern disney style' somewhere in your prompt), you can have Dream Factory automatically insert these for you.
