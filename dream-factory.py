@@ -367,10 +367,10 @@ class Worker(threading.Thread):
                             newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
 
                             # remove all unrecognized variables
-                            while '<' in newfilename and '>' in newfilename:
-                                 front = newfilename.split('<', 1)[0]
-                                 back = newfilename.split('>', 1)[1]
-                                 newfilename = front + back
+                            #opening_braces = '<'
+                            #closing_braces = '>'
+                            #non_greedy_wildcard = '.*?'
+                            #re.sub(f'[{opening_braces}]{non_greedy_wildcard}[{closing_braces}]', '', newfilename)
 
                             # make the final name filesystem-safe
                             newfilename = utils.slugify(newfilename)
