@@ -454,6 +454,7 @@ class Controller:
         self.wildcards = None
         self.default_model_validated = False
         self.embeddings = []
+        self.loras = []
         # for queuing multiple models to apply to prompt files
         self.models = []
         self.model_index = 0
@@ -488,11 +489,10 @@ class Controller:
             # create some dummy devices for testing
             self.init_dummy_workers()
 
-        # do an initial read of user wildcard files
+        # do an initial read of user-installed files
         self.read_wildcards()
-
-        # do an initial read of user embedding files
         self.read_embeddings()
+        self.read_loras()
 
 
     # returns the current operation mode (standard or random)
@@ -529,12 +529,26 @@ class Controller:
 
     # checks for user embedding files in Auto1111 embeddings dir
     def read_embeddings(self):
+        self.embeddings = []
         embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
         if os.path.exists(embed_dir):
             for x in os.listdir(embed_dir):
-                if x.endswith('.pt') or x.endswith('.bin'):
+                if x.endswith('.pt') or x.endswith('.bin') or x.endswith('.safetensors'):
                     self.embeddings.append(x)
         self.embeddings.sort()
+
+
+    # checks for user lora files in Auto1111 embeddings dir
+    # 2023-02-28 BK there is no API request for these; doing this instead
+    def read_loras(self):
+        self.loras = []
+        lora_dir = os.path.join(self.config['sd_location'], 'models')
+        lora_dir = os.path.join(lora_dir, 'Lora')
+        if os.path.exists(lora_dir):
+            for x in os.listdir(lora_dir):
+                if x.endswith('.pt') or x.endswith('.bin') or x.endswith('.safetensors'):
+                    self.loras.append(x)
+        self.loras.sort()
 
 
     # for debugging
@@ -1575,12 +1589,19 @@ if __name__ == '__main__':
                                 should_stop = True
 
                         if should_stop:
-                            control.is_paused = True
-                            # no more jobs, wait for all workers to finish
-                            control.print('No more work in queue; waiting for all workers to finish...')
-                            while control.num_workers_working() > 0:
-                                time.sleep(.05)
-                            control.print('All work done; pausing server - add some more work via the control panel!')
+                            # check if user specified a prompt file to load upon completion
+                            if control.prompt_manager != None and control.prompt_manager.config.get('next_prompt_file') != "":
+                                fname = utils.filename_from_abspath(control.prompt_manager.config.get('next_prompt_file'))
+                                control.print("all work done; loading next specified prompt file: " + str(fname))
+                                control.new_prompt_file(control.prompt_manager.config.get('next_prompt_file'))
+                            else:
+                                # all work done and no follow-up prompt file specified
+                                control.is_paused = True
+                                # no more jobs, wait for all workers to finish
+                                control.print('No more work in queue; waiting for all workers to finish...')
+                                while control.num_workers_working() > 0:
+                                    time.sleep(.05)
+                                control.print('All work done; pausing server - add some more work via the control panel!')
                         else:
                             # flag to repeat work enabled, re-load work queue
                             control.loops += 1

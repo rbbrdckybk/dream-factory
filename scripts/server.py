@@ -298,10 +298,13 @@ def build_hypernetwork_reference(control):
         buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
         buffer += "<div class=\"modal-help-header\">Hypernetworks:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
-        for h in control.sdi_hypernetworks:
-            cpy = '<hypernet:' + h + ':1.0>'
-            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + h + "</li>\n"
-        buffer += "</ul>\n"
+        if len(control.sdi_hypernetworks) == 0:
+            buffer += "none"
+        else:
+            for h in control.sdi_hypernetworks:
+                cpy = '<hypernet:' + h + ':1.0>'
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + h + "</li>\n"
+            buffer += "</ul>\n"
     return buffer
 
 
@@ -337,10 +340,29 @@ def build_embedding_reference(control):
         buffer += "<ul class=\"no-bullets\">\n"
         keys = []
         for e in control.embeddings:
-            embed = e.replace('.pt', '').replace('.bin', '')
+            embed = e.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
             cpy = embed
             buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + cpy + "</li>\n"
         buffer += "</ul>\n"
+    return buffer
+
+
+def build_lora_reference(control):
+    buffer = ""
+    buffer += "<div class=\"modal-help-header-pre\"><p>These LoRA files may be included in your prompts (use &lt;lora:[LoRA name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\Lora\' folder and restart Dream Factory to have them appear here.</p>\n"
+    buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+    buffer += "<div class=\"modal-help-header\">LoRA files:</div>\n"
+    buffer += "<ul class=\"no-bullets\">\n"
+
+    if len(control.loras) == 0:
+        buffer += "none"
+    else:
+        for e in control.loras:
+            lora = e.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
+            cpy = '<lora:' + lora + ':1.0>'
+            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + lora + "</li>\n"
+        buffer += "</ul>\n"
+
     return buffer
 
 
@@ -519,6 +541,10 @@ class ArtGeneratorWebService(object):
 
     def HYPERNETWORK_REFERENCE_LOAD(self):
         buffer_text = build_hypernetwork_reference(self.control)
+        return buffer_text
+
+    def LORA_REFERENCE_LOAD(self):
+        buffer_text = build_lora_reference(self.control)
         return buffer_text
 
     def WILDCARD_REFERENCE_LOAD(self):

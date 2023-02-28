@@ -17,6 +17,7 @@
         const samplers = document.getElementById('sampler_help_msg');
         const models = document.getElementById('model_help_msg');
         const hypernetworks = document.getElementById('hypernetwork_help_msg');
+        const loras = document.getElementById('lora_help_msg');
         const wildcards = document.getElementById('wildcard_help_msg');
         const embeddings = document.getElementById('embedding_help_msg');
 
@@ -60,6 +61,16 @@
             });
         }
 
+        function loadLoras() {
+            $.ajax({
+              type: "LORA_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+              loras.innerHTML = string;
+            });
+        }
+
         function loadWildcards() {
             $.ajax({
               type: "WILDCARD_REFERENCE_LOAD",
@@ -90,6 +101,7 @@
         loadSamplers();
         loadModels();
         loadHyperNetworks();
+        loadLoras();
         loadWildcards();
         loadEmbeddings();
     });
@@ -124,7 +136,11 @@
           </div>
           <div class="tooltip">
               <button id="help-hypernetworks" class="button-editor" onclick="help_content('hypernetwork_help_msg')">Hypernetworks</button>
-              <span class="tooltiptext">See hypernetworks reference</span>
+              <span class="tooltiptext">See hypernetwork reference</span>
+          </div>
+          <div class="tooltip">
+              <button id="help-loras" class="button-editor" onclick="help_content('lora_help_msg')">LoRAs</button>
+              <span class="tooltiptext">See LoRA reference</span>
           </div>
       </div>
       <div class="modal-help-row">
@@ -141,6 +157,8 @@
         </div>
         <div class="modal-help-hidden" id="hypernetwork_help_msg">
         </div>
+        <div class="modal-help-hidden" id="lora_help_msg">
+        </div>
       </div>
       <div class="modal-help-row" style="margin-top: 15px; margin-bottom: 50px; font-size: 14px; color: #888;">
         (press escape to close this reference)
@@ -151,6 +169,10 @@
 
         <div id="editor-title" class="panel-title">
             Prompt Editor
+            <div class="tooltip">
+                <a href="https://github.com/rbbrdckybk/dream-factory#creating-and-editing-prompt-files" target="_blank"><img src="/static/img/help-icon-sm.png" class="edit-img" style="margin-top: -1px; margin-bottom: -2px; margin-left: 3px;"></a>
+                <span class="tooltiptext">Full documentation.&#xa;(opens in a new tab)</span>
+            </div>
         </div>
 
         <div id="editor-row" class="panel-row" style="justify-content: space-between;">

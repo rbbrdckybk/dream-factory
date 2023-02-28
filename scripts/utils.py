@@ -209,6 +209,7 @@ class PromptManager():
             'min_strength' : 0.75,
             'max_strength' : 0.75,
             'delim' : " ",
+            'next_prompt_file' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
@@ -423,6 +424,24 @@ class PromptManager():
                 else:
                     self.control.print("*** WARNING: prompt file command DELIM value (" + value + ") not understood (make sure to put quotes around it)! ***")
                     time.sleep(1.5)
+
+        elif command == 'next_prompt_file':
+            match = False
+            if value != '':
+                value = value.lower().replace('.prompts', '').strip()
+                files = os.listdir(self.control.config.get('prompts_location'))
+                for f in files:
+                    if f.lower().endswith('.prompts'):
+                        file = f.lower().replace('.prompts', '')
+                        if value == file:
+                            match = True
+                            value += '.prompts'
+                            value = os.path.join(os.path.abspath(self.control.config.get('prompts_location')), value)
+                            self.config.update({'next_prompt_file' : value})
+                            break
+            if not match:
+                self.control.print("*** WARNING: prompt file command NEXT_PROMPT_FILE value (" + value + ") is not a valid prompt file and will be ignored! ***")
+                time.sleep(1.5)
 
         elif command == 'ckpt_file':
             model = ''
