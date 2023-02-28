@@ -7,7 +7,7 @@ When updating to a new release, use the built-in setup.py script with the --upda
 python setup.py --update
 ```
 ## [2023.02.28]
-Tested with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **0cc0ee1bcb4c24a8c9715f66cede06601bfc00c8**
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **0cc0ee1bcb4c24a8c9715f66cede06601bfc00c8**
 
 ### Added
 - LoRA reference added to the integrated prompt editor.
