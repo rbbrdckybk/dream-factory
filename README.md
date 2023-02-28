@@ -165,6 +165,7 @@ These directives are valid in both the [config] section of both standard and ran
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
  * [!REPEAT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat)
+ * [!NEXT_PROMPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#next_prompt_file)
 
 Finally, these directives are valid only in the [config] section of **random** prompt files (!MODE = random):
 
@@ -319,6 +320,12 @@ Tells Dream Factory whether or not to continuing producing images after it has f
 ```
 !REPEAT = yes
 ```
+#### !NEXT_PROMPT_FILE
+Allows you to specify another prompt file to load when the current file finishes processing. Do not include a path; Dream Factory will automatically look for prompt files in the prompt location specified in your config.txt file. Note that this will have no effect in random prompt files or standard prompt files with *!REPEAT = yes*, since those files will run forever.
+```
+!NEXT_PROMPT_FILE = example-random
+```
+A .prompts file extension will be appended automatically if you omit it.
 #### !MIN_SCALE
 When using random mode prompt files, sets the minimum !SCALE value to use. If !MIN_SCALE and !MAX_SCALE are set to different values, Dream Factory will choose a random value between them for each prompt.
 ```
@@ -406,10 +413,10 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout c98cb0f8ecc904666f47684e238dd022039ca16f
+git checkout 0cc0ee1bcb4c24a8c9715f66cede06601bfc00c8
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
 If/when you want to go back to the latest version, you can just run ```git checkout master```.
 
-(updated 2023-01-20, previous supported hash: fd4461d44c7256d56889f5b5ed9fb660a859172f)
+(updated 2023-02-28, previous supported hash: c98cb0f8ecc904666f47684e238dd022039ca16f)
