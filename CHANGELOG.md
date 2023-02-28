@@ -6,6 +6,17 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.02.28]
+Tested with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **0cc0ee1bcb4c24a8c9715f66cede06601bfc00c8**
+
+### Added
+- LoRA reference added to the integrated prompt editor.
+- Support for chaining prompt file jobs via a new **!NEXT_PROMPT_FILE** prompt file directive. See [docs](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#next_prompt_file) for reference and usage example.
+- Added a help link on the integrated editor page that opens the [full command reference](https://github.com/rbbrdckybk/dream-factory#prompt-file-command-reference).
+
+### Fixed
+- Embeddings and Hypernetworks in .safetensors format will now properly show up in the integrated editor reference.
+
 ## [2023.02.09]
 
 ### Added
