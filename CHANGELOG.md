@@ -16,6 +16,7 @@ Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk
 
 ### Fixed
 - Embeddings and Hypernetworks in .safetensors format will now properly show up in the integrated editor reference.
+- Fix for potential broken images issue in user-defined gallery.
 
 ## [2023.02.09]
 
