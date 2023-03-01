@@ -132,7 +132,8 @@ def build_gallery(control):
 
         buffer += "\t<li id=\"" + img_identifier + "\" onclick=\"img_modal('i_" + img_identifier + "', 'd_" + img_identifier + "', 'p_" + img_identifier + "')\">\n"
         if control.config['gallery_current'] == 'user_gallery':
-            buffer += "\t\t<img src=\"/user_gallery/" + img_identifier + "\" id=\"i_" + img_identifier + "\"/>\n"
+            #buffer += "\t\t<img src=\"/user_gallery/" + img_identifier + "\" id=\"i_" + img_identifier + "\"/>\n"
+            buffer += "\t\t<img src=\"/user_gallery/" + utils.filename_from_abspath(img) + "\" id=\"i_" + img_identifier + "\"/>\n"
         else:
             buffer += "\t\t<img src=\"/" + img + "\" id=\"i_" + img_identifier + "\"/>\n"
         buffer += "\t\t<div class=\"overlay\"><span id=\"c_" + img_identifier + "\">" + short_prompt + "</span></div>\n"
