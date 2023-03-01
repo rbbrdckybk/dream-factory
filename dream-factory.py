@@ -442,7 +442,7 @@ class Controller:
         self.server_startup_time = time.time()
         self.shutting_down = False
         self.sdi_ports_assigned = 0
-        self.sdi_setup_request_made = False
+        #self.sdi_setup_request_made = False        # made this worker-level
         self.sdi_sampler_request_made = False
         self.sdi_samplers = None
         self.models_filename = 'model-triggers.txt'
@@ -941,6 +941,7 @@ class Controller:
                 'jobs_done': 0, \
                 'job_prompt_info': '', \
                 'job_start_time': float(0), \
+                'sdi_setup_request_made' : False, \
                 'idle': True, \
                 'sdi_instance': SDI(sdi_gpu_id, sdi_port, self.config['sd_location'], self, id) \
             })
@@ -952,6 +953,7 @@ class Controller:
                 'jobs_done': 0, \
                 'job_prompt_info': '', \
                 'job_start_time': float(0), \
+                'sdi_setup_request_made' : True, \
                 'idle': True, \
                 'sdi_instance': None \
             })
@@ -1538,10 +1540,11 @@ if __name__ == '__main__':
         skip = False
 
         if worker != None:
-            if not control.sdi_setup_request_made:
+            #if not control.sdi_setup_request_made:
+            if not worker['sdi_setup_request_made']:
                 # sets initial config options necessary for Dream Factory to operate
                 worker['sdi_instance'].set_initial_options()
-                control.sdi_setup_request_made = True
+                worker['sdi_setup_request_made'] = True
                 skip = True
 
             if not control.sdi_sampler_request_made:
