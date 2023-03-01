@@ -17,6 +17,7 @@ Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk
 ### Fixed
 - Embeddings and Hypernetworks in .safetensors format will now properly show up in the integrated editor reference.
 - Fix for potential broken images issue in user-defined gallery.
+- Made initial config handshake with Auto1111 happen on a per-GPU basis instead of global to resolve a potential issue when running multiple GPUs.
 
 ## [2023.02.09]
 
