@@ -127,7 +127,7 @@ def extract_params_from_command(command):
             # we'll assume anything before --ddim_steps is the prompt
             temp = command.split('--ddim_steps', 1)[0]
             temp = temp.strip()
-            if temp[-1] == '\"':
+            if temp is not None and len(temp) > 0 and temp[-1] == '\"':
                 temp = temp[:-1]
             temp = temp.replace('\\', '')
             params.update({'prompt' : temp})
