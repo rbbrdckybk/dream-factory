@@ -77,6 +77,10 @@ GALLERY_USER_FOLDER_ALIAS = favorites
 # If you're working with massive .prompt files, it's best to edit them using an external editor.
 EDITOR_MAX_STYLING_CHARS = 80000
 
+# Set the jpg quality of output image files here (1-100).
+# Higher values result in overall better image quality at the cost of larger file sizes.
+JPG_QUALITY = 88
+
 # You can set your own defaults for prompt file settings below.
 # Settings specified in individual prompt files will always override these.
 

@@ -386,7 +386,8 @@ class Worker(threading.Thread):
                             newfilename = dt.now().strftime('%Y%m%d-%H%M%S-') + str(nf_count)
                             nf_count += 1
 
-                        im.save(output_dir + "/" + newfilename + ".jpg", exif=exif, quality=88)
+                        quality = control.config.get('jpg_quality')
+                        im.save(output_dir + "/" + newfilename + ".jpg", exif=exif, quality=quality)
                         if exists(samples_dir + "/" + f):
                             os.remove(samples_dir + "/" + f)
 
@@ -585,6 +586,7 @@ class Controller:
             'debug_test_mode' : False,
             'random_queue_size' : 50,
             'editor_max_styling_chars' : 80000,
+            'jpg_quality' : 88,
 
             'auto_insert_model_trigger' : 'start',
             'neg_prompt' : '',
@@ -740,6 +742,17 @@ class Controller:
                             print("*** WARNING: specified 'EDITOR_MAX_STYLING_CHARS' is not a valid number; it will be ignored!")
                         else:
                             self.config.update({'editor_max_styling_chars' : int(value)})
+
+                    elif command == 'jpg_quality':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'JPG_QUALITY' is not a valid number; it will be ignored!")
+                        else:
+                            if int(value) > 0 and int(value) <= 100:
+                                self.config.update({'jpg_quality' : int(value)})
+                            else:
+                                print("*** WARNING: specified 'JPG_QUALITY' value must be between 1-100!")
 
                     elif command == 'debug_test_mode':
                         if value == 'yes' or value == 'no':
