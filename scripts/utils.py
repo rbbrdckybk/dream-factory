@@ -205,6 +205,10 @@ class PromptManager():
             'batch_size' : 1,
             'input_image' : "",
             'random_input_image_dir' : "",
+            'controlnet_input_image' : "",
+            'controlnet_pre' : "none",
+            'controlnet_model' : "",
+            'controlnet_lowvram' : False,
             'strength' : 0.75,
             'min_strength' : 0.75,
             'max_strength' : 0.75,
@@ -402,6 +406,8 @@ class PromptManager():
                     self.config.update({'input_image' : value})
                 else:
                     self.control.print("*** WARNING: specified 'INPUT_IMAGE' does not exist; it will be ignored!")
+            else:
+                self.config.update({'input_image' : ''})
 
         elif command == 'random_input_image_dir':
             if value != '':
@@ -409,6 +415,34 @@ class PromptManager():
                     self.config.update({'random_input_image_dir' : value})
                 else:
                     self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' does not exist; it will be ignored!")
+
+        elif command == 'controlnet_input_image':
+            if value != '':
+                if os.path.exists(value):
+                    self.config.update({'controlnet_input_image' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'CONTROLNET_INPUT_IMAGE' does not exist; it will be ignored!")
+            else:
+                self.config.update({'controlnet_input_image' : ''})
+
+        elif command == 'controlnet_pre':
+            if value != '':
+                self.config.update({'controlnet_pre' : value})
+            else:
+                self.config.update({'controlnet_pre' : 'none'})
+
+        elif command == 'controlnet_model':
+            if value != '':
+                cn_model = self.validate_controlnet_model(value)
+                self.config.update({'controlnet_model' : cn_model})
+            else:
+                self.config.update({'controlnet_model' : ''})
+
+        elif command == 'controlnet_lowvram':
+            if value == 'yes':
+                self.config.update({'controlnet_lowvram' : True})
+            elif value == 'no':
+                self.config.update({'controlnet_lowvram' : False})
 
         elif command == 'repeat':
             if value == 'yes':
@@ -517,6 +551,24 @@ class PromptManager():
                 print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
 
         return validated_sampler
+
+
+    # validate user-supplied controlnet model
+    def validate_controlnet_model(self, model):
+        validated_model = ''
+        validated = False
+        if len(model) >= 3 and self.control.sdi_controlnet_models != None:
+            for m in self.control.sdi_controlnet_models:
+                if model.lower() in m.lower():
+                    validated_model = m
+                    validated = True
+                    break
+
+        if not validated:
+            # user-supplied CN model doesn't closely match anything on server list
+            print("*** WARNING: prompt file command CONTROLNET_MODEL value (" + model + ") doesn't match any server values; ignoring it! ***")
+
+        return validated_model
 
 
     # update config variables if there were changes in the prompt file [config]
@@ -693,19 +745,17 @@ def create_command(command, output_dir_ext, gpu_id):
         output_dir_ext = output_dir_ext.split('.', 1)[0]
     output_folder = command.get('outdir') + '/' + str(date.today()) + '-' + str(output_dir_ext)
 
-    #py_command = "python scripts_mod/txt2img.py"
-    py_command = "python scripts/txt2img.py"
-    #if command.get('sd_low_memory') == "yes":
-    #    py_command = "python scripts_mod/optimized_txt2img.py"
+    #py_command = "python scripts/txt2img.py"
+    py_command = 'txt2img:'
+    if command.get('controlnet_input_image') != '':
+        py_command = 'txt2img with ControlNet:'
 
-    if command.get('input_image') != "":
-        #py_command = "python scripts_mod/img2img.py"
-        py_command = "python scripts/img2img.py"
-        #if command.get('sd_low_memory') == "yes":
-        #    py_command = "python scripts_mod/optimized_img2img.py"
-
-    #if command.get('sd_low_memory') == "yes" and command.get('sd_low_mem_turbo') == "yes":
-    #    py_command += " --turbo"
+    if command.get('input_image') != '':
+        #py_command = "python scripts/img2img.py"
+        if command.get('controlnet_input_image') != '':
+            py_command = 'img2img with ControlNet:'
+        else:
+            py_command = 'img2img:'
 
     # if this isn't happening on the default gpu, specify the device
     if "cuda:" in gpu_id and gpu_id != "cuda:0":
@@ -723,6 +773,9 @@ def create_command(command, output_dir_ext, gpu_id):
 
     if neg_prompt != "":
         py_command += " --neg_prompt \"" + neg_prompt + "\"" \
+
+    if command.get('controlnet_input_image') != "" and command.get('controlnet_model') != "":
+        py_command += " --cn-img \"" + str(command.get('controlnet_input_image')) + "\"" + " --cn-model \"" + str(command.get('controlnet_model')) + "\""
 
     if command.get('input_image') != "":
         #py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
@@ -763,7 +816,9 @@ def extract_params_from_command(command):
         'scale' : "",
         'input_image' : "",
         'strength' : "",
-        'ckpt_file' : ""
+        'ckpt_file' : "",
+        'controlnet_model' : "",
+        'controlnet_input_image' : ""
     }
 
     if command != "":
@@ -841,6 +896,14 @@ def extract_params_from_command(command):
             temp = filename_from_abspath(temp)
             params.update({'input_image' : temp})
 
+        if '--cn-img' in command:
+            temp = command.split('--cn-img', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('../', '').strip().strip('"')
+            temp = filename_from_abspath(temp)
+            params.update({'controlnet_input_image' : temp})
+
         if '--strength' in command:
             temp = command.split('--strength', 1)[1]
             if '--' in temp:
@@ -865,6 +928,14 @@ def extract_params_from_command(command):
             temp = temp.replace('\"', '')
             temp = filename_from_abspath(temp)
             params.update({'ckpt_file' : temp.strip()})
+
+        if '--cn-model' in command:
+            temp = command.split('--cn-model', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('\"', '')
+            temp = filename_from_abspath(temp)
+            params.update({'controlnet_model' : temp.strip()})
 
 
     return params

@@ -21,6 +21,10 @@
         const wildcards = document.getElementById('wildcard_help_msg');
         const embeddings = document.getElementById('embedding_help_msg');
 
+        const controlnetModels = document.getElementById('controlnet_model_help_msg');
+        const controlnetPres = document.getElementById('controlnet_pre_help_msg');
+        const controlnetPoses = document.getElementById('controlnet_poses_help_msg');
+
         function loadDropdown() {
             $.ajax({
               type: "PROMPT_DROPDOWN_LOAD",
@@ -51,23 +55,18 @@
             });
         }
 
-        function loadHyperNetworks() {
-            $.ajax({
-              type: "HYPERNETWORK_REFERENCE_LOAD",
-              url: "/generator"
-            })
-            .done(function(string) {
-              hypernetworks.innerHTML = string;
-            });
-        }
-
         function loadLoras() {
             $.ajax({
               type: "LORA_REFERENCE_LOAD",
               url: "/generator"
             })
             .done(function(string) {
-              loras.innerHTML = string;
+                if (string == "none") {
+                    var ebtn = document.getElementById('help-loras');
+                    ebtn.style.display = "none";
+                } else {
+                    loras.innerHTML = string;
+                }
             });
         }
 
@@ -78,6 +77,66 @@
             })
             .done(function(string) {
               wildcards.innerHTML = string;
+            });
+        }
+
+        function loadHyperNetworks() {
+            $.ajax({
+              type: "HYPERNETWORK_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+                if (string == "none") {
+                    var ebtn = document.getElementById('help-hypernetworks');
+                    ebtn.style.display = "none";
+                } else {
+                    hypernetworks.innerHTML = string;
+                }
+            });
+        }
+
+        function loadControlNetModels() {
+            $.ajax({
+              type: "CONTROLNET_MODEL_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+                if (string == "none") {
+                    var ebtn = document.getElementById('help-controlnet-models');
+                    ebtn.style.display = "none";
+                } else {
+                    controlnetModels.innerHTML = string;
+                }
+            });
+        }
+
+        function loadControlNetPres() {
+            $.ajax({
+              type: "CONTROLNET_PRE_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+                if (string == "none") {
+                    var ebtn = document.getElementById('help-controlnet-pres');
+                    ebtn.style.display = "none";
+                } else {
+                    controlnetPres.innerHTML = string;
+                }
+            });
+        }
+
+        function loadControlNetPoses() {
+            $.ajax({
+              type: "CONTROLNET_POSES_REFERENCE_LOAD",
+              url: "/generator"
+            })
+            .done(function(string) {
+                if (string == "none") {
+                    var ebtn = document.getElementById('help-controlnet-poses');
+                    ebtn.style.display = "none";
+                } else {
+                    controlnetPoses.innerHTML = string;
+                }
             });
         }
 
@@ -104,6 +163,9 @@
         loadLoras();
         loadWildcards();
         loadEmbeddings();
+        loadControlNetModels();
+        loadControlNetPres();
+        loadControlNetPoses();
     });
 
     </script>
@@ -142,6 +204,18 @@
               <button id="help-loras" class="button-editor" onclick="help_content('lora_help_msg')">LoRAs</button>
               <span class="tooltiptext">See LoRA reference</span>
           </div>
+          <div class="tooltip">
+              <button id="help-controlnet-pres" class="button-cn-editor" onclick="help_content('controlnet_pre_help_msg')">ControlNet: Preprocessors</button>
+              <span class="tooltiptext">ControlNet:&#xa;see preprocessor reference</span>
+          </div>
+          <div class="tooltip">
+              <button id="help-controlnet-models" class="button-cn-editor" onclick="help_content('controlnet_model_help_msg')">ControlNet: Models</button>
+              <span class="tooltiptext">ControlNet:&#xa;see model reference</span>
+          </div>
+          <div class="tooltip">
+              <button id="help-controlnet-poses" class="button-cn-editor" onclick="help_content('controlnet_poses_help_msg')">ControlNet: Poses</button>
+              <span class="tooltiptext">ControlNet:&#xa;see pose reference</span>
+          </div>
       </div>
       <div class="modal-help-row">
         <div class="modal-help-content" id="modal-help-content">
@@ -158,6 +232,12 @@
         <div class="modal-help-hidden" id="hypernetwork_help_msg">
         </div>
         <div class="modal-help-hidden" id="lora_help_msg">
+        </div>
+        <div class="modal-help-hidden" id="controlnet_model_help_msg">
+        </div>
+        <div class="modal-help-hidden" id="controlnet_pre_help_msg">
+        </div>
+        <div class="modal-help-hidden" id="controlnet_poses_help_msg">
         </div>
       </div>
       <div class="modal-help-row" style="margin-top: 15px; margin-bottom: 50px; font-size: 14px; color: #888;">

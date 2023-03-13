@@ -99,6 +99,14 @@ def build_gallery(control):
                 model = model.split('[', 1)[0].strip()
                 param_string += 'model: ' + model
 
+            if params['controlnet_model'] != '' and params['controlnet_input_image'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                # remove the hash from the model string
+                model = str(params['controlnet_model'])
+                model = model.split('[', 1)[0].strip()
+                param_string += 'ControlNet enabled: ' + params['controlnet_input_image'] + ' (' + model + ')'
+
             if params['sampler'] != '':
                 if param_string != '':
                     param_string += '  |  '
@@ -300,7 +308,8 @@ def build_hypernetwork_reference(control):
         buffer += "<div class=\"modal-help-header\">Hypernetworks:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         if len(control.sdi_hypernetworks) == 0:
-            buffer += "none"
+            #buffer += "none"
+            buffer = "none"
         else:
             for h in control.sdi_hypernetworks:
                 cpy = '<hypernet:' + h + ':1.0>'
@@ -356,7 +365,8 @@ def build_lora_reference(control):
     buffer += "<ul class=\"no-bullets\">\n"
 
     if len(control.loras) == 0:
-        buffer += "none"
+        #buffer += "none"
+        buffer = "none"
     else:
         for e in control.loras:
             lora = e.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
@@ -364,6 +374,89 @@ def build_lora_reference(control):
             buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + lora + "</li>\n"
         buffer += "</ul>\n"
 
+    return buffer
+
+
+def build_controlnet_model_reference(control):
+    buffer = ""
+    if control.sdi_controlnet_models == None:
+        buffer = "none"
+    else:
+        buffer += "<div class=\"modal-help-header-pre\"><p>These ControlNet models may be included in your prompts (use !CONTROLNET_MODEL = [model name] or simply click an item to copy it to the clipboard in the proper format). Note that you must also set an appropriate ControlNet input image with !CONTROLNET_INPUT_IMAGE to enable ControlNet.</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">ControlNet Models:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        if len(control.sdi_controlnet_models) == 0:
+            buffer = "none"
+        else:
+            for m in control.sdi_controlnet_models:
+                m = m.split('[', 1)[0].strip()
+                cpy = '!CONTROLNET_MODEL = ' + m
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "</li>\n"
+            buffer += "</ul>\n"
+    return buffer
+
+
+def build_controlnet_pre_reference(control):
+    buffer = ""
+    if control.sdi_controlnet_preprocessors == None:
+        buffer = "none"
+    else:
+        buffer += "<div class=\"modal-help-header-pre\"><p>These ControlNet pre-processors may be included in your prompts (use !CONTROLNET_PRE = [preprocessor name] or simply click an item to copy it to the clipboard in the proper format). Note that you must also set an appropriate ControlNet input image with !CONTROLNET_INPUT_IMAGE, and set a ControlNet model with !CONTROLNET_MODEL to enable ControlNet.</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">ControlNet Pre-processors:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+        if len(control.sdi_controlnet_preprocessors) == 0:
+            buffer = "none"
+        else:
+            for p in control.sdi_controlnet_preprocessors:
+                cpy = '!CONTROLNET_PRE = ' + p[0]
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + p[0] + "</li>\n"
+            buffer += "</ul>\n"
+    return buffer
+
+
+def build_controlnet_poses_reference(control):
+    buffer = ""
+    if len(control.poses) == 0:
+        buffer = "none"
+    else:
+        buffer += "<div class=\"modal-help-header-pre\"><p>These ControlNet poses may be included in your prompts (use !CONTROLNET_INPUT_IMAGE = [full path to image] or simply click an filename to copy it to the clipboard in the proper format). Note that you must also set a ControlNet model with !CONTROLNET_MODEL to enable ControlNet.</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">ControlNet Poses:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
+
+        for p in control.poses:
+            subdir = p[0]
+            buffer += "<details open>"
+            buffer += "<summary><li class=\"no-bullets-head\"\">" + subdir + "</li></summary>\n"
+            for f in p[1]:
+                file = f[0]
+                dimensions = f[1]
+                preview = f[2]
+                fullpath = os.path.join(subdir, file)
+                cpy = '!CONTROLNET_INPUT_IMAGE = ' + fullpath.replace("\\", "\\\\")
+                preview_img = '<a href=\"/' + fullpath + '\" target=\"_blank\"><img src=\"img/pre01.png\"></a>'
+                preview_alt = ''
+                if preview:
+                    fullpath_preview = os.path.join(subdir, 'previews')
+                    fullpath_preview = os.path.join(fullpath_preview, file)
+                    preview_alt = '<a href=\"/' + fullpath_preview + '\" target=\"_blank\"><img src=\"img/pre02.png\"></a>'
+
+                #buffer += '<li class=\"no-bullets\">'
+                buffer += '<div class=\"pose-row\">'
+                buffer += '<div class=\"pose-column-short\">&nbsp;&nbsp;&nbsp;&nbsp;</div>'
+                #buffer += "<div class=\"pose-column-long\" onclick=\"copyText('" + cpy + "')\">" + file + '</div>'
+                buffer += "<div class=\"pose-column-long\"><li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + file + "</li></div>"
+                buffer += '<div class=\"pose-column\">' + dimensions + '</div>'
+                buffer += '<div class=\"pose-column-short\">' + preview_img + '</div>'
+                buffer += '<div class=\"pose-column-short\">' + preview_alt + '</div>'
+                buffer += '</div>'
+                #buffer += '</li>\n'
+
+                #buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + file + "</li>\n"
+            buffer += "</details>"
+        buffer += "</ul>\n"
     return buffer
 
 
@@ -556,6 +649,18 @@ class ArtGeneratorWebService(object):
         buffer_text = build_embedding_reference(self.control)
         return buffer_text
 
+    def CONTROLNET_MODEL_REFERENCE_LOAD(self):
+        buffer_text = build_controlnet_model_reference(self.control)
+        return buffer_text
+
+    def CONTROLNET_PRE_REFERENCE_LOAD(self):
+        buffer_text = build_controlnet_pre_reference(self.control)
+        return buffer_text
+
+    def CONTROLNET_POSES_REFERENCE_LOAD(self):
+        buffer_text = build_controlnet_poses_reference(self.control)
+        return buffer_text
+
     def PROMPT_FILE_DELETE(self):
         result = self.control.delete_prompt_file()
         if result:
@@ -682,6 +787,15 @@ class ArtServer:
                         'tools.staticdir.dir': os.path.abspath(self.control_ref.config.get('gallery_user_folder'))
                     }
                 })
+
+        # set up reference to ControlNet poses folder
+        if os.path.exists('poses'):
+            self.config.update({
+                '/poses': {
+                    'tools.staticdir.on': True,
+                    'tools.staticdir.dir': os.path.abspath('poses')
+                }
+            })
 
 
         if self.control_ref.config['webserver_network_accessible']:

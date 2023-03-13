@@ -201,6 +201,67 @@ class Worker(threading.Thread):
               "negative_prompt": str(self.command.get('neg_prompt'))
             }
 
+        # check for ControlNet params
+        use_controlnet = False
+        scribble_mode = False
+        cn_params = [64, 64, 64]
+        if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
+            use_controlnet = True
+            img2img = False
+            if self.command.get('input_image') != '':
+                img2img = True
+
+            # encode CN image
+            encoded = base64.b64encode(open(self.command.get('controlnet_input_image'), "rb").read())
+            encodedString = str(encoded, encoding='utf-8')
+            cn_img_payload = 'data:image/png;base64,' + encodedString
+
+            # get preprocessor params
+            if len(self.command.get('controlnet_pre')) >= 3:
+                for p in control.sdi_controlnet_preprocessors:
+                    if self.command.get('controlnet_pre').lower() == p[0]:
+                        self.command['controlnet_pre'] = p[0]
+                        cn_params = p[1]
+                        break
+            else:
+                self.command['controlnet_pre'] = 'none'
+
+            # build additional CN params - this path is now deprecated
+            #cn_payload = [{
+            #    "input_image": cn_img_payload,
+            #    "module": str(self.command.get('controlnet_pre')),
+            #    "model": str(self.command.get('controlnet_model')),
+            #    "lowvram": self.command.get('controlnet_lowvram')
+            #}]
+
+            # https://github.com/Mikubill/sd-webui-controlnet/issues/567
+            cn_payload = {
+                "ControlNet": {
+                    "args": [
+                        img2img,    # is_img2img
+                        False,      # is_ui
+                        True,       # enabled
+                        str(self.command.get('controlnet_pre')),        # module
+                        str(self.command.get('controlnet_model')),      # model
+                        1.0,        # weight
+                        {"image": cn_img_payload},      # image/mask,
+                        scribble_mode,                  # scribble_mode
+                        "Scale to Fit (Inner Fit)",     # resize_mode
+                        False,      # rgbbgr_mode
+                        self.command.get('controlnet_lowvram'),      # lowvram
+                        cn_params[0],   # pres
+                        cn_params[1],   # pthr_a
+                        cn_params[2],   # pthr_b
+                        0.0,            # guidance_start
+                        1.0,            # guidance_end
+                        False           # guess_mode
+                    ]
+                }
+            }
+
+            # add CN params to existing payload
+            payload["alwayson_scripts"] = cn_payload
+
         start_time = time.time()
         self.worker['job_start_time'] = start_time
         self.worker['job_prompt_info'] = self.command
@@ -223,12 +284,18 @@ class Worker(threading.Thread):
             time.sleep(work_time)
         else:
             # invoke SD
-            #wd = cwd + os.path.sep + 'stable-diffusion'
-            #subprocess.call(shlex.split(command), cwd=(wd))
             if self.command.get('input_image') != '':
-                self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+                if use_controlnet:
+                    #self.worker['sdi_instance'].do_controlnet_img2img(payload, samples_dir)
+                    self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+                else:
+                    self.worker['sdi_instance'].do_img2img(payload, samples_dir)
             else:
-                self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+                if use_controlnet:
+                    #self.worker['sdi_instance'].do_controlnet_txt2img(payload, samples_dir)
+                    self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+                else:
+                    self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                 time.sleep(0.25)
 
@@ -452,10 +519,15 @@ class Controller:
         self.sdi_models = None
         self.sdi_hypernetwork_request_made = False
         self.sdi_hypernetworks = None
+        self.sdi_controlnet_available = False
+        self.sdi_controlnet_request_made = False
+        self.sdi_controlnet_models = None
+        self.sdi_controlnet_preprocessors = None
         self.wildcards = None
         self.default_model_validated = False
         self.embeddings = []
         self.loras = []
+        self.poses = []     # [ path, [filename, str(WxH img dimensions), bool(preview?)] ]
         # for queuing multiple models to apply to prompt files
         self.models = []
         self.model_index = 0
@@ -494,6 +566,7 @@ class Controller:
         self.read_wildcards()
         self.read_embeddings()
         self.read_loras()
+        self.init_controlnet()
 
 
     # returns the current operation mode (standard or random)
@@ -550,6 +623,89 @@ class Controller:
                 if x.endswith('.pt') or x.endswith('.bin') or x.endswith('.safetensors'):
                     self.loras.append(x)
         self.loras.sort()
+
+
+    # checks for presense of controlnet extension
+    def init_controlnet(self):
+        cn_dir = os.path.join(self.config['sd_location'], 'extensions')
+        cn_dir = os.path.join(cn_dir, 'sd-webui-controlnet')
+        if os.path.exists(cn_dir):
+            # controlnet extension appears to be installed
+            self.sdi_controlnet_available = True
+            self.print('ControlNet extension found; enabling ControlNet functionality...')
+
+            # build preprocesor list manually - no API call for this currently
+            pre = []
+            pre.append(['none', [64, 64, 64]])
+            pre.append(['canny', [512, 100, 200]])
+            pre.append(['depth', [384, 64, 64]])
+            pre.append(['hed', [512, 64, 64]])
+            pre.append(['mlsd', [512, 0.1, 0.1]])
+            pre.append(['normal_map', [512, 0.4, 64]])
+            pre.append(['openpose', [512, 64, 64]])
+            pre.append(['scribble', [512, 64, 64]])
+            pre.append(['segmentation', [512, 64, 64]])
+            self.sdi_controlnet_preprocessors = pre
+
+            # read/init pose files
+            if os.path.exists('poses'):
+                self.poses = []
+                root_files = []
+                for entry in os.scandir('poses'):
+                    if entry.is_dir() and entry.name != 'previews':
+                        # scan subdirs
+                        files = []
+                        subdir = os.path.join('poses', entry.name)
+                        for entry in os.scandir(subdir):
+                           if entry.is_file() and (entry.name.lower().endswith('.png') or entry.name.lower().endswith('.jpg')):
+                               size = ''
+                               try:
+                                   with Image.open(os.path.join(subdir, entry.name)) as img:
+                                       width, height = img.size
+                                       size = str(width) + 'x' + str(height)
+                               except:
+                                   size = ''
+                               if size != '':
+                                   preview = False
+                                   preview_dir = os.path.join(subdir, 'previews')
+                                   if os.path.exists(os.path.join(preview_dir, entry.name)):
+                                       preview = True
+                                   files.append([entry.name, size, preview])
+                        if len(files) > 0:
+                            files.sort()
+                            self.poses.append([subdir, files])
+
+                    else:
+                        # scan root
+                        if entry.is_file() and (entry.name.lower().endswith('.png') or entry.name.lower().endswith('.jpg')):
+                            size = ''
+                            try:
+                               with Image.open(os.path.join('poses', entry.name)) as img:
+                                   width, height = img.size
+                                   size = str(width) + 'x' + str(height)
+                            except:
+                               size = ''
+                            if size != '':
+                                preview = False
+                                preview_dir = os.path.join('poses', 'previews')
+                                if os.path.exists(os.path.join(preview_dir, entry.name)):
+                                   preview = True
+                                root_files.append([entry.name, size, preview])
+            if len(root_files) > 0:
+                root_files.sort()
+                self.poses.append(['poses', root_files])
+
+            self.poses.sort()
+
+            #for x in self.poses:
+            #    print(x[0])
+            #    for f in x[1]:
+            #        print('   ' + f[0] + ' (' + f[1] + '), ' + str(f[2]))
+
+        else:
+            # controlnet extension not available
+            self.sdi_controlnet_available = False
+            self.print('ControlNet extension not found; disabling ControlNet functionality...')
 
 
     # for debugging
@@ -1579,6 +1735,13 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_hypernetworks()
                 control.sdi_hypernetwork_request_made = True
+                skip = True
+
+            if not control.sdi_controlnet_request_made and control.sdi_controlnet_available:
+                # get available controlnet models from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_controlnet_models()
+                control.sdi_controlnet_request_made = True
                 skip = True
 
             # worker is idle, start some work

@@ -777,6 +777,12 @@ ul.no-bullets {
   padding: 0;
 }
 
+li.no-bullets-head {
+  color: #ddd;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
 li.no-bullets {
   color: #bbc;
   margin-top: 2px;
@@ -786,4 +792,33 @@ li.no-bullets:hover {
   cursor: pointer;
   transform: scale(1.02);
   color: hotpink;
+}
+
+.pose-column-long {
+  float: left;
+  width: 500px;
+}
+
+.pose-column {
+  float: left;
+  width: 100px;
+}
+
+.pose-column-short {
+  float: left;
+  width: 40px;
+}
+
+.pose-row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+details summary {
+  cursor: pointer;
+}
+
+details summary > * {
+  display: inline;
 }

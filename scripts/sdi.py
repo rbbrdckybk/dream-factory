@@ -47,6 +47,32 @@ class Img2ImgRequest(threading.Thread):
         self.callback(response)
 
 
+# for making ControlNet txt2img requests
+class ControlNet_Txt2ImgRequest(threading.Thread):
+    def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+        self.payload = payload
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/controlnet/txt2img', json=self.payload)
+        self.callback(response)
+
+
+# for making ControlNet img2img requests
+class ControlNet_Img2ImgRequest(threading.Thread):
+    def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+        self.payload = payload
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/controlnet/img2img', json=self.payload)
+        self.callback(response)
+
+
 # for making upscale requests
 class UpscaleRequest(threading.Thread):
     def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
@@ -93,6 +119,18 @@ class GetHyperNetworksRequest(threading.Thread):
 
     def run(self):
         response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/hypernetworks')
+        self.callback(response)
+
+
+# for fetching ControlNet models
+class ControlNet_GetModelsRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/controlnet/model_list')
         self.callback(response)
 
 
@@ -371,6 +409,22 @@ class SDI:
         img2img.start()
 
 
+    # make a controlnet txt2img request
+    def do_controlnet_txt2img(self, payload, output_dir = ''):
+        self.busy = True
+        self.output_dir = output_dir
+        txt2img = ControlNet_Txt2ImgRequest(self, payload, self.handle_response)
+        txt2img.start()
+
+
+    # make a controlnet img2img request
+    def do_controlnet_img2img(self, payload, output_dir = ''):
+        self.busy = True
+        self.output_dir = output_dir
+        img2img = ControlNet_Img2ImgRequest(self, payload, self.handle_response)
+        img2img.start()
+
+
     # make an upscale request
     def do_upscale(self, payload, output_dir = ''):
         self.busy = True
@@ -406,6 +460,32 @@ class SDI:
         # reload prompt file if we have one to validate it against samplers
         if self.control_ref.prompt_file != '':
             self.control_ref.new_prompt_file(self.control_ref.prompt_file)
+
+        self.busy = False
+
+
+    # gets valid controlnet models from server
+    def get_server_controlnet_models(self):
+        self.busy = True
+        #self.log('Fetching models from server...')
+        self.log('querying SD for available ControlNet models...', True)
+        query = ControlNet_GetModelsRequest(self, self.controlnet_model_response)
+        query.start()
+
+
+    # handle server controlnet model response
+    def controlnet_model_response(self, response):
+        r = response.json()
+        models = []
+        for i in r['model_list']:
+            models.append(i)
+
+        if len(models) > 0:
+            self.log('received ControlNet query response: SD indicates ' + str(len(models)) + ' ControlNet models available for use...', True)
+            self.control_ref.sdi_controlnet_models = models
+        else:
+            self.log('received ControlNet query response: SD indicates no ControlNet models available; disabling ControlNet functionality (install at least one model)!', True)
+            self.control_ref.sdi_controlnet_available = False
 
         self.busy = False
 
