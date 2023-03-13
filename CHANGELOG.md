@@ -6,6 +6,20 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.03.13]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
+
+### Added
+- Intitial support for ControlNet has been added. This is a fairly rough first cut, but it should be functional for those that want to give it a try. Note that the ControlNet API is fairly new and currently in a state of daily flux, so if you run into issues please ensure that the version of your ControlNet extension matches hash ```c73c9451``` (the latest at the time of this posting). Will update this with a link to instructions as soon as I get them posted.
+- Added new reference buttons in the integrated prompt editor for your ControlNet models, preprocessors, and pose/input files (hidden if the ControlNet extension is not installed.
+- Added ControlNet metadata to output files when enabled; details visible in the integrated gallery.
+
+### Fixed
+- Fixed an issue that prevented a previously-set input image from being cleared when set to nothing via prompt file directive (!INPUT_IMAGE = ).
+
+### Changed
+- Hid the buttons for Hypernetwork / LoRA references in the integrated prompt editor if there are no user-installed hypernets/loras available.
+
 ## [2023.03.10]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **0cc0ee1bcb4c24a8c9715f66cede06601bfc00c8**
 
