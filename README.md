@@ -426,6 +426,29 @@ If you've installed any [textual inversion embeddings into your Auto1111](https:
 
 Just press ctrl+h or click the help button when editing prompt files with the integrated editor to see a list of your available embeddings (click one to copy it to the clipboard for easy inclusion in your prompt files!).
 
+## ControlNet
+
+(2023-03-13 Note: this should be considered WIP - the editor reference pages are pretty rough and there may be some bugs!)
+
+If you've installed the [Auto1111 ControlNet extension](https://github.com/Mikubill/sd-webui-controlnet) and have at least one of ControlNet [pre-trained models](https://civitai.com/models/9251/controlnet-pre-trained-models) installed, then ControlNet functionality should automatically be enabled within Dream Factory.
+
+### ControlNet Prompt File Directives
+
+You can reference current [ControlNet prompt file directives here](https://github.com/rbbrdckybk/dream-factory#controlnet_input_image).
+
+Note that at minimum, you'll need to set both **!CONTROLNET_INPUT_IMAGE** and **!CONTROLNET_MODEL** in your prompt file to activate ControlNet.
+
+### ControlNet Poses
+
+If you have a library of ControlNet poses, you may place them into the **poses** directory located off your main Dream Factory folder. Pose image files may be organized into their own folders (no more than one level deep).
+
+Optional: you may additionally create a **previews** sub-directory in each of these folders. Within the **previews** sub-folder, you may place a rendered image that corresponds to each pose file - these previews must be named exactly the same as the pose file (including the extension). These previews will appear alongside the pose image files in the Dream Factory integrated prompt editor reference.
+
+Check out the **poses\examples** Dream Factory folder for a couple examples of pose image files, and their corresponding preview files. You should be able to view these within the Dream Factory prompt file editor reference area (press control-H while editing any prompt file to open).
+
+### ControlNet Tips
+* If you do not want the pre-processor image map as an additional output when using the **!CONTROLNET_PRE** directive, you may disable this within the Auto1111 UI. Go to Settings -> ControlNet -> Do not append detectmap to output.
+
 # Updating Dream Factory
 
 You can update Dream Factory to the latest version by typing:
