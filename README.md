@@ -161,6 +161,10 @@ These directives are valid in both the [config] section of both standard and ran
  * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_gfpgan_amount)
  * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_keep_org)
  * [!FILENAME](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#filename)
+ * [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image)
+ * [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_model)
+ * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_pre)
+ * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_lowvram)
 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
@@ -315,6 +319,32 @@ The file extension (.jpg) will be added automatically.
 !FILENAME = <date-year><date-month><date-day>-<model>-<width>x<height>-<prompt>
 ```
 The above example might produce an output filename of **20230209-deliberate_v11-768x1280-a-photo-of-a-cute-cat.jpg**, for example.
+#### !CONTROLNET_INPUT_IMAGE
+Sets an input image for use with ControlNet.
+```
+!CONTROLNET_INPUT_IMAGE = poses\examples\openpose-standing_arms_in_front.png
+```
+The above example will use **openpose-standing_arms_in_front.png** as the ControlNet input image. Note that this will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet model via the [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_model) directive.
+
+You may clear previously-set input images by issuing another directive to set it to nothing (!CONTROLNET_INPUT_IMAGE = ).
+#### !CONTROLNET_MODEL
+Sets the ControlNet model to use.
+```
+!CONTROLNET_MODEL = openpose
+```
+You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet models. Note that setting a ControlNet model will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
+#### !CONTROLNET_PRE
+Sets the ControlNet preprocessor to use. This is used to "extract" pose information from a normal image, so that it can then be used with the corresponding ControlNet model. If you're using pre-generated poses (such as the example ones contained in the Dream Factory **poses** folder) you do not need to set this (or you can set it to the default of 'none').
+```
+!CONTROLNET_PRE = openpose
+```
+You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet preprocessors. Note that setting a ControlNet preprocessor will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
+#### !CONTROLNET_LOWVRAM
+Use this to enable (yes) or disable (no, the default) low VRAM mode when using ControlNet. 
+```
+!CONTROLNET_LOWVRAM = yes
+```
+This may be helpful if you have a GPU with less VRAM.
 #### !REPEAT
 Tells Dream Factory whether or not to continuing producing images after it has finished all possible combinations in the prompt file. Options are **yes** (default) or **no**. If set to no, Dream Factory will idle after it has completed all prompts.
 ```
