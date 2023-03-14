@@ -10,12 +10,12 @@ python setup.py --update
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
 
 ### Added
-- Intitial support for ControlNet has been added. This is a fairly rough first cut, but it should be functional for those that want to give it a try. Note that the ControlNet API is fairly new and currently in a state of daily flux, so if you run into issues please ensure that the version of your ControlNet extension matches hash ```c73c9451``` (the latest at the time of this posting). Will update this with a link to instructions as soon as I get them posted.
+- Intitial support for ControlNet has been added. This is a fairly rough first cut, but it should be functional for those that want to give it a try. Note that the ControlNet API is fairly new and currently in a state of daily flux, so if you run into issues please ensure that the version of your ControlNet extension matches hash ```c73c9451``` (the latest at the time of this posting). [Instructions here should get you started](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet); please open issues if you find bugs!
 - Added new reference buttons in the integrated prompt editor for your ControlNet models, preprocessors, and pose/input files (hidden if the ControlNet extension is not installed.
 - Added ControlNet metadata to output files when enabled; details visible in the integrated gallery.
 
 ### Fixed
-- Fixed an issue that prevented a previously-set input image from being cleared when set to nothing via prompt file directive (!INPUT_IMAGE = ).
+- Fixed an issue that prevented a previously-set input image from being cleared when set to nothing (!INPUT_IMAGE = ) via prompt file directive.
 
 ### Changed
 - Hid the buttons for Hypernetwork / LoRA references in the integrated prompt editor if there are no user-installed hypernets/loras available.
