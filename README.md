@@ -161,10 +161,10 @@ These directives are valid in both the [config] section of both standard and ran
  * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_gfpgan_amount)
  * [!UPSCALE_KEEP_ORG](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_keep_org)
  * [!FILENAME](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#filename)
- * [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image)
- * [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_model)
- * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_pre)
- * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_lowvram)
+ * [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_input_image)
+ * [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_model)
+ * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pre)
+ * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
