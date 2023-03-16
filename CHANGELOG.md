@@ -6,6 +6,18 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.03.15]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
+
+### Added
+- Added an **auto** option for !CONTROLNET_MODEL that will allow you have Dream Factory choose the proper ControlNet model automatically as long as your pose images are named appropriately (see [docs](https://github.com/rbbrdckybk/dream-factory#controlnet_model)).
+- Added additional [custom filename variables](https://github.com/rbbrdckybk/dream-factory#filename) for input image, controlnet image, and controlnet model.
+
+### Changed
+- Changed web UI pages to use local cached versions of critical Javascript libraries instead of relying on remote CDNs.
+- Preview images for ControlNet pose files can now be a different file format than the base pose file (so .jpg preview with a .png pose file or vice versa).
+- Cleaned up various minor UI issues.
+
 ## [2023.03.13]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
 
