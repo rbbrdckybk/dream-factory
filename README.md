@@ -165,6 +165,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_model)
  * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pre)
  * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
+ * [!AUTO_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)
 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
@@ -238,6 +239,11 @@ Sets an image to use as a starting point for the denoising process, rather than 
 !INPUT_IMAGE = cat.jpg                                   # specifies an input image 'cat.jpg' in the DF home directory
 !INPUT_IMAGE =                                           # specifies no input image should be used
 ```
+Note that you may also pass a directory of images to this directive:
+```
+!INPUT_IMAGE = C:\images
+```
+If a directory is passed, every image in the folder will be applied to the prompt(s) that follow.
 #### !STRENGTH
 Sets the strength of the input image influence. Valid values are 0-1 (default = 0.75). Values close to 0 will result in an output image very similar to the input image, and values close to 1 will result in images with less resemblence. Generally, values between 0.2 - 0.8 are most useful. Note that this is also used when !HIGHRES_FIX = yes to indicate how closely the final image should mirror the low-res initialization image.
 ```
@@ -332,6 +338,12 @@ Sets an input image for use with ControlNet.
 The above example will use **openpose-standing_arms_in_front.png** as the ControlNet input image. Note that this will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet model via the [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_model) directive.
 
 You may clear previously-set input images by issuing another directive to set it to nothing (!CONTROLNET_INPUT_IMAGE = ).
+
+Note that you may also pass a directory of images to this directive:
+```
+!CONTROLNET_INPUT_IMAGE = poses\examples
+```
+If a directory is passed, every image in the folder will be applied to the prompt(s) that follow.
 #### !CONTROLNET_MODEL
 Sets the ControlNet model to use.
 ```
@@ -356,6 +368,19 @@ Use this to enable (yes) or disable (no, the default) low VRAM mode when using C
 !CONTROLNET_LOWVRAM = yes
 ```
 This may be helpful if you have a GPU with less VRAM.
+#### !AUTO_SIZE
+Allows you to have Dream Factory automatically size your output images based in the size of input images or ControlNet input images. Valid options are **match_input_image_size**, **match_controlnet_image_size**, **match_input_image_aspect_ratio**, **match_controlnet_image_aspect_ratio**, or **off** (default).
+```
+# output image will be set to the same size as your input image, regardless of any !WIDTH & !HEIGHT directives
+!AUTO_SIZE = match_input_image_size
+
+# output image will use the larger of your !WIDTH & !HEIGHT directives as the longer output dimension
+# the shorter output dimension will be calculated so that the output image has the same aspect ratio as the ControlNet input image
+!AUTO_SIZE = match_controlnet_image_aspect_ratio
+```
+Note that all resizings will result in image dimensions that are divisible by 64 (both dimensions will be rounded down to the nearest divisible-by-64 number).
+
+For example, with **!AUTO_SIZE = match_controlnet_image_aspect_ratio**, if you set both your !WIDTH and !HEIGHT to 1408, and pass a 1920x1080 ControlNet input image (16:9 aspect ratio), the resulting output image will be 1408x768. The larger dimension has been set to the larger of your !WIDTH & !HEIGHT setting, and the smaller dimension has been calculated to be as close as possible to a 16:9 aspect ratio with a smaller dimension that is evenly divisble by 64.
 #### !REPEAT
 Tells Dream Factory whether or not to continuing producing images after it has finished all possible combinations in the prompt file. Options are **yes** (default) or **no**. If set to no, Dream Factory will idle after it has completed all prompts.
 ```
