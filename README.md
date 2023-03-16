@@ -304,6 +304,7 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<date-month>```
 * ```<date-day>```
 * ```<height>```
+* ```<input-img>```
 * ```<model>```
 * ```<neg_prompt>```
 * ```<prompt>```
@@ -313,12 +314,16 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<steps>```
 * ```<time>```
 * ```<width>```
+* ```<cn-img>```
+* ```<cn-model>```
 
 The file extension (.jpg) will be added automatically.
 ```
 !FILENAME = <date-year><date-month><date-day>-<model>-<width>x<height>-<prompt>
 ```
 The above example might produce an output filename of **20230209-deliberate_v11-768x1280-a-photo-of-a-cute-cat.jpg**, for example.
+
+Note that ```<input-img>``` and ```<cn-img>``` (ControlNet input image) will be the base filename only (no subdirectories or file extension).
 #### !CONTROLNET_INPUT_IMAGE
 Sets an input image for use with ControlNet.
 ```
@@ -333,6 +338,12 @@ Sets the ControlNet model to use.
 !CONTROLNET_MODEL = openpose
 ```
 You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet models. Note that setting a ControlNet model will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
+
+Note that you may optionally specify **auto** for !CONTROLNET_MODEL (or **auto, [default]**) if you want Dream Factory to extract the model from your [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) filename(s). You must name your image in the following format for this to work: ```[ControlNet model to use]-[rest of filename].ext```. For example, an image named **openpose-standing_arms_in_front.png** would indicate that the openpose model should be used when !CONTROLNET_MODEL = auto.
+```
+!CONTROLNET_MODEL = auto, depth
+```
+In this example directive, Dream Factory will attempt to extract the model to use from your filenames, and fallback to 'depth' as a default model if your filename didn't contain a valid model. Specifying a default is optional, but if a model cannot be discerned from your filename(s) and no default is present, ControlNet will be disabled.
 #### !CONTROLNET_PRE
 Sets the ControlNet preprocessor to use. This is used to "extract" pose information from a normal image, so that it can then be used with the corresponding ControlNet model. If you're using pre-generated poses (such as the example ones contained in the Dream Factory **poses** folder) you do not need to set this (or you can set it to the default of 'none').
 ```
@@ -442,7 +453,7 @@ Note that at minimum, you'll need to set both **!CONTROLNET_INPUT_IMAGE** and **
 
 If you have a library of ControlNet poses, you may place them into the **poses** directory located off your main Dream Factory folder. Pose image files may be organized into their own folders (no more than one level deep).
 
-Optional: you may additionally create a **previews** sub-directory in each of these folders. Within the **previews** sub-folder, you may place a rendered image that corresponds to each pose file - these previews must be named exactly the same as the pose file (including the extension). These previews will appear alongside the pose image files in the Dream Factory integrated prompt editor reference.
+Optional: you may additionally create a **previews** sub-directory in each of these folders. Within the **previews** sub-folder, you may place a rendered image that corresponds to each pose file - these previews must be named the same as the pose file (though you may have different image formats; currently .jpg or .png will work). These previews will appear alongside the pose image files in the Dream Factory integrated prompt editor reference.
 
 Check out the **poses\examples** Dream Factory folder for a couple examples of pose image files, and their corresponding preview files. You should be able to view these within the Dream Factory prompt file editor reference area (press control-H while editing any prompt file to open).
 
