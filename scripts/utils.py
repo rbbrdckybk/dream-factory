@@ -557,7 +557,11 @@ class PromptManager():
     def validate_controlnet_model(self, model):
         validated_model = ''
         validated = False
-        if len(model) >= 3 and self.control.sdi_controlnet_models != None:
+        if model.lower().strip().startswith('auto'):
+            # the user wants to extract the model from the input img later
+            validated_model = model
+            validated = True
+        elif len(model) >= 3 and self.control.sdi_controlnet_models != None:
             for m in self.control.sdi_controlnet_models:
                 if model.lower() in m.lower():
                     validated_model = m
@@ -747,12 +751,12 @@ def create_command(command, output_dir_ext, gpu_id):
 
     #py_command = "python scripts/txt2img.py"
     py_command = 'txt2img:'
-    if command.get('controlnet_input_image') != '':
+    if command.get('controlnet_input_image') != '' and command.get('controlnet_model') != '':
         py_command = 'txt2img with ControlNet:'
 
     if command.get('input_image') != '':
         #py_command = "python scripts/img2img.py"
-        if command.get('controlnet_input_image') != '':
+        if command.get('controlnet_input_image') != '' and command.get('controlnet_model') != '':
             py_command = 'img2img with ControlNet:'
         else:
             py_command = 'img2img:'

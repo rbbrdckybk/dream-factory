@@ -154,6 +154,78 @@ class Worker(threading.Thread):
         self.command['prompt'] = p
         #print('after wildcard replace: ' + self.command['prompt'])
 
+
+        # check for ControlNet params
+        use_controlnet = False
+        scribble_mode = False
+        cn_params = [64, 64, 64]
+        if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
+            use_controlnet = True
+            img2img = False
+            if self.command.get('input_image') != '':
+                img2img = True
+
+            # encode CN image
+            encoded = base64.b64encode(open(self.command.get('controlnet_input_image'), "rb").read())
+            encodedString = str(encoded, encoding='utf-8')
+            cn_img_payload = 'data:image/png;base64,' + encodedString
+
+            # get preprocessor params
+            if len(self.command.get('controlnet_pre')) >= 3:
+                for p in control.sdi_controlnet_preprocessors:
+                    if self.command.get('controlnet_pre').lower() == p[0]:
+                        self.command['controlnet_pre'] = p[0]
+                        cn_params = p[1]
+                        break
+            else:
+                self.command['controlnet_pre'] = 'none'
+
+            # check for auto-model from filename
+            auto = self.command.get('controlnet_model').lower().strip()
+            if auto.startswith('auto'):
+                cn_img = self.command.get('controlnet_input_image')
+                cn_img = utils.filename_from_abspath(cn_img)
+                auto_model = ''
+                # attempt to extract controlnet model from cn input file
+                if '-' in cn_img:
+                    auto_model = cn_img.split('-', 1)[0]
+                    validated = False
+                    if len(auto_model) >= 3 and control.sdi_controlnet_models != None:
+                        for m in control.sdi_controlnet_models:
+                            if auto_model.lower() in m.lower():
+                                auto_model = m
+                                validated = True
+                                break
+                        if not validated:
+                            auto_model = ''
+                    else:
+                        auto_model = ''
+
+                if auto_model == '':
+                    # couldn't get model from filename, check for default
+                    if ',' in auto:
+                        auto_model = auto.rsplit(',', 1)[1].strip()
+                        validated = False
+                        if len(auto_model) >= 3 and control.sdi_controlnet_models != None:
+                            for m in control.sdi_controlnet_models:
+                                if auto_model.lower() in m.lower():
+                                    auto_model = m
+                                    validated = True
+                                    break
+                            if not validated:
+                                auto_model = ''
+                        else:
+                            auto_model = ''
+                if auto_model == '':
+                    # failed to get model or default, disable CN
+                    use_controlnet = False
+                    self.print('WARNING: automatic ControlNet model specified, but unable to determine valid CN model from input image filename: ' + cn_img + '; disabling ControlNet!')
+                else:
+                    # we have a valid model, use it
+                    self.command['controlnet_model'] = auto_model
+
+
+
         command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
         self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
 
@@ -201,66 +273,32 @@ class Worker(threading.Thread):
               "negative_prompt": str(self.command.get('neg_prompt'))
             }
 
-        # check for ControlNet params
-        use_controlnet = False
-        scribble_mode = False
-        cn_params = [64, 64, 64]
-        if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
-            use_controlnet = True
-            img2img = False
-            if self.command.get('input_image') != '':
-                img2img = True
-
-            # encode CN image
-            encoded = base64.b64encode(open(self.command.get('controlnet_input_image'), "rb").read())
-            encodedString = str(encoded, encoding='utf-8')
-            cn_img_payload = 'data:image/png;base64,' + encodedString
-
-            # get preprocessor params
-            if len(self.command.get('controlnet_pre')) >= 3:
-                for p in control.sdi_controlnet_preprocessors:
-                    if self.command.get('controlnet_pre').lower() == p[0]:
-                        self.command['controlnet_pre'] = p[0]
-                        cn_params = p[1]
-                        break
-            else:
-                self.command['controlnet_pre'] = 'none'
-
-            # build additional CN params - this path is now deprecated
-            #cn_payload = [{
-            #    "input_image": cn_img_payload,
-            #    "module": str(self.command.get('controlnet_pre')),
-            #    "model": str(self.command.get('controlnet_model')),
-            #    "lowvram": self.command.get('controlnet_lowvram')
-            #}]
-
-            # https://github.com/Mikubill/sd-webui-controlnet/issues/567
-            cn_payload = {
-                "ControlNet": {
-                    "args": [
-                        img2img,    # is_img2img
-                        False,      # is_ui
-                        True,       # enabled
-                        str(self.command.get('controlnet_pre')),        # module
-                        str(self.command.get('controlnet_model')),      # model
-                        1.0,        # weight
-                        {"image": cn_img_payload},      # image/mask,
-                        scribble_mode,                  # scribble_mode
-                        "Scale to Fit (Inner Fit)",     # resize_mode
-                        False,      # rgbbgr_mode
-                        self.command.get('controlnet_lowvram'),      # lowvram
-                        cn_params[0],   # pres
-                        cn_params[1],   # pthr_a
-                        cn_params[2],   # pthr_b
-                        0.0,            # guidance_start
-                        1.0,            # guidance_end
-                        False           # guess_mode
-                    ]
+            # add CN params to existing payload if ControlNet is enabled
+            if use_controlnet:
+                cn_payload = {
+                    "ControlNet": {
+                        "args": [
+                            img2img,    # is_img2img
+                            False,      # is_ui
+                            True,       # enabled
+                            str(self.command.get('controlnet_pre')),        # module
+                            str(self.command.get('controlnet_model')),      # model
+                            1.0,        # weight
+                            {"image": cn_img_payload},      # image/mask,
+                            scribble_mode,                  # scribble_mode
+                            "Scale to Fit (Inner Fit)",     # resize_mode
+                            False,      # rgbbgr_mode
+                            self.command.get('controlnet_lowvram'),      # lowvram
+                            cn_params[0],   # pres
+                            cn_params[1],   # pthr_a
+                            cn_params[2],   # pthr_b
+                            0.0,            # guidance_start
+                            1.0,            # guidance_end
+                            False           # guess_mode
+                        ]
+                    }
                 }
-            }
-
-            # add CN params to existing payload
-            payload["alwayson_scripts"] = cn_payload
+                payload["alwayson_scripts"] = cn_payload
 
         start_time = time.time()
         self.worker['job_start_time'] = start_time
@@ -417,6 +455,23 @@ class Worker(threading.Thread):
                             if '.' in model:
                                 model = model.rsplit('.', 1)[0].strip()
 
+                            cn_model = ''
+                            if self.command.get('controlnet_model') != '':
+                                cn_model = self.command.get('controlnet_model')
+                                cn_model = cn_model.split('[', 1)[0].strip()
+                                if '.' in cn_model:
+                                    cn_model = cn_model.rsplit('.', 1)[0].strip()
+
+                            cn_img = ''
+                            if self.command.get('controlnet_input_image') != '':
+                                cn_img = self.command.get('controlnet_input_image')
+                                cn_img = utils.filename_from_abspath(cn_img)[:-4]
+
+                            input_img = ''
+                            if self.command.get('input_image') != '':
+                                input_img = self.command.get('input_image')
+                                input_img = utils.filename_from_abspath(input_img)[:-4]
+
                             newfilename = self.command['filename']
                             newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
@@ -432,6 +487,10 @@ class Worker(threading.Thread):
                             newfilename = re.sub('<date-year>', dt.now().strftime('%Y'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-month>', dt.now().strftime('%m'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<input-img>', input_img, newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
+
 
                             # remove all unrecognized variables
                             #opening_braces = '<'
@@ -527,7 +586,7 @@ class Controller:
         self.default_model_validated = False
         self.embeddings = []
         self.loras = []
-        self.poses = []     # [ path, [filename, str(WxH img dimensions), bool(preview?)] ]
+        self.poses = []     # [ path, [filename, str(WxH img dimensions), str(preview ext: '', 'jpg', 'png')] ]
         # for queuing multiple models to apply to prompt files
         self.models = []
         self.model_index = 0
@@ -666,10 +725,12 @@ class Controller:
                                except:
                                    size = ''
                                if size != '':
-                                   preview = False
+                                   preview = ''
                                    preview_dir = os.path.join(subdir, 'previews')
-                                   if os.path.exists(os.path.join(preview_dir, entry.name)):
-                                       preview = True
+                                   if os.path.exists(os.path.join(preview_dir, entry.name[:-3] + 'jpg')):
+                                       preview = 'jpg'
+                                   elif os.path.exists(os.path.join(preview_dir, entry.name[:-3] + 'png')):
+                                       preview = 'png'
                                    files.append([entry.name, size, preview])
                         if len(files) > 0:
                             files.sort()
@@ -686,10 +747,12 @@ class Controller:
                             except:
                                size = ''
                             if size != '':
-                                preview = False
+                                preview = ''
                                 preview_dir = os.path.join('poses', 'previews')
-                                if os.path.exists(os.path.join(preview_dir, entry.name)):
-                                   preview = True
+                                if os.path.exists(os.path.join(preview_dir, entry.name[:-3] + 'jpg')):
+                                   preview = 'jpg'
+                                elif os.path.exists(os.path.join(preview_dir, entry.name[:-3] + 'png')):
+                                   preview = 'png'
                                 root_files.append([entry.name, size, preview])
             if len(root_files) > 0:
                 root_files.sort()

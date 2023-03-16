@@ -438,9 +438,10 @@ def build_controlnet_poses_reference(control):
                 cpy = '!CONTROLNET_INPUT_IMAGE = ' + fullpath.replace("\\", "\\\\")
                 preview_img = '<a href=\"/' + fullpath + '\" target=\"_blank\"><img src=\"img/pre01.png\"></a>'
                 preview_alt = ''
-                if preview:
+                if preview != '':
                     fullpath_preview = os.path.join(subdir, 'previews')
                     fullpath_preview = os.path.join(fullpath_preview, file)
+                    fullpath_preview = fullpath_preview[:-3] + preview
                     preview_alt = '<a href=\"/' + fullpath_preview + '\" target=\"_blank\"><img src=\"img/pre02.png\"></a>'
 
                 #buffer += '<li class=\"no-bullets\">'
@@ -753,6 +754,8 @@ class ArtServer:
             }
 
         # common config items
+        favicon_path = os.path.join('server', 'img')
+        favicon_path = os.path.join(favicon_path, 'favicon.ico')
         self.config.update({
             '/generator': {
                 'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
@@ -766,7 +769,11 @@ class ArtServer:
             '/output': {
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': os.path.abspath(self.control_ref.config['output_location'])
-            }
+            },
+        	'/favicon.ico': {
+        		'tools.staticfile.on': True,
+                'tools.staticfile.filename': os.path.abspath(favicon_path)
+        	}
         })
 
         # if we're not in debug mode and not logging web requests, enable production mode
