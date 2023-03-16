@@ -88,7 +88,10 @@ def build_gallery(control):
             prompt = params['prompt'].replace('<', '&lt;').replace('>', '&gt;')
             if params['width'] != '':
                 param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
-            elif params['input_image'] != "":
+
+            if params['input_image'] != "":
+                if param_string != '':
+                    param_string += '  |  '
                 param_string += 'init image: ' + params['input_image'] + '  |  strength: ' + str(params['strength'])
 
             if params['ckpt_file'] != '':

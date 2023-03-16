@@ -197,6 +197,7 @@ class PromptManager():
             'seed' : -1,
             'width' : self.control.config['width'],
             'height' : self.control.config['height'],
+            'auto_size' : 'off',
             'steps' : self.control.config['steps'],
             'scale' : self.control.config['scale'],
             'min_scale' : 7.5,
@@ -258,6 +259,17 @@ class PromptManager():
                     self.control.print("*** WARNING: specified 'HEIGHT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'height' : value})
+
+        elif command == 'auto_size':
+            value = value.lower().strip()
+            if value == 'off' or value == '':
+                self.config.update({'auto_size' : 'off'})
+            elif value == 'match_controlnet_image_size' or value == 'match_controlnet_image_aspect_ratio':
+                self.config.update({'auto_size' : value})
+            elif value == 'match_input_image_size' or value == 'match_input_image_aspect_ratio':
+                self.config.update({'auto_size' : value})
+            else:
+                self.control.print("*** WARNING: specified 'AUTO_SIZE' value (" + value + ") not understood; it will be ignored!")
 
         elif command == 'auto_insert_model_trigger':
             if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off' or 'keyword:' in value:
@@ -548,7 +560,7 @@ class PromptManager():
                 # user-supplied sampler doesn't closely match anything on server list
                 # use default
                 validated_sampler = 'Euler'
-                print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
+                self.control.print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
 
         return validated_sampler
 
@@ -570,7 +582,7 @@ class PromptManager():
 
         if not validated:
             # user-supplied CN model doesn't closely match anything on server list
-            print("*** WARNING: prompt file command CONTROLNET_MODEL value (" + model + ") doesn't match any server values; ignoring it! ***")
+            self.control.print("*** WARNING: prompt file command CONTROLNET_MODEL value (" + model + ") doesn't match any server values; ignoring it! ***")
 
         return validated_model
 
@@ -630,7 +642,52 @@ class PromptManager():
 
             if not is_directive:
                 work['prompt'] = str_prompt
-                prompt_work_queue.append(work.copy())
+
+                # check for input/controlnet input images that are directories
+                # if found, iterate over contained files, submit work for each
+                subdir_processed = False
+                if os.path.isdir(work['input_image']) and os.path.isdir(work['controlnet_input_image']):
+                    # need to add combination of input/control files
+                    input_files = get_images_in_dir(work['input_image'])
+                    controlnet_files = get_images_in_dir(work['controlnet_input_image'])
+                    if len(input_files) > 0 and len(controlnet_files) > 0:
+                        subdir_processed = True
+                        for i in input_files:
+                            for c in controlnet_files:
+                                work['input_image'] = i
+                                work['controlnet_input_image'] = c
+                                prompt_work_queue.append(work.copy())
+                    #else:
+                        # one or both directories are empty, fall through to below and handle
+
+                if not subdir_processed and os.path.isdir(work['input_image']):
+                    # input image is a directory, add a work item for each file
+                    files = get_images_in_dir(work['input_image'])
+                    if len(files) > 0:
+                        subdir_processed = True
+                        for f in files:
+                            # queue each image in the input dir
+                            work['input_image'] = f
+                            prompt_work_queue.append(work.copy())
+                    else:
+                        self.control.print("*** WARNING: prompt file command INPUT_IMAGE refers to an empty directory (" + work['input_image'] + "); ignoring it! ***")
+                        work['input_image'] = ''
+
+                if not subdir_processed and os.path.isdir(work['controlnet_input_image']):
+                    # ControlNet input image is a directory, add a work item for each file
+                    files = get_images_in_dir(work['controlnet_input_image'])
+                    if len(files) > 0:
+                        subdir_processed = True
+                        for f in files:
+                            # queue each image in the input dir
+                            work['controlnet_input_image'] = f
+                            prompt_work_queue.append(work.copy())
+                    else:
+                        self.control.print("*** WARNING: prompt file command CONTROLNET_INPUT_IMAGE refers to an empty directory (" + work['controlnet_input_image'] + "); ignoring it! ***")
+                        work['controlnet_input_image'] = ''
+
+                if not subdir_processed:
+                    prompt_work_queue.append(work.copy())
 
         return prompt_work_queue
 
@@ -784,7 +841,8 @@ def create_command(command, output_dir_ext, gpu_id):
     if command.get('input_image') != "":
         #py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
         py_command += " --init-img \"" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
-    else:
+
+    if command.get('width') != "":
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
 
     if command.get('ckpt_file') != '':
@@ -1071,3 +1129,78 @@ def create_zip(dir):
                zipObj.write(f.path, basename(f.path))
 
     return zip_path
+
+
+# returns an image's size dimensions in [w, h] format
+# output dimensions will be divisible by 64 (orig dimensions rounded down if necessary)
+# returns [] if image doesn't exist or isn't a valid format
+def get_image_size(filepath):
+    size = []
+    if os.path.exists(filepath):
+        try:
+           with Image.open(filepath) as img:
+               width, height = img.size
+               size = [width, height]
+        except:
+           size = []
+
+        if len(size) == 2:
+            if size[0] % 64 != 0:
+                size[0] = int((size[0] // 64) * 64)
+            if size[1] % 64 != 0:
+                size[1] = int((size[1] // 64) * 64)
+
+    return size
+
+# given an image (filepath) and orignal dimensions,
+# returns new dimensions with the same aspect ratio as the image
+# the longest original dimension will match the longest matched AR dimension
+# output dimensions will be divisible by 64
+# returns dimensions as [w, h], or [] if there was an issue
+def match_image_aspect_ratio(filepath, original_dimensions):
+    input_dimensions = get_image_size(filepath)
+    output_dimensions = []
+    if input_dimensions != [] and len(original_dimensions) == 2:
+        # first get the longest original dimension
+        longest_original_dimension = 0
+        if original_dimensions[0] >= original_dimensions[1]:
+            longest_original_dimension = int(original_dimensions[0])
+        else:
+            longest_original_dimension = int(original_dimensions[1])
+
+        # determine which side of the input image is longer
+        # and calculate the input image's aspect ratio
+        width_longest = True
+        aspect_ratio = 0
+        if input_dimensions[0] >= input_dimensions[1]:
+            width_longest = True
+            aspect_ratio = input_dimensions[0] / input_dimensions[1]
+        else:
+            width_longest = False
+            aspect_ratio = input_dimensions[1] / input_dimensions[0]
+
+        # calculate the short dimension of output image
+        new_short_dimension = longest_original_dimension / aspect_ratio
+
+        # ensure result is divisible by 64; round down to nearest 64 if not
+        if new_short_dimension % 64 != 0:
+            new_short_dimension = (new_short_dimension // 64) * 64
+
+        # build return dimensions
+        if width_longest:
+            output_dimensions = [int(longest_original_dimension), int(new_short_dimension)]
+        else:
+            output_dimensions = [int(new_short_dimension), int(longest_original_dimension)]
+
+    return output_dimensions
+
+
+# returns a list of .jpg and .png images in the given directory
+def get_images_in_dir(path):
+    files = []
+    if os.path.exists(path):
+        for entry in os.scandir(path):
+            if entry.is_file() and (entry.name.lower().endswith('.png') or entry.name.lower().endswith('.jpg')):
+                file = os.path.join(path, entry.name)
+                files.append(file)
+    return files

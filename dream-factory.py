@@ -154,14 +154,43 @@ class Worker(threading.Thread):
         self.command['prompt'] = p
         #print('after wildcard replace: ' + self.command['prompt'])
 
+        # check for auto-dimensions
+        orig_size = [self.command.get('width'), self.command.get('height')]
+        if self.command.get('auto_size') == 'match_controlnet_image_size':
+            if self.command.get('controlnet_input_image') != '':
+                new_size = utils.get_image_size(self.command.get('controlnet_input_image'))
+                if new_size != []:
+                    self.command['width'] = new_size[0]
+                    self.command['height'] = new_size[1]
+
+        elif self.command.get('auto_size') == 'match_input_image_size':
+            if self.command.get('input_image') != '':
+                new_size = utils.get_image_size(self.command.get('input_image'))
+                if new_size != []:
+                    self.command['width'] = new_size[0]
+                    self.command['height'] = new_size[1]
+
+        elif self.command.get('auto_size') == 'match_controlnet_image_aspect_ratio':
+            if self.command.get('controlnet_input_image') != '':
+                new_size = utils.match_image_aspect_ratio(self.command.get('controlnet_input_image'), orig_size)
+                if new_size != []:
+                    self.command['width'] = new_size[0]
+                    self.command['height'] = new_size[1]
+
+        elif self.command.get('auto_size') == 'match_input_image_aspect_ratio':
+            if self.command.get('input_image') != '':
+                new_size = utils.match_image_aspect_ratio(self.command.get('input_image'), orig_size)
+                if new_size != []:
+                    self.command['width'] = new_size[0]
+                    self.command['height'] = new_size[1]
 
         # check for ControlNet params
         use_controlnet = False
         scribble_mode = False
         cn_params = [64, 64, 64]
+        img2img = False
         if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
             use_controlnet = True
-            img2img = False
             if self.command.get('input_image') != '':
                 img2img = True
 
@@ -224,8 +253,6 @@ class Worker(threading.Thread):
                     # we have a valid model, use it
                     self.command['controlnet_model'] = auto_model
 
-
-
         command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
         self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
 
@@ -273,32 +300,29 @@ class Worker(threading.Thread):
               "negative_prompt": str(self.command.get('neg_prompt'))
             }
 
-            # add CN params to existing payload if ControlNet is enabled
-            if use_controlnet:
-                cn_payload = {
-                    "ControlNet": {
-                        "args": [
-                            img2img,    # is_img2img
-                            False,      # is_ui
-                            True,       # enabled
-                            str(self.command.get('controlnet_pre')),        # module
-                            str(self.command.get('controlnet_model')),      # model
-                            1.0,        # weight
-                            {"image": cn_img_payload},      # image/mask,
-                            scribble_mode,                  # scribble_mode
-                            "Scale to Fit (Inner Fit)",     # resize_mode
-                            False,      # rgbbgr_mode
-                            self.command.get('controlnet_lowvram'),      # lowvram
-                            cn_params[0],   # pres
-                            cn_params[1],   # pthr_a
-                            cn_params[2],   # pthr_b
-                            0.0,            # guidance_start
-                            1.0,            # guidance_end
-                            False           # guess_mode
-                        ]
-                    }
+        # add CN params to existing payload if ControlNet is enabled
+        # https://github.com/Mikubill/sd-webui-controlnet/wiki/API
+        if use_controlnet:
+            cn_payload = {
+                "ControlNet": {
+                    "args": [{
+                        "input_image": cn_img_payload,
+                        "mask": "",
+                        "module": str(self.command.get('controlnet_pre')),
+                        "model": str(self.command.get('controlnet_model')),
+                        "weight": 1,
+                        "resize_mode": "Scale to Fit (Inner Fit)",
+                        "lowvram": self.command.get('controlnet_lowvram'),
+                        "processor_res": cn_params[0],
+                        "threshold_a": cn_params[1],
+                        "threshold_b": cn_params[2],
+                        "guidance_start": 0,
+                        "guidance_end": 1,
+                        "guessmode": False
+                    }]
                 }
-                payload["alwayson_scripts"] = cn_payload
+            }
+            payload["alwayson_scripts"] = cn_payload
 
         start_time = time.time()
         self.worker['job_start_time'] = start_time
