@@ -6,6 +6,18 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.03.16]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
+
+### Added
+- Added an **!AUTO_SIZE** directive that allows you to have your output image dimensions automatically calculated based on the dimensions or aspect ratio of input images or ControlNet input images ([see docs](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)).
+
+### Changed
+- [!INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#input_image) and [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_input_image) now both accept directories as input, in addition to individual files.
+
+### Fixed
+- Fixed a bug that was preventing img2img calls with ControlNet enabled to disregard ControlNet settings.
+
 ## [2023.03.15]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
 
