@@ -6,6 +6,17 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.03.21]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
+
+### Added
+- Added a **!CLIP_SKIP** directive ([see docs](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#clip_skip) for details).
+- Added directives for IPTC metadata tagging (!IPTC_TITLE, !IPTC_DESCRIPTION, !IPTC_KEYWORDS, !IPTC_COPYRIGHT). [Docs/examples](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_title).
+- Added some additional initial data handshaking with Auto1111 to grab available upscalers/scripts for future additions.
+
+### Changed
+- Modified setup.py to check dependancies and install any that are missing when running with the --update switch (```iptcinfo3``` is a new dependancy; this should hopefully pick it up for everyone).
+
 ## [2023.03.16]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
 
