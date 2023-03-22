@@ -268,6 +268,7 @@ You may also use the reserved word "all" here, and Dream Factory will rotate thr
 !CKPT_FILE = all                                         # will rotate between all of your models
 !CKPT_FILE =                                             # sets the default model specified in your config.txt
 ```
+Note: this uses a substring match on the valid server values available via the integrated reference, so for example if 'SD_1.5\dreamshaper_4BakedVae.safetensors [7f16bbcd80]' is what the reference reports, then setting **!CKPT_FILE = dreamshaper_4BakedVae.safetensors** will find it.
 #### !NEG_PROMPT
 Specifies a negative prompt to be used for all of the prompts that follow it (remember you can place most directives directly into [prompts] sections of standard prompt files!). If you have a 'catch-all' negative prompt that you tend to use, you can specify it in your config.txt file and it'll be populated as the default on new prompt files you create. Setting this to nothing will clear the negative prompt.
 ```
@@ -367,6 +368,8 @@ Note that you may optionally specify **auto** for !CONTROLNET_MODEL (or **auto, 
 !CONTROLNET_MODEL = auto, depth
 ```
 In this example directive, Dream Factory will attempt to extract the model to use from your filenames, and fallback to 'depth' as a default model if your filename didn't contain a valid model. Specifying a default is optional, but if a model cannot be discerned from your filename(s) and no default is present, ControlNet will be disabled.
+
+Note: this uses a substring match on the valid server values available via the integrated reference, so for example if 'control_canny-fp16' is what the reference reports, then setting **!CONTROLNET_MODEL = canny** will find it.
 #### !CONTROLNET_PRE
 Sets the ControlNet preprocessor to use. This is used to "extract" pose information from a normal image, so that it can then be used with the corresponding ControlNet model. If you're using pre-generated poses (such as the example ones contained in the Dream Factory **poses** folder) you do not need to set this (or you can set it to the default of 'none').
 ```
