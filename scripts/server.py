@@ -125,6 +125,11 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += 'scale: ' + str(params['scale'])
 
+            if params['clip_skip'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'CLIP skip: ' + str(params['clip_skip'])
+
             if params['seed'] != '':
                 if param_string != '':
                     param_string += '  |  '

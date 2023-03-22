@@ -21,6 +21,7 @@ import json
 from PIL import Image
 from io import BytesIO
 import scripts.utils as utils
+import scripts.metadata as metadata
 from os.path import exists
 from datetime import datetime as dt
 from datetime import date
@@ -324,6 +325,14 @@ class Worker(threading.Thread):
             }
             payload["alwayson_scripts"] = cn_payload
 
+        # handle override settings here: clip_skip, etc
+        override_settings = {}
+        if self.command.get('clip_skip') != '':
+            override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
+
+        if override_settings != {}:
+            payload["override_settings"] = override_settings
+
         start_time = time.time()
         self.worker['job_start_time'] = start_time
         self.worker['job_prompt_info'] = self.command
@@ -515,7 +524,6 @@ class Worker(threading.Thread):
                             newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
 
-
                             # remove all unrecognized variables
                             #opening_braces = '<'
                             #closing_braces = '>'
@@ -537,7 +545,23 @@ class Worker(threading.Thread):
                             nf_count += 1
 
                         quality = control.config.get('jpg_quality')
-                        im.save(output_dir + "/" + newfilename + ".jpg", exif=exif, quality=quality)
+                        #output_fn = output_dir + "/" + newfilename + ".jpg"
+                        output_fn = os.path.join(output_dir, newfilename + ".jpg")
+                        im.save(output_fn, exif=exif, quality=quality)
+
+                        # add IPTC metadata if necesary
+                        if (self.command.get('iptc_title') != ''
+                                or self.command.get('iptc_description') != ''
+                                or self.command.get('iptc_keywords') != []
+                                or self.command.get('iptc_copyright') != ''):
+
+                            # write IPTC info
+                            metadata.write_iptc_info(output_fn,
+                                self.command.get('iptc_title'),
+                                self.command.get('iptc_description'),
+                                self.command.get('iptc_keywords'),
+                                self.command.get('iptc_copyright'))
+
                         if exists(samples_dir + "/" + f):
                             os.remove(samples_dir + "/" + f)
 
@@ -602,10 +626,15 @@ class Controller:
         self.sdi_models = None
         self.sdi_hypernetwork_request_made = False
         self.sdi_hypernetworks = None
+        self.sdi_upscaler_request_made = False
+        self.sdi_upscalers = None
         self.sdi_controlnet_available = False
         self.sdi_controlnet_request_made = False
         self.sdi_controlnet_models = None
         self.sdi_controlnet_preprocessors = None
+        self.sdi_script_request_made = False
+        self.sdi_txt2img_scripts = None
+        self.sdi_img2img_scripts = None
         self.wildcards = None
         self.default_model_validated = False
         self.embeddings = []
@@ -1822,6 +1851,20 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_hypernetworks()
                 control.sdi_hypernetwork_request_made = True
+                skip = True
+
+            if not control.sdi_script_request_made:
+                # get available hypernetworks from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_scripts()
+                control.sdi_script_request_made = True
+                skip = True
+
+            if not control.sdi_upscaler_request_made:
+                # get available upscalers from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_upscalers()
+                control.sdi_upscaler_request_made = True
                 skip = True
 
             if not control.sdi_controlnet_request_made and control.sdi_controlnet_available:

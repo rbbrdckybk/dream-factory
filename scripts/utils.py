@@ -215,6 +215,11 @@ class PromptManager():
             'max_strength' : 0.75,
             'delim' : " ",
             'next_prompt_file' : "",
+            'iptc_title' : "",
+            'iptc_description' : "",
+            'iptc_keywords' : [],
+            'iptc_copyright' : "",
+            'clip_skip' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
@@ -417,7 +422,7 @@ class PromptManager():
                 if os.path.exists(value):
                     self.config.update({'input_image' : value})
                 else:
-                    self.control.print("*** WARNING: specified 'INPUT_IMAGE' does not exist; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'INPUT_IMAGE' (" + value + ") does not exist; it will be ignored!")
             else:
                 self.config.update({'input_image' : ''})
 
@@ -426,14 +431,14 @@ class PromptManager():
                 if os.path.exists(value):
                     self.config.update({'random_input_image_dir' : value})
                 else:
-                    self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' does not exist; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' (" + value + ") does not exist; it will be ignored!")
 
         elif command == 'controlnet_input_image':
             if value != '':
                 if os.path.exists(value):
                     self.config.update({'controlnet_input_image' : value})
                 else:
-                    self.control.print("*** WARNING: specified 'CONTROLNET_INPUT_IMAGE' does not exist; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'CONTROLNET_INPUT_IMAGE' (" + value + ") does not exist; it will be ignored!")
             else:
                 self.config.update({'controlnet_input_image' : ''})
 
@@ -488,6 +493,45 @@ class PromptManager():
             if not match:
                 self.control.print("*** WARNING: prompt file command NEXT_PROMPT_FILE value (" + value + ") is not a valid prompt file and will be ignored! ***")
                 time.sleep(1.5)
+
+        elif command == 'iptc_title':
+            if value != '':
+                self.config.update({'iptc_title' : value})
+            else:
+                self.config.update({'iptc_title' : ''})
+
+        elif command == 'iptc_description':
+            if value != '':
+                self.config.update({'iptc_description' : value})
+            else:
+                self.config.update({'iptc_description' : ''})
+
+        elif command == 'iptc_keywords':
+            if value != '':
+                keywords = []
+                kw = value.split(',')
+                for k in kw:
+                    keywords.append(k.strip())
+                self.config.update({'iptc_keywords' : keywords})
+            else:
+                self.config.update({'iptc_keywords' : []})
+
+        elif command == 'iptc_copyright':
+            if value != '':
+                self.config.update({'iptc_copyright' : value})
+            else:
+                self.config.update({'iptc_copyright' : ''})
+
+        elif command == 'clip_skip':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'CLIP_SKIP' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'clip_skip' : value})
+            else:
+                self.config.update({'clip_skip' : ''})
 
         elif command == 'ckpt_file':
             model = ''
@@ -842,6 +886,9 @@ def create_command(command, output_dir_ext, gpu_id):
         #py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
         py_command += " --init-img \"" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
 
+    if command.get('clip_skip') != "":
+        py_command += " --clip-skip " + str(command.get('clip_skip'))
+
     if command.get('width') != "":
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
 
@@ -880,7 +927,8 @@ def extract_params_from_command(command):
         'strength' : "",
         'ckpt_file' : "",
         'controlnet_model' : "",
-        'controlnet_input_image' : ""
+        'controlnet_input_image' : "",
+        'clip_skip' : ""
     }
 
     if command != "":
@@ -949,6 +997,12 @@ def extract_params_from_command(command):
             if '--' in temp:
                 temp = temp.split('--', 1)[0]
             params.update({'height' : temp.strip()})
+
+        if '--clip-skip' in command:
+            temp = command.split('--clip-skip', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'clip_skip' : temp.strip()})
 
         if '--init-img' in command:
             temp = command.split('--init-img', 1)[1]

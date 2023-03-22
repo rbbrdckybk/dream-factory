@@ -1,4 +1,4 @@
-# Copyright 2021 - 2022, Bill Kennedy
+# Copyright 2021 - 2023, Bill Kennedy
 # SPDX-License-Identifier: MIT
 # Dream Factory setup script
 # https://github.com/rbbrdckybk/dream-factory
@@ -56,7 +56,7 @@ def install_pytorch(verbose = False, shell = False):
 
 # installs all dependancies via pip
 def install_dependencies(verbose = False, shell = False):
-    print('\nInstalling all required dependencies:')
+    print('\nChecking for required dependencies:')
     base = 'pip install --no-input '
     packages = [ \
         #'transformers', \
@@ -78,7 +78,8 @@ def install_dependencies(verbose = False, shell = False):
         #'basicsr', \
         #'facexlib', \
         #'gfpgan', \
-        'requests'
+        'requests', \
+        'IPTCInfo3'
     ]
     packages.sort()
 
@@ -123,6 +124,8 @@ def update(shell = False):
         exec(cmd, True, shell)
         #print('updating stable-diffusion...')
         #exec_cwd(cmd, cwd + os.path.sep + 'stable-diffusion', True, shell)
+        install_dependencies(False, shell)
+
     except FileNotFoundError:
         print('\nUnable to find git executable - try re-running update with the --shell option, e.g.:')
         print('   python setup.py --shell --update\n')

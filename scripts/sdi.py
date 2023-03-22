@@ -122,6 +122,30 @@ class GetHyperNetworksRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching scripts
+class GetScriptsRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/scripts')
+        self.callback(response)
+
+
+# for fetching upscalers
+class GetUpscalersRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/upscalers')
+        self.callback(response)
+
+
 # for fetching ControlNet models
 class ControlNet_GetModelsRequest(threading.Thread):
     def __init__(self, sdi_ref, callback=lambda: None, *args):
@@ -493,30 +517,67 @@ class SDI:
     # gets valid hypernetworks from server
     def get_server_hypernetworks(self):
         self.busy = True
-        #self.log('Fetching models from server...')
         self.log('querying SD for available hypernetworks...', True)
         query = GetHyperNetworksRequest(self, self.hypernetwork_response)
+        query.start()
+
+
+    # gets valid scripts from server
+    def get_server_scripts(self):
+        self.busy = True
+        self.log('querying SD for available scripts...', True)
+        query = GetScriptsRequest(self, self.script_response)
+        query.start()
+
+
+    # gets valid upscalers from server
+    def get_server_upscalers(self):
+        self.busy = True
+        self.log('querying SD for available upscalers...', True)
+        query = GetUpscalersRequest(self, self.upscaler_response)
         query.start()
 
 
     # handle server hypernetwork response
     def hypernetwork_response(self, response):
         r = response.json()
-
         networks = []
-        network_str = ''
         for i in r:
             networks.append(i['name'])
-            network_str += '   - ' + i['name'] + '\n'
 
-        #self.log('Server indicates the following hypernetworks are available for use:\n' + network_str)
         self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
         self.control_ref.sdi_hypernetworks = networks
+        self.busy = False
 
-        # reload prompt file if we have one to validate it against models
-        if self.control_ref.prompt_file != '':
-            self.control_ref.new_prompt_file(self.control_ref.prompt_file)
 
+    # handle server script response
+    def script_response(self, response):
+        r = response.json()
+        txt2img_scripts = []
+        img2img_scripts = []
+        rtxt = 'is not'
+        for i in r['txt2img']:
+            txt2img_scripts.append(i)
+        for i in r['img2img']:
+            img2img_scripts.append(i)
+            if i == 'ultimate sd upscale':
+                rtxt = 'is'
+
+        self.log('received script query response: SD indicates \'Ultimate SD Upscale script\' ' + rtxt + ' available for use...', True)
+        self.control_ref.sdi_txt2img_scripts = txt2img_scripts
+        self.control_ref.sdi_img2img_scripts = img2img_scripts
+        self.busy = False
+
+
+    # handle server upscaler response
+    def upscaler_response(self, response):
+        r = response.json()
+        upscalers = []
+        for i in r:
+            upscalers.append(i['name'])
+
+        self.log('received upscaler query response: SD indicates ' + str(len(upscalers)) + ' upscalers available for use...', True)
+        self.control_ref.sdi_upscalers = upscalers
         self.busy = False
 
 
