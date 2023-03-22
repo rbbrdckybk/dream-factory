@@ -330,6 +330,12 @@ The file extension (.jpg) will be added automatically.
 The above example might produce an output filename of **20230209-deliberate_v11-768x1280-a-photo-of-a-cute-cat.jpg**, for example.
 
 Note that ```<input-img>``` and ```<cn-img>``` (ControlNet input image) will be the base filename only (no subdirectories or file extension).
+#### !CLIP_SKIP
+Sets the [CLIP skip](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#clip-skip) value. The default is 1, and most models work best with it set there. However some models may give optimal results with other values.
+```
+!CLIP_SKIP = 2
+```
+You may set this to nothing (!CLIP_SKIP = ) to clear it.
 #### !CONTROLNET_INPUT_IMAGE
 Sets an input image for use with ControlNet.
 ```
@@ -381,6 +387,30 @@ Allows you to have Dream Factory automatically size your output images based in 
 Note that all resizings will result in image dimensions that are divisible by 64 (both dimensions will be rounded down to the nearest divisible-by-64 number).
 
 For example, with **!AUTO_SIZE = match_controlnet_image_aspect_ratio**, if you set both your !WIDTH and !HEIGHT to 1408, and pass a 1920x1080 ControlNet input image (16:9 aspect ratio), the resulting output image will be 1408x768. The larger dimension has been set to the larger of your !WIDTH & !HEIGHT setting, and the smaller dimension has been calculated to be as close as possible to a 16:9 aspect ratio with a smaller dimension that is evenly divisble by 64.
+#### IPTC_TITLE
+Sets the image's title in embedded [IPTC metadata](https://www.iptc.org/standards/photo-metadata/). Generally only useful if you plan to export your images into some other application that uses IPTC standards for cataloging, etc.
+```
+IPTC_TITLE = Super awesome AI kitten image!
+```
+Set this to nothing to clear it, as usual.
+#### IPTC_DESCRIPTION
+Sets the image's description in embedded [IPTC metadata](https://www.iptc.org/standards/photo-metadata/). Generally only useful if you plan to export your images into some other application that uses IPTC standards for cataloging, etc.
+```
+IPTC_DESCRIPTION = This is an excellent AI image of a cute kitten.
+```
+Set this to nothing to clear it, as usual.
+#### IPTC_KEYWORDS
+Sets the image's keywords in embedded [IPTC metadata](https://www.iptc.org/standards/photo-metadata/). Generally only useful if you plan to export your images into some other application that uses IPTC standards for cataloging, etc. Keywords should be a comma-separated list.
+```
+IPTC_KEYWORDS = ai, kitten, cute
+```
+Set this to nothing to clear it, as usual.
+#### IPTC_COPYRIGHT
+Sets the image's copyright statement in embedded [IPTC metadata](https://www.iptc.org/standards/photo-metadata/). Generally only useful if you plan to export your images into some other application that uses IPTC standards for cataloging, etc.
+```
+IPTC_COPYRIGHT = Copyright © 2023 Super Awesome Image Studio
+```
+Set this to nothing to clear it, as usual.
 #### !REPEAT
 Tells Dream Factory whether or not to continuing producing images after it has finished all possible combinations in the prompt file. Options are **yes** (default) or **no**. If set to no, Dream Factory will idle after it has completed all prompts.
 ```
