@@ -15,7 +15,7 @@ Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk
 - Added some additional initial data handshaking with Auto1111 to grab available upscalers/scripts for future additions.
 
 ### Changed
-- Modified setup.py to check dependancies and install any that are missing when running with the --update switch (```iptcinfo3``` is a new dependancy; this should hopefully pick it up for everyone).
+- Modified setup.py to check dependancies and install any that are missing when running with the --update switch (```iptcinfo3``` is a new dependency; run ```python setup.py --update``` once to get this update, then again to check your dependencies).
 
 ## [2023.03.16]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **dfeee786f903e392dbef1519c7c246b9856ebab3**
