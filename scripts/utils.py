@@ -1258,3 +1258,33 @@ def get_images_in_dir(path):
                 file = os.path.join(path, entry.name)
                 files.append(file)
     return files
+
+
+# check a string for potential wildcard replacement; make at most 1
+# unless all=True (make all replacements)
+def wildcard_replace(str, key, replace, all=False):
+    if str != None and len(str) > 0:
+        if not all:
+            str = re.sub(key, replace, str, 1, flags=re.IGNORECASE)
+        else:
+            str = re.sub(key, replace, str, flags=re.IGNORECASE)
+    return str
+
+
+# check a list for potential wildcard replacement; make at most 1
+# unless all=True (make all replacements)
+def wildcard_replace_list(list, key, replace, all=False):
+    replace_list = []
+    made_replacement = False
+    if list != None and len(list) > 0:
+        for str in list:
+            if not made_replacement and key.lower() in str.lower():
+                if not all:
+                    str = re.sub(key, replace, str, 1, flags=re.IGNORECASE)
+                    made_replacement = True
+                else:
+                    str = re.sub(key, replace, str, flags=re.IGNORECASE)
+            replace_list.append(str)
+    else:
+        replace_list = list
+    return replace_list

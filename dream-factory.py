@@ -147,10 +147,25 @@ class Worker(threading.Thread):
                         x = random.randint(0, len(vcopy)-1)
                         replace = vcopy.pop(x)
                         # replace the first occurence with the chosen value
-                        p = re.sub(key, replace, p, 1, flags=re.IGNORECASE)
+                        #p = re.sub(key, replace, p, 1, flags=re.IGNORECASE)
+                        p = utils.wildcard_replace(p, key, replace)
+
+                        # check IPTC metadata and make the same replacement if necessary
+                        self.command['iptc_title'] = utils.wildcard_replace(self.command.get('iptc_title'), key, replace)
+                        self.command['iptc_description'] = utils.wildcard_replace(self.command.get('iptc_description'), key, replace)
+                        self.command['iptc_keywords'] = utils.wildcard_replace_list(self.command.get('iptc_keywords'), key, replace)
+                        self.command['iptc_copyright'] = utils.wildcard_replace(self.command.get('iptc_copyright'), key, replace)
+
                     else:
                         # not enough values to make all replacements, sub '' instead
-                        p = re.sub(key, '', p, flags=re.IGNORECASE)
+                        #p = re.sub(key, '', p, flags=re.IGNORECASE)
+                        p = utils.wildcard_replace(p, key, '', True)
+
+                        # make the same replacement in IPTC metadata if necessary
+                        self.command['iptc_title'] = utils.wildcard_replace(self.command.get('iptc_title'), key, '', True)
+                        self.command['iptc_description'] = utils.wildcard_replace(self.command.get('iptc_description'), key, '', True)
+                        self.command['iptc_keywords'] = utils.wildcard_replace_list(self.command.get('iptc_keywords'), key, '', True)
+                        self.command['iptc_copyright'] = utils.wildcard_replace(self.command.get('iptc_copyright'), key, '', True)
 
         self.command['prompt'] = p
         #print('after wildcard replace: ' + self.command['prompt'])
