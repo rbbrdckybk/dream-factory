@@ -166,7 +166,12 @@ These directives are valid in both the [config] section of both standard and ran
  * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pre)
  * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
  * [!AUTO_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)
-
+ * [!CLIP_SKIP](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#clip_skip)
+ * [!IPTC_TITLE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_title)
+ * [!IPTC_DESCRIPTION](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_description)
+ * [!IPTC_KEYWORDS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_keywords)
+ * [!IPTC_COPYRIGHT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_copyright)
+ 
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
  * [!REPEAT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat)
