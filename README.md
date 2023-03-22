@@ -537,10 +537,10 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout dfeee786f903e392dbef1519c7c246b9856ebab3
+git checkout a9fed7c364061ae6efb37f797b6b522cb3cf7aa2
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
 If/when you want to go back to the latest version, you can just run ```git checkout master```.
 
-(updated 2023-03-13, previous supported hash: 0cc0ee1bcb4c24a8c9715f66cede06601bfc00c8)
+(updated 2023-03-21, previous supported hash: dfeee786f903e392dbef1519c7c246b9856ebab3)
