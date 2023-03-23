@@ -1,0 +1,81 @@
+# *****************************************************************************************************
+# Dream Factory example prompt file (process mode)
+# Note: This is an advanced file type that's useful for batch processing (e.g. upscaling, renaming, etc)
+# prompt file reference: https://github.com/rbbrdckybk/dream-factory#prompt-file-command-reference
+# *****************************************************************************************************
+[config]
+
+# Sets the mode to PROCESS; this is a special mode that doesn't generate new images from prompts;
+# instead you can instruct Dream Factory to do some batch processing on existing images.
+!MODE = process
+
+# This mode does not repeat when finished, so it's especially useful to set up another normal
+# image-generating prompt file to execute when this one finishes its work.
+!NEXT_PROMPT_FILE = example-random
+
+# Upscaling folders of hand-picked images is probably the best use of PROCESS mode.
+# Set up your common upscaling operations in the [config] and they'll be used automatically below.
+!USE_UPSCALE = yes
+!UPSCALE_CODEFORMER_AMOUNT = 0
+!UPSCALE_GFPGAN_AMOUNT = 0
+!UPSCALE_AMOUNT = 2.5
+
+# Adding IPTC keywords to existing images is also do-able from here. 
+# This will append these two keywords to the IPTC metadata in every image that's processed below.
+!IPTC_KEYWORDS = stable diffusion, dream factory
+# leave this out or set to 'no' to replace instead of append
+!IPTC_APPEND = yes
+
+# Renaming files can also be done by a PROCESS prompt file.
+# <input-img> refers to the original filename of each file being processed.
+# <upscale-model> refers to the upscaler used during the upscale process.
+!FILENAME = <input-img>-<upscale-model>-<date>-<time>
+
+
+# PROCESS prompt files may only have a single [prompts] section.
+# Any additional [prompts] sections will be ignored.
+[prompts]
+
+# This specifies that all images in this directory should be processed.
+!INPUT_IMAGE = C:\images\space-cats
+
+# This will attempt to perform a substring match on your Auto1111 upscale models.
+# ESRGAN_4x should be found (it's the default) and will be set for the first operation.
+!UPSCALE_MODEL = esrgan
+
+# This overrides the default Dream Factory output folder - only possible in PROCESS files.
+# This folder MUST EXIST or it'll be ignored!
+!OUTPUT_DIR = C:\images\space-cats\upscaled-esrgan
+
+# This is the special PROCESS mode trigger that kicks off whatever job(s) you've 
+# laid out above. In this case, all of the images in 'C:\images\space-cats' will:
+# - Be upscaled 2.5x with the ESRGAN_4x upscaler
+# - Have [stable diffusion, dream factory] added to the IPTC keywords of each upscaled image
+# - Be renamed to <input-img>-ESRGAN_4x-<date>-<time>
+# - Output images will be placed in 'C:\images\space-cats\upscaled-esrgan'
+go
+
+
+# Here we're setting up a 2nd upscale operation, this time using a different upscaler and
+# 80% GFPGAN face enhancement visibility. Note that you'll need to have the 4x_foolhardy_Remacri.pth
+# upscaler installed properly (or something similarly named) for 'remacri' to successfully match.
+!UPSCALE_MODEL = remacri
+!UPSCALE_GFPGAN_AMOUNT = 0.8
+
+# Remember that setting values will overwrite any previously-set values, so from this point, any
+# new 'go' triggers will use these values instead of the previously-established ones!
+
+
+# We're setting up a second output folder to keep things organized. Again, this must already exist!
+!OUTPUT_DIR = C:\images\space-cats\upscaled-remacri
+
+# And here's our second 'go' trigger, which will use the latest values for everything set to this point.
+# The result is that all of the images in 'C:\images\space-cats' will again be processed:
+# - First upscaled 2.5x with the 4x_foolhardy_Remacri upscaler
+# - Have [stable diffusion, dream factory] added to the IPTC keywords of each upscaled image
+# - Be renamed to <input-img>-4x_foolhardy_Remacri-<date>-<time>
+# - Output images will be placed in 'C:\images\space-cats\upscaled-remacri'
+go
+
+
+# Any non-directive prompts other than 'go' will be ignored in PROCESS .prompts files!
