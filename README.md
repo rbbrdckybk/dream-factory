@@ -193,6 +193,7 @@ Sets the prompt file mode to either **standard** (default) or **random**. Standa
 ```
 !MODE = standard
 ```
+Note that a third option for !MODE exists (**!MODE = process**) that enables advanced users to set up batch processing tasks on existing images (e.g.: batch upscaling, metadata tagging, renaming, etc) using Dream Factory. You can see an [example process .prompts file here](https://github.com/rbbrdckybk/dream-factory/blob/main/prompts/example-process.prompts).
 #### !DELIM
 Sets the delimiter that will be used when joining [prompts] sections (default is a space). For example, if you have two [prompts] sections, and the top entry in the first is "a portrait of" and the top entry in the second is "a cat", then when the two sections are combined, you'd end up with "a portrait of a cat" if !DELIM = " ". 
 ```
