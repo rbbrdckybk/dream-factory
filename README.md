@@ -189,7 +189,7 @@ Finally, these directives are valid only in the [config] section of **random** p
 Command Help and Usage Examples:
 
 #### !MODE
-Sets the prompt file mode to either **standard** (default) or **random**. Standard prompt files work by iterating through all possible [prompts] sections combinations, and random prompt files simply pick prompts at random from [prompts] sections. See prompts/example-standard.prompts and prompts/example-random.prompts for a detailed walkthrough of how each mode works.
+Sets the prompt file mode to either **standard** (default) or **random**. Standard prompt files work by iterating through all possible [prompts] sections combinations, and random prompt files simply pick prompts at random from [prompts] sections. See [prompts/example-standard.prompts](https://github.com/rbbrdckybk/dream-factory/blob/main/prompts/example-standard.prompts) and [prompts/example-random.prompts](https://github.com/rbbrdckybk/dream-factory/blob/main/prompts/example-random.prompts) for a detailed walkthrough of how each mode works.
 ```
 !MODE = standard
 ```
