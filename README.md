@@ -289,6 +289,12 @@ Whether or not every output image should automatically be upscaled. Upscaling ca
 ```
 !USE_UPSCALE = no
 ```
+#### !UPSCALE_MODEL
+Sets the upscaling model to use.
+```
+!UPSCALE_MODEL = esrgan
+```
+Note that this will perform a substring match on any upscalers you have installed with Auto1111. In this case, **ESRGAN_4x*** should be selected (and is also the default).
 #### !UPSCALE_AMOUNT
 The factor to upscale by. Setting !UPSCALE_AMOUNT = 2 will double the width and height of an image (resulting in quadruple the resolution). Has no effect unless !USE_UPSCALE = yes.
 ```
@@ -328,6 +334,7 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<width>```
 * ```<cn-img>```
 * ```<cn-model>```
+* ```<upscale-model>```
 
 The file extension (.jpg) will be added automatically.
 ```
