@@ -66,6 +66,11 @@ class Worker(threading.Thread):
 
 
     def run(self):
+        command = ''
+        original_filename = ''
+        original_exif = {}
+        original_iptc = {}
+        process_mode = False
         if not int(self.command.get('seed')) > 0:
             self.command['seed'] = -1
         else:
@@ -73,183 +78,164 @@ class Worker(threading.Thread):
             seed = int(self.command.get('seed')) + control.loops
             self.command['seed'] = seed
 
-        # if this is a random prompt, settle on random values
-        if self.command.get('mode') == 'random':
-            self.command['scale'] = round(random.uniform(float(self.command.get('min_scale')), float(self.command.get('max_scale'))), 1)
-            self.command['strength'] = round(random.uniform(float(self.command.get('min_strength')), float(self.command.get('max_strength'))), 2)
-            if self.command.get('random_input_image_dir') != "":
-                self.command['input_image'] = utils.InputManager(self.command.get('random_input_image_dir')).pick_random()
+        # if this is a process-mode prompt, skip past image generation stuff
+        if self.command.get('mode') != 'process':
 
-        # check if a model change is needed
-        if self.command.get('ckpt_file') != '' and (self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
-            self.worker['sdi_instance'].load_model(self.command.get('ckpt_file'))
-            while self.worker['sdi_instance'].options_change_in_progress:
-                # wait for model change to complete
-                time.sleep(0.25)
-        elif self.command.get('ckpt_file') == '':
-            # revert to default config.txt model if necessary
-            if control.config.get('ckpt_file') != '' and control.default_model_validated and (control.config.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
-                self.worker['sdi_instance'].load_model(control.config.get('ckpt_file'))
+            # if this is a random prompt, settle on random values
+            if self.command.get('mode') == 'random':
+                self.command['scale'] = round(random.uniform(float(self.command.get('min_scale')), float(self.command.get('max_scale'))), 1)
+                self.command['strength'] = round(random.uniform(float(self.command.get('min_strength')), float(self.command.get('max_strength'))), 2)
+                if self.command.get('random_input_image_dir') != "":
+                    self.command['input_image'] = utils.InputManager(self.command.get('random_input_image_dir')).pick_random()
+
+            # check if a model change is needed
+            if self.command.get('ckpt_file') != '' and (self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
+                self.worker['sdi_instance'].load_model(self.command.get('ckpt_file'))
                 while self.worker['sdi_instance'].options_change_in_progress:
                     # wait for model change to complete
                     time.sleep(0.25)
+            elif self.command.get('ckpt_file') == '':
+                # revert to default config.txt model if necessary
+                if control.config.get('ckpt_file') != '' and control.default_model_validated and (control.config.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
+                    self.worker['sdi_instance'].load_model(control.config.get('ckpt_file'))
+                    while self.worker['sdi_instance'].options_change_in_progress:
+                        # wait for model change to complete
+                        time.sleep(0.25)
 
-        # check for auto-insertion of model trigger word
-        if (control.model_trigger_words != None) and (self.command.get('auto_insert_model_trigger') != 'off'):
-            # check to see if the model we're using has an associated trigger
-            if control.model_trigger_words.get(self.command.get('ckpt_file')) != None:
-                trigger = control.model_trigger_words.get(self.command.get('ckpt_file'))
-                p = self.command.get('prompt')
-                if trigger not in p:
-                    # trigger word isn't in prompt, we need to add it
-                    if self.command.get('auto_insert_model_trigger') == 'first_comma':
-                        if ',' in p:
-                            self.command['prompt'] = p.split(',', 1)[0] + ', ' + trigger + ',' + p.split(',', 1)[1]
-                        else:
+            # check for auto-insertion of model trigger word
+            if (control.model_trigger_words != None) and (self.command.get('auto_insert_model_trigger') != 'off'):
+                # check to see if the model we're using has an associated trigger
+                if control.model_trigger_words.get(self.command.get('ckpt_file')) != None:
+                    trigger = control.model_trigger_words.get(self.command.get('ckpt_file'))
+                    p = self.command.get('prompt')
+                    if trigger not in p:
+                        # trigger word isn't in prompt, we need to add it
+                        if self.command.get('auto_insert_model_trigger') == 'first_comma':
+                            if ',' in p:
+                                self.command['prompt'] = p.split(',', 1)[0] + ', ' + trigger + ',' + p.split(',', 1)[1]
+                            else:
+                                self.command['prompt'] = p + ', ' + trigger
+                        elif self.command.get('auto_insert_model_trigger') == 'end':
                             self.command['prompt'] = p + ', ' + trigger
-                    elif self.command.get('auto_insert_model_trigger') == 'end':
-                        self.command['prompt'] = p + ', ' + trigger
-                    elif self.command.get('auto_insert_model_trigger') == 'start':
-                        self.command['prompt'] = trigger + ', ' + p
-                    elif 'keyword:' in self.command.get('auto_insert_model_trigger'):
-                        keyword = self.command.get('auto_insert_model_trigger')
-                        keyword = keyword.split('keyword:', 1)[1].strip()
-                        if keyword in p:
-                            # the keyword we need to replace with the trigger is in the prompt, replace it
-                            self.command['prompt'] = p.replace(keyword, trigger)
+                        elif self.command.get('auto_insert_model_trigger') == 'start':
+                            self.command['prompt'] = trigger + ', ' + p
+                        elif 'keyword:' in self.command.get('auto_insert_model_trigger'):
+                            keyword = self.command.get('auto_insert_model_trigger')
+                            keyword = keyword.split('keyword:', 1)[1].strip()
+                            if keyword in p:
+                                # the keyword we need to replace with the trigger is in the prompt, replace it
+                                self.command['prompt'] = p.replace(keyword, trigger)
 
-        # check for wildcard replacements
-        p = self.command.get('prompt')
-        #print('before wildcard replace: ' + self.command['prompt'])
-        for k, v in control.wildcards.items():
-            key = '__' + k.lower() + '__'
-            if key in p.lower():
-                vcopy = v.copy()
-                # check if any of the values are wildcard keys themselves
-                key_replacements = 1
-                while key_replacements > 0:
-                    key_replacements = 0
-                    for v in vcopy:
-                        #print('Checking ' + v)
-                        check_key = v[2:][:-2].lower()
-                        if check_key in control.wildcards.keys():
-                            key_replacements += 1
-                            #print('\n\nFound nested wildcard: ' + v)
-                            #print('\nList before replacement: ' + str(vcopy))
-                            vcopy.extend(control.wildcards[check_key])
-                            vcopy.remove(v)
-                            #print('\nList after replacement: ' + str(vcopy) + '\n\n')
+            # check for wildcard replacements
+            p = self.command.get('prompt')
+            #print('before wildcard replace: ' + self.command['prompt'])
+            for k, v in control.wildcards.items():
+                key = '__' + k.lower() + '__'
+                if key in p.lower():
+                    vcopy = v.copy()
+                    # check if any of the values are wildcard keys themselves
+                    key_replacements = 1
+                    while key_replacements > 0:
+                        key_replacements = 0
+                        for v in vcopy:
+                            #print('Checking ' + v)
+                            check_key = v[2:][:-2].lower()
+                            if check_key in control.wildcards.keys():
+                                key_replacements += 1
+                                #print('\n\nFound nested wildcard: ' + v)
+                                #print('\nList before replacement: ' + str(vcopy))
+                                vcopy.extend(control.wildcards[check_key])
+                                vcopy.remove(v)
+                                #print('\nList after replacement: ' + str(vcopy) + '\n\n')
 
-                # this will handle multiple replacements of the same key
-                while key in p.lower():
-                    if len(vcopy) > 0:
-                        # pick a random value & remove it from the copied list
-                        x = random.randint(0, len(vcopy)-1)
-                        replace = vcopy.pop(x)
-                        # replace the first occurence with the chosen value
-                        #p = re.sub(key, replace, p, 1, flags=re.IGNORECASE)
-                        p = utils.wildcard_replace(p, key, replace)
+                    # this will handle multiple replacements of the same key
+                    while key in p.lower():
+                        replace_all = False
+                        if len(vcopy) > 0:
+                            # pick a random value & remove it from the copied list
+                            x = random.randint(0, len(vcopy)-1)
+                            replace = vcopy.pop(x)
+                        else:
+                            # not enough values to make all replacements, sub '' instead
+                            replace_all = True
+                            replace = ''
 
+                        # make the replacement(s)
+                        p = utils.wildcard_replace(p, key, replace, replace_all)
                         # check IPTC metadata and make the same replacement if necessary
-                        self.command['iptc_title'] = utils.wildcard_replace(self.command.get('iptc_title'), key, replace)
-                        self.command['iptc_description'] = utils.wildcard_replace(self.command.get('iptc_description'), key, replace)
-                        self.command['iptc_keywords'] = utils.wildcard_replace_list(self.command.get('iptc_keywords'), key, replace)
-                        self.command['iptc_copyright'] = utils.wildcard_replace(self.command.get('iptc_copyright'), key, replace)
+                        self.command['iptc_title'] = utils.wildcard_replace(self.command.get('iptc_title'), key, replace, replace_all)
+                        self.command['iptc_description'] = utils.wildcard_replace(self.command.get('iptc_description'), key, replace, replace_all)
+                        self.command['iptc_keywords'] = utils.wildcard_replace_list(self.command.get('iptc_keywords'), key, replace, replace_all)
+                        self.command['iptc_copyright'] = utils.wildcard_replace(self.command.get('iptc_copyright'), key, replace, replace_all)
 
-                    else:
-                        # not enough values to make all replacements, sub '' instead
-                        #p = re.sub(key, '', p, flags=re.IGNORECASE)
-                        p = utils.wildcard_replace(p, key, '', True)
 
-                        # make the same replacement in IPTC metadata if necessary
-                        self.command['iptc_title'] = utils.wildcard_replace(self.command.get('iptc_title'), key, '', True)
-                        self.command['iptc_description'] = utils.wildcard_replace(self.command.get('iptc_description'), key, '', True)
-                        self.command['iptc_keywords'] = utils.wildcard_replace_list(self.command.get('iptc_keywords'), key, '', True)
-                        self.command['iptc_copyright'] = utils.wildcard_replace(self.command.get('iptc_copyright'), key, '', True)
+            self.command['prompt'] = p
+            #print('after wildcard replace: ' + self.command['prompt'])
 
-        self.command['prompt'] = p
-        #print('after wildcard replace: ' + self.command['prompt'])
+            # check for auto-dimensions
+            orig_size = [self.command.get('width'), self.command.get('height')]
+            if self.command.get('auto_size') == 'match_controlnet_image_size':
+                if self.command.get('controlnet_input_image') != '':
+                    new_size = utils.get_image_size(self.command.get('controlnet_input_image'))
+                    if new_size != []:
+                        self.command['width'] = new_size[0]
+                        self.command['height'] = new_size[1]
 
-        # check for auto-dimensions
-        orig_size = [self.command.get('width'), self.command.get('height')]
-        if self.command.get('auto_size') == 'match_controlnet_image_size':
-            if self.command.get('controlnet_input_image') != '':
-                new_size = utils.get_image_size(self.command.get('controlnet_input_image'))
-                if new_size != []:
-                    self.command['width'] = new_size[0]
-                    self.command['height'] = new_size[1]
+            elif self.command.get('auto_size') == 'match_input_image_size':
+                if self.command.get('input_image') != '':
+                    new_size = utils.get_image_size(self.command.get('input_image'))
+                    if new_size != []:
+                        self.command['width'] = new_size[0]
+                        self.command['height'] = new_size[1]
 
-        elif self.command.get('auto_size') == 'match_input_image_size':
-            if self.command.get('input_image') != '':
-                new_size = utils.get_image_size(self.command.get('input_image'))
-                if new_size != []:
-                    self.command['width'] = new_size[0]
-                    self.command['height'] = new_size[1]
+            elif self.command.get('auto_size') == 'match_controlnet_image_aspect_ratio':
+                if self.command.get('controlnet_input_image') != '':
+                    new_size = utils.match_image_aspect_ratio(self.command.get('controlnet_input_image'), orig_size)
+                    if new_size != []:
+                        self.command['width'] = new_size[0]
+                        self.command['height'] = new_size[1]
 
-        elif self.command.get('auto_size') == 'match_controlnet_image_aspect_ratio':
-            if self.command.get('controlnet_input_image') != '':
-                new_size = utils.match_image_aspect_ratio(self.command.get('controlnet_input_image'), orig_size)
-                if new_size != []:
-                    self.command['width'] = new_size[0]
-                    self.command['height'] = new_size[1]
+            elif self.command.get('auto_size') == 'match_input_image_aspect_ratio':
+                if self.command.get('input_image') != '':
+                    new_size = utils.match_image_aspect_ratio(self.command.get('input_image'), orig_size)
+                    if new_size != []:
+                        self.command['width'] = new_size[0]
+                        self.command['height'] = new_size[1]
 
-        elif self.command.get('auto_size') == 'match_input_image_aspect_ratio':
-            if self.command.get('input_image') != '':
-                new_size = utils.match_image_aspect_ratio(self.command.get('input_image'), orig_size)
-                if new_size != []:
-                    self.command['width'] = new_size[0]
-                    self.command['height'] = new_size[1]
+            # check for ControlNet params
+            use_controlnet = False
+            scribble_mode = False
+            cn_params = [64, 64, 64]
+            img2img = False
+            if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
+                use_controlnet = True
+                if self.command.get('input_image') != '':
+                    img2img = True
 
-        # check for ControlNet params
-        use_controlnet = False
-        scribble_mode = False
-        cn_params = [64, 64, 64]
-        img2img = False
-        if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
-            use_controlnet = True
-            if self.command.get('input_image') != '':
-                img2img = True
+                # encode CN image
+                encoded = base64.b64encode(open(self.command.get('controlnet_input_image'), "rb").read())
+                encodedString = str(encoded, encoding='utf-8')
+                cn_img_payload = 'data:image/png;base64,' + encodedString
 
-            # encode CN image
-            encoded = base64.b64encode(open(self.command.get('controlnet_input_image'), "rb").read())
-            encodedString = str(encoded, encoding='utf-8')
-            cn_img_payload = 'data:image/png;base64,' + encodedString
+                # get preprocessor params
+                if len(self.command.get('controlnet_pre')) >= 3:
+                    for p in control.sdi_controlnet_preprocessors:
+                        if self.command.get('controlnet_pre').lower() == p[0]:
+                            self.command['controlnet_pre'] = p[0]
+                            cn_params = p[1]
+                            break
+                else:
+                    self.command['controlnet_pre'] = 'none'
 
-            # get preprocessor params
-            if len(self.command.get('controlnet_pre')) >= 3:
-                for p in control.sdi_controlnet_preprocessors:
-                    if self.command.get('controlnet_pre').lower() == p[0]:
-                        self.command['controlnet_pre'] = p[0]
-                        cn_params = p[1]
-                        break
-            else:
-                self.command['controlnet_pre'] = 'none'
-
-            # check for auto-model from filename
-            auto = self.command.get('controlnet_model').lower().strip()
-            if auto.startswith('auto'):
-                cn_img = self.command.get('controlnet_input_image')
-                cn_img = utils.filename_from_abspath(cn_img)
-                auto_model = ''
-                # attempt to extract controlnet model from cn input file
-                if '-' in cn_img:
-                    auto_model = cn_img.split('-', 1)[0]
-                    validated = False
-                    if len(auto_model) >= 3 and control.sdi_controlnet_models != None:
-                        for m in control.sdi_controlnet_models:
-                            if auto_model.lower() in m.lower():
-                                auto_model = m
-                                validated = True
-                                break
-                        if not validated:
-                            auto_model = ''
-                    else:
-                        auto_model = ''
-
-                if auto_model == '':
-                    # couldn't get model from filename, check for default
-                    if ',' in auto:
-                        auto_model = auto.rsplit(',', 1)[1].strip()
+                # check for auto-model from filename
+                auto = self.command.get('controlnet_model').lower().strip()
+                if auto.startswith('auto'):
+                    cn_img = self.command.get('controlnet_input_image')
+                    cn_img = utils.filename_from_abspath(cn_img)
+                    auto_model = ''
+                    # attempt to extract controlnet model from cn input file
+                    if '-' in cn_img:
+                        auto_model = cn_img.split('-', 1)[0]
                         validated = False
                         if len(auto_model) >= 3 and control.sdi_controlnet_models != None:
                             for m in control.sdi_controlnet_models:
@@ -261,92 +247,121 @@ class Worker(threading.Thread):
                                 auto_model = ''
                         else:
                             auto_model = ''
-                if auto_model == '':
-                    # failed to get model or default, disable CN
-                    use_controlnet = False
-                    self.print('WARNING: automatic ControlNet model specified, but unable to determine valid CN model from input image filename: ' + cn_img + '; disabling ControlNet!')
-                else:
-                    # we have a valid model, use it
-                    self.command['controlnet_model'] = auto_model
 
-        command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
-        self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
+                    if auto_model == '':
+                        # couldn't get model from filename, check for default
+                        if ',' in auto:
+                            auto_model = auto.rsplit(',', 1)[1].strip()
+                            validated = False
+                            if len(auto_model) >= 3 and control.sdi_controlnet_models != None:
+                                for m in control.sdi_controlnet_models:
+                                    if auto_model.lower() in m.lower():
+                                        auto_model = m
+                                        validated = True
+                                        break
+                                if not validated:
+                                    auto_model = ''
+                            else:
+                                auto_model = ''
+                    if auto_model == '':
+                        # failed to get model or default, disable CN
+                        use_controlnet = False
+                        self.print('WARNING: automatic ControlNet model specified, but unable to determine valid CN model from input image filename: ' + cn_img + '; disabling ControlNet!')
+                    else:
+                        # we have a valid model, use it
+                        self.command['controlnet_model'] = auto_model
 
-        # parameters to pass to SD instance
-        payload = {}
-        if self.command.get('input_image') != '':
-            #img2img
-            encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
-            encodedString = str(encoded, encoding='utf-8')
-            img_payload = 'data:image/png;base64,' + encodedString
+            # parameters to pass to SD instance
+            payload = {}
+            if self.command.get('input_image') != '':
+                #img2img
+                encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
+                encodedString = str(encoded, encoding='utf-8')
+                img_payload = 'data:image/png;base64,' + encodedString
 
-            payload = {
-              "init_images": [img_payload],
-              "sampler_index": str(self.command.get('sampler')),
-              #"resize_mode": 0,
-              "denoising_strength": self.command.get('strength'),
-              "prompt": str(self.command.get('prompt')),
-              "seed": self.command.get('seed'),
-              "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
-              "n_iter": self.command.get('samples'),            # number of iterations to run
-              "steps": self.command.get('steps'),
-              "cfg_scale": self.command.get('scale'),
-              "width": self.command.get('width'),
-              "height": self.command.get('height'),
-              #"restore_faces": False,
-              #"tiling": False,
-              "negative_prompt": str(self.command.get('neg_prompt'))
-            }
-        else:
-            # txt2img
-            payload = {
-              "enable_hr": self.command.get('highres_fix'),
-              "denoising_strength": self.command.get('strength'),
-              "sampler_index": str(self.command.get('sampler')),
-              "prompt": str(self.command.get('prompt')),
-              "seed": self.command.get('seed'),
-              "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
-              "n_iter": self.command.get('samples'),            # number of iterations to run
-              "steps": self.command.get('steps'),
-              "cfg_scale": self.command.get('scale'),
-              "width": self.command.get('width'),
-              "height": self.command.get('height'),
-              #"restore_faces": False,
-              #"tiling": False,
-              "negative_prompt": str(self.command.get('neg_prompt'))
-            }
-
-        # add CN params to existing payload if ControlNet is enabled
-        # https://github.com/Mikubill/sd-webui-controlnet/wiki/API
-        if use_controlnet:
-            cn_payload = {
-                "ControlNet": {
-                    "args": [{
-                        "input_image": cn_img_payload,
-                        "mask": "",
-                        "module": str(self.command.get('controlnet_pre')),
-                        "model": str(self.command.get('controlnet_model')),
-                        "weight": 1,
-                        "resize_mode": "Scale to Fit (Inner Fit)",
-                        "lowvram": self.command.get('controlnet_lowvram'),
-                        "processor_res": cn_params[0],
-                        "threshold_a": cn_params[1],
-                        "threshold_b": cn_params[2],
-                        "guidance_start": 0,
-                        "guidance_end": 1,
-                        "guessmode": False
-                    }]
+                payload = {
+                  "init_images": [img_payload],
+                  "sampler_index": str(self.command.get('sampler')),
+                  #"resize_mode": 0,
+                  "denoising_strength": self.command.get('strength'),
+                  "prompt": str(self.command.get('prompt')),
+                  "seed": self.command.get('seed'),
+                  "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
+                  "n_iter": self.command.get('samples'),            # number of iterations to run
+                  "steps": self.command.get('steps'),
+                  "cfg_scale": self.command.get('scale'),
+                  "width": self.command.get('width'),
+                  "height": self.command.get('height'),
+                  #"restore_faces": False,
+                  #"tiling": False,
+                  "negative_prompt": str(self.command.get('neg_prompt'))
                 }
-            }
-            payload["alwayson_scripts"] = cn_payload
+            else:
+                # txt2img
+                payload = {
+                  "enable_hr": self.command.get('highres_fix'),
+                  "denoising_strength": self.command.get('strength'),
+                  "sampler_index": str(self.command.get('sampler')),
+                  "prompt": str(self.command.get('prompt')),
+                  "seed": self.command.get('seed'),
+                  "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
+                  "n_iter": self.command.get('samples'),            # number of iterations to run
+                  "steps": self.command.get('steps'),
+                  "cfg_scale": self.command.get('scale'),
+                  "width": self.command.get('width'),
+                  "height": self.command.get('height'),
+                  #"restore_faces": False,
+                  #"tiling": False,
+                  "negative_prompt": str(self.command.get('neg_prompt'))
+                }
 
-        # handle override settings here: clip_skip, etc
-        override_settings = {}
-        if self.command.get('clip_skip') != '':
-            override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
+            # add CN params to existing payload if ControlNet is enabled
+            # https://github.com/Mikubill/sd-webui-controlnet/wiki/API
+            if use_controlnet:
+                cn_payload = {
+                    "ControlNet": {
+                        "args": [{
+                            "input_image": cn_img_payload,
+                            "mask": "",
+                            "module": str(self.command.get('controlnet_pre')),
+                            "model": str(self.command.get('controlnet_model')),
+                            "weight": 1,
+                            "resize_mode": "Scale to Fit (Inner Fit)",
+                            "lowvram": self.command.get('controlnet_lowvram'),
+                            "processor_res": cn_params[0],
+                            "threshold_a": cn_params[1],
+                            "threshold_b": cn_params[2],
+                            "guidance_start": 0,
+                            "guidance_end": 1,
+                            "guessmode": False
+                        }]
+                    }
+                }
+                payload["alwayson_scripts"] = cn_payload
 
-        if override_settings != {}:
-            payload["override_settings"] = override_settings
+            # handle override settings here: clip_skip, etc
+            override_settings = {}
+            if self.command.get('clip_skip') != '':
+                override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
+
+            if override_settings != {}:
+                payload["override_settings"] = override_settings
+
+        else:
+            # !MODE=process -specific stuff here
+            process_mode = True
+            original_exif = metadata.read_exif(self.command.get('input_image'))
+            original_iptc = metadata.read_iptc(self.command.get('input_image'))
+            original_filename = utils.filename_from_abspath(self.command.get('input_image')).lower().strip()
+            # remove extension
+            original_filename = original_filename[:-4]
+
+        # !MODE = process enters here:
+        command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
+        if not process_mode:
+            self.print("starting job #" + str(self.worker['jobs_done']+1) + ": " + command)
+        else:
+            self.print("starting job #" + str(self.worker['jobs_done']+1) + ": batch processing...")
 
         start_time = time.time()
         self.worker['job_start_time'] = start_time
@@ -364,26 +379,27 @@ class Worker(threading.Thread):
         samples_dir = output_dir + '/' + "gpu_" + str(gpu_id)
 
         #self.worker['sdi_instance'].last_job_success = True
-        if control.config.get('debug_test_mode'):
+        if control.config.get('debug_test_mode') and not process_mode:
             # simulate SD work
             work_time = round(random.uniform(2, 6), 2)
             time.sleep(work_time)
         else:
             # invoke SD
-            if self.command.get('input_image') != '':
-                if use_controlnet:
-                    #self.worker['sdi_instance'].do_controlnet_img2img(payload, samples_dir)
-                    self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+            if not process_mode:
+                if self.command.get('input_image') != '':
+                    if use_controlnet:
+                        #self.worker['sdi_instance'].do_controlnet_img2img(payload, samples_dir)
+                        self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+                    else:
+                        self.worker['sdi_instance'].do_img2img(payload, samples_dir)
                 else:
-                    self.worker['sdi_instance'].do_img2img(payload, samples_dir)
-            else:
-                if use_controlnet:
-                    #self.worker['sdi_instance'].do_controlnet_txt2img(payload, samples_dir)
-                    self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
-                else:
-                    self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
-            while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
-                time.sleep(0.25)
+                    if use_controlnet:
+                        #self.worker['sdi_instance'].do_controlnet_txt2img(payload, samples_dir)
+                        self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+                    else:
+                        self.worker['sdi_instance'].do_txt2img(payload, samples_dir)
+                while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
+                    time.sleep(0.25)
 
         # upscale here if requested
         if self.worker['sdi_instance'].last_job_success and self.worker['sdi_instance'].isRunning:
@@ -397,15 +413,29 @@ class Worker(threading.Thread):
                     work_time = round(random.uniform(0.5, 2), 2)
                     time.sleep(work_time)
                 else:
-                    new_files = os.listdir(samples_dir)
+                    new_files = []
+                    if not process_mode:
+                        # upscale all newly-generated images for non-process mode
+                        new_files = os.listdir(samples_dir)
+                    else:
+                        # if process mode, upscale the designated image
+                        new_files.append(self.command.get('input_image'))
                     if len(new_files) > 0:
                         # invoke ESRGAN on entire directory
                         #utils.upscale(self.command['upscale_amount'], samples_dir, self.command['upscale_face_enh'], gpu_id)
 
                         # upscale each image
-                        self.worker['sdi_instance'].log('upscaling generated images...')
+                        if not process_mode:
+                            self.worker['sdi_instance'].log('upscaling images...')
+                        else:
+                            self.worker['sdi_instance'].log('upscaling ' + self.command.get('input_image') + '...')
                         for file in new_files:
-                            encoded = base64.b64encode(open(os.path.join(samples_dir, file), "rb").read())
+                            encoded = None
+                            if not process_mode:
+                                encoded = base64.b64encode(open(os.path.join(samples_dir, file), "rb").read())
+                            else:
+                                # this whole process_mode thread is pretty hacky...
+                                encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
                             encodedString = str(encoded, encoding='utf-8')
                             img_payload = 'data:image/png;base64,' + encodedString
                             payload = {
@@ -418,7 +448,7 @@ class Worker(threading.Thread):
                                 #"upscaling_resize_w": 512,
                                 #"upscaling_resize_h": 512,
                                 #"upscaling_crop": true,
-                                "upscaler_1": "ESRGAN_4x",
+                                "upscaler_1": self.command['upscale_model'],
                                 #"upscaler_2": "None",
                                 #"extras_upscaler_2_visibility": 0,
                                 #"upscale_first": false,
@@ -430,22 +460,23 @@ class Worker(threading.Thread):
 
 
                         # remove originals if upscaled version present
-                        new_files = os.listdir(samples_dir)
-                        for f in new_files:
-                            if (".png" in f):
-                                basef = f.replace(".png", "")
-                                if basef[-2:] == "_u":
-                                    # this is an upscaled image, delete the original
-                                    # or save it in /original if desired
-                                    if exists(samples_dir + "/" + basef[:-2] + ".png"):
-                                        if self.command['upscale_keep_org'] == 'yes':
-                                            # move the original to /original
-                                            orig_dir = output_dir + "/original"
-                                            Path(orig_dir).mkdir(parents=True, exist_ok=True)
-                                            os.replace(samples_dir + "/" + basef[:-2] + ".png", \
-                                                orig_dir + "/" + basef[:-2] + ".png")
-                                        else:
-                                            os.remove(samples_dir + "/" + basef[:-2] + ".png")
+                        if not process_mode:
+                            new_files = os.listdir(samples_dir)
+                            for f in new_files:
+                                if (".png" in f):
+                                    basef = f.replace(".png", "")
+                                    if basef[-2:] == "_u":
+                                        # this is an upscaled image, delete the original
+                                        # or save it in /original if desired
+                                        if exists(samples_dir + "/" + basef[:-2] + ".png"):
+                                            if self.command['upscale_keep_org'] == 'yes':
+                                                # move the original to /original
+                                                orig_dir = output_dir + "/original"
+                                                Path(orig_dir).mkdir(parents=True, exist_ok=True)
+                                                os.replace(samples_dir + "/" + basef[:-2] + ".png", \
+                                                    orig_dir + "/" + basef[:-2] + ".png")
+                                            else:
+                                                os.remove(samples_dir + "/" + basef[:-2] + ".png")
 
 
         # find the new image(s) that SD created: re-name, process, and move them
@@ -480,15 +511,20 @@ class Worker(threading.Thread):
                         upscale_text = ""
                         if self.command['use_upscale'] == 'yes':
                             upscale_text = " (upscaled "
-                            upscale_text += str(self.command['upscale_amount']) + "x via ESRGAN"
+                            upscale_text += str(self.command['upscale_amount']) + "x via " + self.command['upscale_model'] + ")"
 
                         pngImage = PngImageFile(samples_dir + "/" + f)
                         im = pngImage.convert('RGB')
-                        exif = im.getexif()
-                        exif[0x9286] = meta_prompt
-                        exif[0x9c9c] = meta_prompt.encode('utf16')
+                        exif = None
+                        if not process_mode:
+                            exif = im.getexif()
+                            exif[0x9286] = meta_prompt
+                            exif[0x9c9c] = meta_prompt.encode('utf16')
+                            exif[0x0131] = "https://github.com/rbbrdckybk/dream-factory"
+                        else:
+                            exif = original_exif
                         exif[0x9c9d] = ('AI art' + upscale_text).encode('utf16')
-                        exif[0x0131] = "https://github.com/rbbrdckybk/dream-factory"
+
                         newfilename = ''
 
                         if self.command['filename'] != '':
@@ -521,23 +557,26 @@ class Worker(threading.Thread):
                                 input_img = utils.filename_from_abspath(input_img)[:-4]
 
                             newfilename = self.command['filename']
-                            newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<height>', str(self.command.get('height')), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<sampler>', self.command.get('sampler'), newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<model>', model, newfilename, flags=re.IGNORECASE)
+                            if not process_mode:
+                                newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<height>', str(self.command.get('height')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<sampler>', self.command.get('sampler'), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<model>', model, newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
+
                             newfilename = re.sub('<date>', dt.now().strftime('%Y%m%d'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<time>', dt.now().strftime('%H%M%S'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-year>', dt.now().strftime('%Y'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-month>', dt.now().strftime('%m'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<input-img>', input_img, newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
+                            newfilename = re.sub('<upscale-model>', self.command.get('upscale_model'), newfilename, flags=re.IGNORECASE)
 
                             # remove all unrecognized variables
                             #opening_braces = '<'
@@ -562,7 +601,16 @@ class Worker(threading.Thread):
                         quality = control.config.get('jpg_quality')
                         #output_fn = output_dir + "/" + newfilename + ".jpg"
                         output_fn = os.path.join(output_dir, newfilename + ".jpg")
+                        if process_mode and self.command.get('output_dir') != '':
+                            output_fn =os.path.join(self.command.get('output_dir'), newfilename + ".jpg")
                         im.save(output_fn, exif=exif, quality=quality)
+
+                        iptc_append = False
+                        if process_mode:
+                            # re-attach original iptc info
+                            metadata.attach_iptc_info(output_fn, original_iptc)
+                            if self.command.get('iptc_append'):
+                                iptc_append = True
 
                         # add IPTC metadata if necesary
                         if (self.command.get('iptc_title') != ''
@@ -570,12 +618,18 @@ class Worker(threading.Thread):
                                 or self.command.get('iptc_keywords') != []
                                 or self.command.get('iptc_copyright') != ''):
 
-                            # write IPTC info
-                            metadata.write_iptc_info(output_fn,
-                                self.command.get('iptc_title'),
-                                self.command.get('iptc_description'),
-                                self.command.get('iptc_keywords'),
-                                self.command.get('iptc_copyright'))
+                            if not iptc_append:
+                                metadata.write_iptc_info(output_fn,
+                                    self.command.get('iptc_title'),
+                                    self.command.get('iptc_description'),
+                                    self.command.get('iptc_keywords'),
+                                    self.command.get('iptc_copyright'))
+                            else:
+                                metadata.write_iptc_info_append(output_fn,
+                                    self.command.get('iptc_title'),
+                                    self.command.get('iptc_description'),
+                                    self.command.get('iptc_keywords'),
+                                    self.command.get('iptc_copyright'))
 
                         if exists(samples_dir + "/" + f):
                             os.remove(samples_dir + "/" + f)
@@ -889,6 +943,7 @@ class Controller:
             'upscale_keep_org' : "no",
             'upscale_codeformer_amount' : 0.0,
             'upscale_gfpgan_amount' : 0.0,
+            'upscale_model' : "ESRGAN_4x",
             'ckpt_file' : "",
             'filename' : "",
 
@@ -1146,6 +1201,10 @@ class Controller:
                     elif command == 'pf_upscale_keep_org':
                         if value == 'yes' or value == 'no':
                             self.config.update({'upscale_keep_org' : value})
+
+                    elif command == 'pf_upscale_model':
+                        # this is validated after we receive valid upscalers from the server
+                        self.config.update({'upscale_model' : value})
 
                     elif command == 'pf_ckpt_file':
                         # this is validated after we receive valid models from the server
@@ -1406,8 +1465,13 @@ class Controller:
             new_model = self.models[self.model_index]
             self.prompt_manager.config['ckpt_file'] = new_model
 
+        # proces mode
+        if self.prompt_manager.config.get('mode') == 'process':
+            self.work_queue = self.prompt_manager.build_process_work()
+            self.orig_work_queue_size = len(self.work_queue)
+
         # random mode; queue up a few random prompts
-        if self.prompt_manager.config.get('mode') == 'random':
+        elif self.prompt_manager.config.get('mode') == 'random':
             for i in range(self.config['random_queue_size']):
                 #work = "Test work item #" + str(i+1)
                 work = self.prompt_manager.config.copy()
@@ -1739,11 +1803,24 @@ class Controller:
             validated_model = self.validate_model(model)
             if validated_model != '':
                 self.config['ckpt_file'] = validated_model
-                print('[controller] >>> default model validated: ' + self.config['ckpt_file'])
+                self.print('[controller] >>> default model validated: ' + self.config['ckpt_file'])
             else:
                 self.config['ckpt_file'] = ''
-                print("*** WARNING: config.txt file command PF_CKPT_FILE value (" + model + ") doesn't match any server values; ignoring it! ***")
+                self.print("*** WARNING: config.txt file command PF_CKPT_FILE value (" + model + ") doesn't match any server values; ignoring it! ***")
         self.default_model_validated = True
+
+
+    def check_default_upscaler(self):
+        # validate default upscaler if there is one:
+        if self.config['upscale_model'] != 'ESRGAN_4x':
+            model = self.config['upscale_model']
+            validated_model = self.validate_upscale_model(model)
+            if validated_model != '':
+                self.config['upscale_model'] = validated_model
+                self.print('[controller] >>> default upscaler validated: ' + self.config['upscale_model'])
+            else:
+                self.config['upscale_model'] = 'ESRGAN_4x'
+                self.print("*** WARNING: config.txt file command PF_UPSCALE_MODEL value (" + model + ") doesn't match any server values; ignoring it! ***")
 
 
     # passing models must be exactly what SD expects; use this to make sure
@@ -1753,6 +1830,20 @@ class Controller:
         if len(model) > 5:
             if self.sdi_models != None:
                 for m in self.sdi_models:
+                    if model.lower() in m.lower():
+                        # case-insensitive partial match; use the exact casing from the server
+                        validated_model = m
+                        break
+        return validated_model
+
+
+    # passing models must be exactly what SD expects; use this to make sure
+    # user-supplied model is ok - otherwise revert to default
+    def validate_upscale_model(self, model):
+        validated_model = ''
+        if len(model) >= 3:
+            if self.sdi_upscalers != None:
+                for m in self.sdi_upscalers:
                     if model.lower() in m.lower():
                         # case-insensitive partial match; use the exact casing from the server
                         validated_model = m

@@ -71,23 +71,10 @@ def read_iptc_pillow(filename):
 def read_iptc(filename):
     iptc_data = {}
     try:
-        iptc_data = IPTCInfo(filename, force=True, inp_charset='utf-8')
+        iptc_data = IPTCInfo(filename, force=True, inp_charset='utf8')
     except:
         pass
     return iptc_data
-
-# prints IPTC data created by Pillow to the console
-def debug_iptc_data_pillow(iptc):
-    print('\nIPTC data:')
-    for k, v in iptc.items():
-        if k == 'keywords':
-            print(str(k) + ' : ')
-            i = 0
-            for kw in v:
-                i += 1
-                print(' [' + str(i) + '] ' + kw)
-        else:
-            print(str(k) + ' : ' + str(v))
 
 # prints IPTC data created by IPTCInfo to the console
 def debug_iptc_data(iptc):
@@ -105,37 +92,39 @@ def debug_iptc_data(iptc):
             print(' [' + str(i) + '] ' + kw)
     if iptc['copyright notice']:
         print('copyright notice (copyright): ' + iptc['copyright notice'])
-
     print(iptc)
 
-# write the supplied pillow-generated IPTC metadata to the specified filename
-def write_iptc_info_from_pillow(filename, iptc):
-    info = None
+
+# saves properly-formatted IPTCInfo dict to filename
+# discards the old image data
+def attach_iptc_info(filename, old_iptc):
+    new_iptc = None
     try:
-        info = IPTCInfo(filename)
+        new_iptc = IPTCInfo(filename)
     except:
         pass
 
-    if info != None:
-        if iptc['title']:
-            info['object name'] = iptc['title']
-        if iptc['description']:
-            info['caption/abstract'] = iptc['description']
-        if iptc['keywords']:
-            info['keywords'] = iptc['keywords']
-        if iptc['copyright']:
-            info['copyright notice'] = iptc['copyright']
-        info.save_as(filename)
+    if new_iptc != None and old_iptc != None:
+        if old_iptc['object name']:
+            new_iptc['object name'] = old_iptc['object name']
+        if old_iptc['caption/abstract']:
+            new_iptc['caption/abstract'] = old_iptc['caption/abstract']
+        if old_iptc['copyright notice']:
+            new_iptc['copyright notice'] = old_iptc['copyright notice']
+        if old_iptc['keywords']:
+            new_iptc['keywords'] = old_iptc['keywords']
 
-        if os.path.exists(filename + '~'):
-            try:
-                os.remove(filename + '~')
-            except:
-                pass
+    new_iptc.save_as(filename)
+    if os.path.exists(filename + '~'):
+        try:
+            os.remove(filename + '~')
+        except:
+            pass
+
 
 # write the supplied metadata to the specified filename
 # metadata all str except keywords which is []
-# if the first char is a '+' metadata will be appended instead of replaced
+# pre-existing metadata will be overwritten! (see write_iptc_info_append to preserve)
 def write_iptc_info(filename, title, description, keywords, copyright):
     info = None
     try:
@@ -144,41 +133,12 @@ def write_iptc_info(filename, title, description, keywords, copyright):
         pass
 
     if info != None:
-        if len(title) > 0 and title[0] == '+':
-            if info['object name']:
-                info['object name'] += title[1:]
-            else:
-                info['object name'] = title[1:]
-        else:
-            info['object name'] = title
-
-        if len(description) > 0 and description[0] == '+':
-            if info['caption/abstract']:
-                info['caption/abstract'] += description[1:]
-            else:
-                info['caption/abstract'] = description[1:]
-        else:
-            info['caption/abstract'] = description
-
-        if len(copyright) > 0 and copyright[0] == '+':
-            if info['copyright notice']:
-                info['copyright notice'] += copyright[1:]
-            else:
-                info['copyright notice'] = copyright[1:]
-        else:
-            info['copyright notice'] = copyright
-
-        if len(keywords) > 0 and len(keywords[0]) > 0 and keywords[0][0] == '+':
-            keywords[0] = keywords[0][1:]
-            if info['keywords']:
-                info['keywords'] += keywords
-            else:
-                info['keywords'] = keywords
-        else:
-            info['keywords'] = keywords
+        info['object name'] = title
+        info['caption/abstract'] = description
+        info['copyright notice'] = copyright
+        info['keywords'] = keywords
 
         info.save_as(filename)
-
         if os.path.exists(filename + '~'):
             try:
                 os.remove(filename + '~')
@@ -186,25 +146,42 @@ def write_iptc_info(filename, title, description, keywords, copyright):
                 pass
 
 
-# entry point
-#if __name__ == '__main__':
+# write the supplied metadata to the specified filename
+# metadata all str except keywords which is []
+# will append to any pre-existing metadata
+def write_iptc_info_append(filename, title, description, keywords, copyright):
+    info = None
+    try:
+        info = IPTCInfo(filename)
+    except:
+        pass
 
-    # read & display exif
-    #exif = read_exif('test.jpg')
-    #debug_exif_data(exif)
+    if info != None:
+        if info['object name']:
+            info['object name'] += (' ' + title).encode('utf8')
+        else:
+            info['object name'] = title
 
-    # read & display IPTC
-    #iptc = read_iptc('1.jpg')
-    #debug_iptc_data(iptc)
+        if info['caption/abstract']:
+            info['caption/abstract'] += (' ' + description).encode('utf8')
+        else:
+            info['caption/abstract'] = description
 
-    # read & display IPTC (Pillow)
-    #iptc = read_iptc_pillow('1.jpg')
-    #debug_iptc_data_pillow(iptc)
+        if info['copyright notice']:
+            info['copyright notice'] += (' ' + copyright).encode('utf8')
+        else:
+            info['copyright notice'] = copyright
 
-    # write IPTC info to file
-    #write_iptc_info('test.jpg', 'title', 'description', ['key1', 'key2', 'key3'], 'copyright testing...')
+        if info['keywords']:
+            for k in keywords:
+                if k not in info['keywords']:
+                    info['keywords'].append(k.encode('utf8'))
+        else:
+            info['keywords'] = keywords
 
-    # write pillow-formatted IPTC data
-    #write_iptc_info_from_pillow('test.jpg', read_iptc_pillow('1.jpg'))
-
-    #exit(0)
+        info.save_as(filename)
+        if os.path.exists(filename + '~'):
+            try:
+                os.remove(filename + '~')
+            except:
+                pass

@@ -91,7 +91,8 @@ PF_SAMPLER = DPM++ 2M Karras		# sampler to use (create a new prompt file using t
 PF_STEPS = 20              			# number of steps, default = 50
 PF_SCALE = 7.5              		# guidance scale, default = 7.5
 PF_SAMPLES = 1						# number of images to generate per prompt
-PF_USE_UPSCALE = no					# use ESRGAN to upscale output images?
+PF_USE_UPSCALE = no					# upscale output images?
+PF_UPSCALE_MODEL = ESRGAN_4x		# default upscaler to use
 PF_UPSCALE_AMOUNT = 2.0				# upscaling factor (2 means you'll get an image with double the width and height of the original)
 PF_UPSCALE_CODEFORMER_AMOUNT = 0.0	# visibility of codeformer face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_GFPGAN_AMOUNT = 0.0		# visibility of gfpgan face enhancement (0 = off, 1 = full effect)

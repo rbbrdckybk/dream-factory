@@ -192,6 +192,7 @@ class PromptManager():
 
     # resets config options back to defaults
     def reset_config_defaults(self):
+        self.control.repeat_jobs = False
         self.config = {
             'mode' : "standard",
             'seed' : -1,
@@ -219,6 +220,7 @@ class PromptManager():
             'iptc_description' : "",
             'iptc_keywords' : [],
             'iptc_copyright' : "",
+            'iptc_append' : False,
             'clip_skip' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
@@ -231,7 +233,9 @@ class PromptManager():
             'upscale_codeformer_amount' : self.control.config['upscale_codeformer_amount'],
             'upscale_gfpgan_amount' : self.control.config['upscale_gfpgan_amount'],
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
+            'upscale_model' : self.control.config['upscale_model'],
             'filename' : self.control.config['filename'],
+            'output_dir' : '',
             'outdir' : self.control.config['output_location']
         }
 
@@ -413,8 +417,18 @@ class PromptManager():
             if value == 'yes' or value == 'no':
                 self.config.update({'upscale_keep_org' : value})
 
+        elif command == 'upscale_model':
+            if value != '':
+                upscale_model = self.control.validate_upscale_model(value.strip())
+                if upscale_model != '':
+                    self.config.update({'upscale_model' : upscale_model})
+                else:
+                    self.control.print("*** WARNING: !UPSCALE_MODEL value (" + value.strip() + ") doesn't match any server values; ignoring it! ***")
+            else:
+                self.config.update({'upscale_model' : 'ESRGAN_4x'})
+
         elif command == 'mode':
-            if value == 'random' or value == 'standard':
+            if value == 'random' or value == 'standard' or value == 'process':
                 self.config.update({'mode' : value})
 
         elif command == 'input_image':
@@ -432,6 +446,13 @@ class PromptManager():
                     self.config.update({'random_input_image_dir' : value})
                 else:
                     self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' (" + value + ") does not exist; it will be ignored!")
+
+        elif command == 'output_dir':
+            if value != '':
+                if os.path.exists(value):
+                    self.config.update({'output_dir' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'OUTPUT_DIR' (" + value + ") does not exist; it will be ignored!")
 
         elif command == 'controlnet_input_image':
             if value != '':
@@ -456,9 +477,9 @@ class PromptManager():
                 self.config.update({'controlnet_model' : ''})
 
         elif command == 'controlnet_lowvram':
-            if value == 'yes':
+            if value == 'yes' or value == 'on':
                 self.config.update({'controlnet_lowvram' : True})
-            elif value == 'no':
+            elif value == 'no' or value == 'off':
                 self.config.update({'controlnet_lowvram' : False})
 
         elif command == 'repeat':
@@ -521,6 +542,12 @@ class PromptManager():
                 self.config.update({'iptc_copyright' : value})
             else:
                 self.config.update({'iptc_copyright' : ''})
+
+        elif command == 'iptc_append':
+            if value == 'yes' or value == 'on':
+                self.config.update({'iptc_append' : True})
+            elif value == 'no' or value == 'off':
+                self.config.update({'iptc_append' : False})
 
         elif command == 'clip_skip':
             if value != '':
@@ -733,6 +760,86 @@ class PromptManager():
                 if not subdir_processed:
                     prompt_work_queue.append(work.copy())
 
+        return prompt_work_queue
+
+
+    # for !MODE = process
+    # return a list of the first PromptSection w/ some additional processing/checks
+    # this is a lazy copy/paste of build_combinations with minimum work done
+    # to make it work for !MODE=process; come back and clean this up later
+    def build_process_work(self):
+        prompt_work_queue = deque()
+        go_cmds = 0
+
+        if len(self.prompts) > 0:
+            # ignore everything after first prompt section for !MODE = process
+            all_prompts = list()
+            ps = self.prompts[0]
+            prompts = list()
+            prompts = ps.tokens
+            all_prompts.append(prompts)
+            prompt_combos = itertools.product(*all_prompts)
+        else:
+            prompt_combos = []
+
+        if len(self.prompts) > 1:
+            self.control.print("*** WARNING: loading a '!MODE=process' prompt file with more than 1 [prompts] section; ignoring extras! ***")
+
+        # associate a copy of config info with each prompt
+        for prompt in prompt_combos:
+            work = self.config.copy()
+            work['prompt_file'] = self.control.prompt_file
+            str_prompt = ""
+            fragments = 0
+            is_directive = False
+
+            for fragment in prompt:
+                # handle embedded command directives
+                ss = re.search('!(.+?)=', fragment)
+                if ss:
+                    # this is a directive, handle it and ignore this combination
+                    command = ss.group(1).lower().strip()
+                    #value = fragment.split("=",1)[1].lower().strip()
+                    value = fragment.split("=",1)[1].strip()
+                    self.handle_directive(command, value)
+                    is_directive = True
+                    break
+
+                if fragments > 0:
+                    if not (fragment.startswith(',') or fragment.startswith(';')):
+                        str_prompt += self.config.get('delim')
+                str_prompt += fragment
+                fragments += 1
+
+            if not is_directive:
+                if str_prompt.lower().strip() == 'go':
+                    work['prompt'] = str_prompt
+                    go_cmds += 1
+
+                    # check for input images that are directories
+                    # if found, iterate over contained files, submit work for each
+                    subdir_processed = False
+                    if os.path.isdir(work['input_image']):
+                        # input image is a directory, add a work item for each file
+                        files = get_images_in_dir(work['input_image'])
+                        if len(files) > 0:
+                            subdir_processed = True
+                            for f in files:
+                                # queue each image in the input dir
+                                work['input_image'] = f
+                                prompt_work_queue.append(work.copy())
+                        else:
+                            self.control.print("*** WARNING: prompt file command INPUT_IMAGE refers to an empty directory (" + work['input_image'] + "); ignoring it! ***")
+                            work['input_image'] = ''
+
+                    if not subdir_processed:
+                        prompt_work_queue.append(work.copy())
+
+                else:
+                    self.control.print("*** WARNING: !MODE=process prompt file doesn't accept normal prompts: " + str_prompt + "! ***")
+
+        if go_cmds == 0:
+            self.control.print("*** WARNING: loading a !MODE=process prompt file with no 'go' keywords in first [prompts] section; no work will be done! ***")
         return prompt_work_queue
 
 

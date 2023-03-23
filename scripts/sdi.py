@@ -578,6 +578,7 @@ class SDI:
 
         self.log('received upscaler query response: SD indicates ' + str(len(upscalers)) + ' upscalers available for use...', True)
         self.control_ref.sdi_upscalers = upscalers
+        self.control_ref.check_default_upscaler()
         self.busy = False
 
 

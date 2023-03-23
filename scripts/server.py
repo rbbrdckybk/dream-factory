@@ -502,16 +502,33 @@ def build_worker_panel(workers):
                 working_text = worker["work_state"]
 
             if worker["job_prompt_info"] != None and worker["job_prompt_info"] != '':
-                prompt_text = worker["job_prompt_info"].get('prompt').replace('<', '&lt').replace('>', '&gt')
+                if worker["job_prompt_info"].get('mode') == 'process':
+                    prompt_text = 'batch processing...<br>'
+                    if worker["work_state"] == 'upscaling':
+                        prompt_text += ' -> currently upscaling: \'' + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image')) + '\' ...'
 
-                if worker["job_prompt_info"].get('input_image') != "":
-                    prompt_options_text = "init image: " + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image'))
+                        prompt_options_text = 'upscaler: ' + worker["job_prompt_info"].get('upscale_model')
+                        prompt_options_text += ' | factor: ' + str(worker["job_prompt_info"].get('upscale_amount')) + 'x'
+                        if float(worker["job_prompt_info"].get('upscale_gfpgan_amount')) > 0:
+                            prompt_options_text += ' | GFPGAN amount: ' + str(worker["job_prompt_info"].get('upscale_gfpgan_amount'))
+                        else:
+                            prompt_options_text += ' | GFPGAN disabled'
+                        if float(worker["job_prompt_info"].get('upscale_codeformer_amount')) > 0:
+                            prompt_options_text += ' | CodeFormer amount: ' + str(worker["job_prompt_info"].get('upscale_codeformer_amount'))
+                        else:
+                            prompt_options_text += ' | CodeFormer disabled'
+
                 else:
-                    prompt_options_text = 'size: ' + str(worker["job_prompt_info"].get('width')) + 'x' + str(worker["job_prompt_info"].get('height'))
+                    prompt_text = worker["job_prompt_info"].get('prompt').replace('<', '&lt').replace('>', '&gt')
 
-                prompt_options_text += ' | steps: ' + str(worker["job_prompt_info"].get('steps')) \
-                    + ' | scale: ' + str(worker["job_prompt_info"].get('scale')) \
-                    + ' | samples: ' + str(worker["job_prompt_info"].get('samples'))
+                    if worker["job_prompt_info"].get('input_image') != "":
+                        prompt_options_text = "init image: " + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image'))
+                    else:
+                        prompt_options_text = 'size: ' + str(worker["job_prompt_info"].get('width')) + 'x' + str(worker["job_prompt_info"].get('height'))
+
+                    prompt_options_text += ' | steps: ' + str(worker["job_prompt_info"].get('steps')) \
+                        + ' | scale: ' + str(worker["job_prompt_info"].get('scale')) \
+                        + ' | samples: ' + str(worker["job_prompt_info"].get('samples'))
 
                 exec_time = time.time() - worker["job_start_time"]
                 clock_text = time.strftime("%M:%S", time.gmtime(exec_time))
