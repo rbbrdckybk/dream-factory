@@ -156,6 +156,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_insert_model_trigger)
  * [!SEED](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#seed)
  * [!USE_UPSCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#use_upscale)
+ * [!UPSCALE_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_model)
  * [!UPSCALE_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_amount)
  * [!UPSCALE_CODEFORMER_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_codeformer_amount)
  * [!UPSCALE_GFPGAN_AMOUNT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_gfpgan_amount)
