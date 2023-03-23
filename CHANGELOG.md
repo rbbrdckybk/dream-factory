@@ -6,6 +6,16 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.03.23]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
+
+### Added
+- Added an **!UPSCALE_MODEL** directive ([docs](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_model)).
+- Added a new .prompts file type for batch processing (**!MODE = process**). This is meant for advanced users to set up automated upscaling, metadata tagging, file re-naming & moving tasks within Dream Factory. You can see an [example process .prompts file here](https://github.com/rbbrdckybk/dream-factory/blob/main/prompts/example-process.prompts).
+
+### Fixed
+- Fixed an issue that caused the !REPEAT directive to not properly reset to the default (off) when new prompt files were loaded and no new directive was present.
+
 ## [2023.03.21]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
 
