@@ -822,3 +822,39 @@ details summary {
 details summary > * {
   display: inline;
 }
+
+
+ /* for mouseover image previews */
+.thumbnail{
+    position: relative;
+    z-index: 0;
+}
+
+.thumbnail:hover{
+    background-color: transparent;
+    z-index: 50;
+}
+
+.thumbnail span{ /*CSS for enlarged image*/
+    border: 1px dashed #999;
+    visibility: hidden;
+    color: black;
+    text-decoration: none;
+    position: fixed;
+    z-index: 1;
+    margin: auto;
+    max-width: 750px;
+    max-height: 76vh;
+}
+
+.thumbnail span img{ /*CSS for enlarged image*/
+    border-width: 0;
+    max-width: 750px;
+    max-height: 76vh;
+}
+
+.thumbnail:hover span{ /*CSS for enlarged image on hover*/
+    visibility: visible;
+    top: 115px;
+    left: 90px; /*position where enlarged image should offset horizontally */
+}

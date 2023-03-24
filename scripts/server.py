@@ -444,13 +444,18 @@ def build_controlnet_poses_reference(control):
                 preview = f[2]
                 fullpath = os.path.join(subdir, file)
                 cpy = '!CONTROLNET_INPUT_IMAGE = ' + fullpath.replace("\\", "\\\\")
-                preview_img = '<a href=\"/' + fullpath + '\" target=\"_blank\"><img src=\"img/pre01.png\"></a>'
+                preview_img = '<a class=\"thumbnail\" href=\"#thumb\"><img src=\"img/pre01.png\" /><span>'
+                #preview_img += '<img src=\"/' + fullpath + '\" /><br />Pose (' + file + ')</span></a>'
+                preview_img += '<img src=\"/' + fullpath + '\" /></span></a>'
+
                 preview_alt = ''
                 if preview != '':
                     fullpath_preview = os.path.join(subdir, 'previews')
                     fullpath_preview = os.path.join(fullpath_preview, file)
                     fullpath_preview = fullpath_preview[:-3] + preview
-                    preview_alt = '<a href=\"/' + fullpath_preview + '\" target=\"_blank\"><img src=\"img/pre02.png\"></a>'
+                    preview_alt = '<a class=\"thumbnail\" href=\"#thumb\"><img src=\"img/pre02.png\" /><span>'
+                    #preview_alt += '<img src=\"/' + fullpath_preview + '\" /><br />Preview (' + file + ')</span></a>'
+                    preview_alt += '<img src=\"/' + fullpath_preview + '\" /></span></a>'
 
                 #buffer += '<li class=\"no-bullets\">'
                 buffer += '<div class=\"pose-row\">'

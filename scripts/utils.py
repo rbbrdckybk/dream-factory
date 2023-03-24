@@ -449,10 +449,10 @@ class PromptManager():
 
         elif command == 'output_dir':
             if value != '':
-                if os.path.exists(value):
-                    self.config.update({'output_dir' : value})
-                else:
-                    self.control.print("*** WARNING: specified 'OUTPUT_DIR' (" + value + ") does not exist; it will be ignored!")
+                #if os.path.exists(value):
+                self.config.update({'output_dir' : value})
+                #else:
+                #    self.control.print("*** WARNING: specified 'OUTPUT_DIR' (" + value + ") does not exist; it will be ignored!")
 
         elif command == 'controlnet_input_image':
             if value != '':
@@ -833,7 +833,11 @@ class PromptManager():
                             work['input_image'] = ''
 
                     if not subdir_processed:
-                        prompt_work_queue.append(work.copy())
+                        # process mode requires an input image
+                        # verify that we have a valid input image before queueing work
+                        # existence was already checked when prompt file was read
+                        if work['input_image'] != '':
+                            prompt_work_queue.append(work.copy())
 
                 else:
                     self.control.print("*** WARNING: !MODE=process prompt file doesn't accept normal prompts: " + str_prompt + "! ***")

@@ -356,6 +356,18 @@ class Worker(threading.Thread):
             # remove extension
             original_filename = original_filename[:-4]
 
+            # check for !OUTPUT_DIR, create if necessary
+            if self.command.get('output_dir') != '':
+                if not os.path.exists(self.command.get('output_dir')):
+                    try:
+                        # attempt to create output directory
+                        Path(self.command.get('output_dir')).mkdir(parents=True, exist_ok=True)
+                    except:
+                        # error creating specified output_dir, fallback to default
+                        self.print("Specified OUTPUT_DIR could not be created: " + self.command.get('output_dir'))
+                        self.print("Using default output directory instead...")
+                        self.command['output_dir'] = ''
+
         # !MODE = process enters here:
         command = utils.create_command(self.command, self.command.get('prompt_file'), self.worker['id'])
         if not process_mode:
@@ -748,6 +760,17 @@ class Controller:
         self.read_embeddings()
         self.read_loras()
         self.init_controlnet()
+
+
+    # clean up empty output dirs
+    def clean_output_subdirs(self, directory):
+        for entry in os.scandir(directory):
+            if os.path.isdir(entry.path) and not os.listdir(entry.path):
+                try:
+                    # try to remove an entry output sub-dir
+                    os.rmdir(entry.path)
+                except:
+                    pass
 
 
     # returns the current operation mode (standard or random)
@@ -1283,6 +1306,9 @@ class Controller:
             if os.path.exists(temp):
                 shutil.rmtree(temp)
 
+            # clean up empty output subdirs
+            self.clean_output_subdirs(self.config.get('output_location'))
+
             self.is_paused = True
             self.work_done = True
 
@@ -1491,6 +1517,10 @@ class Controller:
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
         # TODO validate everything is ok before making the switch
+
+        if self.prompt_file != '':
+            # clean up empty output subdirs on every prompt file switch
+            self.clean_output_subdirs(self.config.get('output_location'))
 
         # clear model queue
         self.models = []
