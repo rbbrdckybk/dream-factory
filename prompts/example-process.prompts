@@ -44,7 +44,7 @@
 !UPSCALE_MODEL = esrgan
 
 # This overrides the default Dream Factory output folder - only possible in PROCESS files.
-# This folder MUST EXIST or it'll be ignored!
+# This folder will be created if it doesn't exist.
 !OUTPUT_DIR = C:\images\space-cats\upscaled-esrgan
 
 # This is the special PROCESS mode trigger that kicks off whatever job(s) you've 
@@ -66,7 +66,7 @@ go
 # new 'go' triggers will use these values instead of the previously-established ones!
 
 
-# We're setting up a second output folder to keep things organized. Again, this must already exist!
+# We're setting up a second output folder to keep things organized.
 !OUTPUT_DIR = C:\images\space-cats\upscaled-remacri
 
 # And here's our second 'go' trigger, which will use the latest values for everything set to this point.
