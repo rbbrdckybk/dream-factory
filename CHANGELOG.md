@@ -6,6 +6,19 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.03.24]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
+
+### Added
+- Added a mouseover preview for ControlNet pose images in the integrated editor.
+
+### Changed
+- Empty subdirectories in your image output folder will now be automatically be cleaned up whenever you switch prompt file or shutdown Dream Factory.
+- The !OUTPUT_DIR directive (for !MODE=process prompt files) will now attempt to create the specified directory if it doesn't exist (and will fall back to your default output folder if it can't be created for whatever reason).
+
+### Fixed
+- Fixed a bug that could cause errors if you attempted to run a !MODE=process prompt file with no input image set.
+
 ## [2023.03.23]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
 
