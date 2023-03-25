@@ -168,6 +168,13 @@ class Worker(threading.Thread):
                         self.command['iptc_keywords'] = utils.wildcard_replace_list(self.command.get('iptc_keywords'), key, replace, replace_all)
                         self.command['iptc_copyright'] = utils.wildcard_replace(self.command.get('iptc_copyright'), key, replace, replace_all)
 
+            # handle special hard-coded prompt directive wildcards
+            if '__!iptc_title__' in p.lower():
+                p = utils.wildcard_replace(p, '__!iptc_title__', self.command.get('iptc_title'), True)
+            if '__!iptc_description__' in p.lower():
+                p = utils.wildcard_replace(p, '__!iptc_description__', self.command.get('iptc_description'), True)
+            if '__!iptc_keywords__' in p.lower():
+                p = utils.wildcard_replace_list(p, '__!iptc_keywords__', self.command.get('iptc_keywords'), True)
 
             self.command['prompt'] = p
             #print('after wildcard replace: ' + self.command['prompt'])

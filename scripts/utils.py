@@ -517,13 +517,19 @@ class PromptManager():
 
         elif command == 'iptc_title':
             if value != '':
-                self.config.update({'iptc_title' : value})
+                if len(value) > 0 and value[0] == '+':
+                    self.config['iptc_title'] += value[1:]
+                else:
+                    self.config.update({'iptc_title' : value})
             else:
                 self.config.update({'iptc_title' : ''})
 
         elif command == 'iptc_description':
             if value != '':
-                self.config.update({'iptc_description' : value})
+                if len(value) > 0 and value[0] == '+':
+                    self.config['iptc_description'] += value[1:]
+                else:
+                    self.config.update({'iptc_description' : value})
             else:
                 self.config.update({'iptc_description' : ''})
 
@@ -533,7 +539,14 @@ class PromptManager():
                 kw = value.split(',')
                 for k in kw:
                     keywords.append(k.strip())
-                self.config.update({'iptc_keywords' : keywords})
+
+                if len(keywords) > 0 and len(keywords[0]) > 0 and keywords[0][0] == '+':
+                    keywords[0] = keywords[0][1:]
+                    for k in keywords:
+                        if k not in self.config['iptc_keywords']:
+                            self.config['iptc_keywords'].append(k)
+                else:
+                    self.config.update({'iptc_keywords' : keywords})
             else:
                 self.config.update({'iptc_keywords' : []})
 
