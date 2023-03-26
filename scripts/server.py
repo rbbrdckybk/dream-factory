@@ -186,8 +186,11 @@ def build_prompt_panel(control):
                 buffer += " | loops done: " + str(control.loops) + " | repeat: on\n"
             else:
                 buffer += " | repeat: off\n"
-        buffer += "\t</div>\n"
+        elif control.get_mode() == 'process':
+            buffer += "\t\t" + str(control.jobs_done) + " of " + str(control.orig_work_queue_size) + " work items completed"
+            buffer += "\t\t | mode: process\n"
 
+        buffer += "\t</div>\n"
         buffer += "</div>\n"
 
         buffer += "<div id=\"prompt-status\" class=\"prompt-status\">\n"
