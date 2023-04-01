@@ -13,6 +13,7 @@ import random
 import glob
 import os
 import itertools
+import copy
 from zipfile import ZipFile
 from os.path import exists, isdir, basename
 from datetime import datetime as dt
@@ -217,8 +218,11 @@ class PromptManager():
             'delim' : " ",
             'next_prompt_file' : "",
             'iptc_title' : "",
+            'iptc_title_history' : {},
             'iptc_description' : "",
+            'iptc_description_history' : {},
             'iptc_keywords' : [],
+            'iptc_keywords_history' : {},
             'iptc_copyright' : "",
             'iptc_append' : False,
             'clip_skip' : "",
@@ -238,7 +242,6 @@ class PromptManager():
             'output_dir' : '',
             'outdir' : self.control.config['output_location']
         }
-
 
     def debug_print(self):
         if len(self.prompts) > 0:
@@ -518,7 +521,20 @@ class PromptManager():
         elif command == 'iptc_title':
             if value != '':
                 if len(value) > 0 and value[0] == '+':
-                    self.config['iptc_title'] += value[1:]
+                    # check for [identifier]
+                    if '<' in value and '>' in value:
+                        # get the key within the first []
+                        key = value.split('<', 1)[1].strip()
+                        key = key.split('>', 1)[0].strip()
+                        # the actual value is everything that follows the []
+                        value = value.split('>', 1)[1]
+                        # add the key/value pair to the history
+                        if key in self.config['iptc_title_history']:
+                            self.config['iptc_title_history'][key].append(value)
+                        else:
+                            self.config['iptc_title_history'][key] = [value]
+                    else:
+                        self.config['iptc_title'] += value[1:]
                 else:
                     self.config.update({'iptc_title' : value})
             else:
@@ -527,7 +543,20 @@ class PromptManager():
         elif command == 'iptc_description':
             if value != '':
                 if len(value) > 0 and value[0] == '+':
-                    self.config['iptc_description'] += value[1:]
+                    # check for [identifier]
+                    if '<' in value and '>' in value:
+                        # get the key within the first []
+                        key = value.split('<', 1)[1].strip()
+                        key = key.split('>', 1)[0].strip()
+                        # the actual value is everything that follows the []
+                        value = value.split('>', 1)[1]
+                        # add the key/value pair to the history
+                        if key in self.config['iptc_description_history']:
+                            self.config['iptc_description_history'][key].append(value)
+                        else:
+                            self.config['iptc_description_history'][key] = [value]
+                    else:
+                        self.config['iptc_description'] += value[1:]
                 else:
                     self.config.update({'iptc_description' : value})
             else:
@@ -535,18 +564,40 @@ class PromptManager():
 
         elif command == 'iptc_keywords':
             if value != '':
+                addon = False
+                history = False
+                key = ''
+                # check for [identifier]
+                if value.strip()[0] == '+':
+                    addon = True
+                    if '<' in value and '>' in value:
+                        # get the key within the first []
+                        key = value.split('<', 1)[1].strip()
+                        key = key.split('>', 1)[0].strip()
+                        # the actual value is everything that follows the []
+                        value = value.split('>', 1)[1]
+                        history = True
+
                 keywords = []
                 kw = value.split(',')
                 for k in kw:
                     keywords.append(k.strip())
 
-                if len(keywords) > 0 and len(keywords[0]) > 0 and keywords[0][0] == '+':
-                    keywords[0] = keywords[0][1:]
-                    for k in keywords:
-                        if k not in self.config['iptc_keywords']:
-                            self.config['iptc_keywords'].append(k)
-                else:
-                    self.config.update({'iptc_keywords' : keywords})
+                if len(keywords) > 0:
+                    if addon:
+                        if history:
+                            # add the key/value pair to the history
+                            if key in self.config['iptc_keywords_history']:
+                                self.config['iptc_keywords_history'][key].append(keywords)
+                            else:
+                                self.config['iptc_keywords_history'][key] = [keywords]
+                        else:
+                            #keywords[0] = keywords[0][1:]
+                            for k in keywords:
+                                if k not in self.config['iptc_keywords']:
+                                    self.config['iptc_keywords'].append(k)
+                    else:
+                        self.config.update({'iptc_keywords' : keywords})
             else:
                 self.config.update({'iptc_keywords' : []})
 
@@ -700,7 +751,10 @@ class PromptManager():
 
         # associate a copy of config info with each prompt
         for prompt in prompt_combos:
-            work = self.config.copy()
+            #work = self.config.copy()
+            # switched to deep copy here to handle IPTC metadata history stuff
+            work = copy.deepcopy(self.config)
+
             work['prompt_file'] = self.control.prompt_file
             str_prompt = ""
             fragments = 0

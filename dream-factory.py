@@ -81,6 +81,21 @@ class Worker(threading.Thread):
         # if this is a process-mode prompt, skip past image generation stuff
         if self.command.get('mode') != 'process':
 
+            # handle IPTC metadata history stuff
+            if self.command['iptc_title_history']:
+                for key in self.command['iptc_title_history']:
+                    self.command['iptc_title'] += self.command['iptc_title_history'][key][-1]
+
+            if self.command['iptc_description_history']:
+                for key in self.command['iptc_description_history']:
+                    self.command['iptc_description'] += self.command['iptc_description_history'][key][-1]
+
+            if self.command['iptc_keywords_history']:
+                for key in self.command['iptc_keywords_history']:
+                    for k in self.command['iptc_keywords_history'][key][-1]:
+                        if k not in self.command['iptc_keywords']:
+                            self.command['iptc_keywords'].append(k)
+
             # if this is a random prompt, settle on random values
             if self.command.get('mode') == 'random':
                 self.command['scale'] = round(random.uniform(float(self.command.get('min_scale')), float(self.command.get('max_scale'))), 1)
