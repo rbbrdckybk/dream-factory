@@ -224,6 +224,14 @@ class Worker(threading.Thread):
                         self.command['width'] = new_size[0]
                         self.command['height'] = new_size[1]
 
+            elif "resize_longest_dimension:" in self.command.get('auto_size'):
+                new_long_dim = self.command.get('auto_size').split(':', 1)[1].strip()
+                new_size = utils.resize_based_on_longest_dimension(new_long_dim, orig_size)
+                if new_size != []:
+                    self.command['width'] = new_size[0]
+                    self.command['height'] = new_size[1]
+
+
             # check for ControlNet params
             use_controlnet = False
             scribble_mode = False

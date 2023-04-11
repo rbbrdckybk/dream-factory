@@ -280,6 +280,14 @@ class PromptManager():
                 self.config.update({'auto_size' : value})
             elif value == 'match_input_image_size' or value == 'match_input_image_aspect_ratio':
                 self.config.update({'auto_size' : value})
+            elif 'resize_longest_dimension:' in value:
+                dimension = value.split(':', 1)[1].strip()
+                try:
+                    int(dimension)
+                except:
+                    self.control.print("*** WARNING: invalid dimension supplied (" + value + ") for !AUTO_SIZE; it will be ignored!")
+                else:
+                    self.config.update({'auto_size' : value})
             else:
                 self.control.print("*** WARNING: specified 'AUTO_SIZE' value (" + value + ") not understood; it will be ignored!")
 
@@ -1423,6 +1431,51 @@ def match_image_aspect_ratio(filepath, original_dimensions):
             output_dimensions = [int(longest_original_dimension), int(new_short_dimension)]
         else:
             output_dimensions = [int(new_short_dimension), int(longest_original_dimension)]
+
+    return output_dimensions
+
+
+# given a new longest-side dimension, and original dimensions,
+# return new dimenions where the longest side matches new_long_dimension
+# and the original aspect ratio is maintained (divisble by 64)
+def resize_based_on_longest_dimension(new_long_dimension, original_dimensions):
+    output_dimensions = []
+    if len(original_dimensions) == 2:
+        # ensure result is divisible by 64; round down to nearest 64 if not
+        new_long_dimension = int(new_long_dimension)
+        if new_long_dimension % 64 != 0:
+            new_long_dimension = (new_long_dimension // 64) * 64
+
+        # first get the longest original dimension
+        longest_original_dimension = 0
+        if int(original_dimensions[0]) >= int(original_dimensions[1]):
+            longest_original_dimension = int(original_dimensions[0])
+        else:
+            longest_original_dimension = int(original_dimensions[1])
+
+        # determine which side of the original image is longer
+        # and calculate the original image's aspect ratio
+        width_longest = True
+        aspect_ratio = 0
+        if int(original_dimensions[0]) >= int(original_dimensions[1]):
+            width_longest = True
+            aspect_ratio = int(original_dimensions[0]) / int(original_dimensions[1])
+        else:
+            width_longest = False
+            aspect_ratio = int(original_dimensions[1]) / int(original_dimensions[0])
+
+        # calculate the short dimension of output image
+        new_short_dimension = new_long_dimension / aspect_ratio
+
+        # ensure result is divisible by 64; round down to nearest 64 if not
+        if new_short_dimension % 64 != 0:
+            new_short_dimension = (new_short_dimension // 64) * 64
+
+        # build return dimensions
+        if width_longest:
+            output_dimensions = [int(new_long_dimension), int(new_short_dimension)]
+        else:
+            output_dimensions = [int(new_short_dimension), int(new_long_dimension)]
 
     return output_dimensions
 
