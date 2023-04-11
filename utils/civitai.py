@@ -6,7 +6,7 @@
 # them at least once to calculate the hash) and scrapes all associated prompts,
 # then saves them as a Dream Factory .prompts file (1 per model).
 
-# usage: python civitai.py
+# usage: python civitai.py --help
 
 # This requires Playwright, which can be installed with these commands:
 # pip3 install playwright
@@ -25,12 +25,17 @@ import os.path
 import copy
 import unicodedata
 import re
+import argparse
+
+resize = 0
+max_steps = 0
 
 class Civitai:
     def __init__(self):
         self.browser = playwright.chromium.launch(headless = True)
         self.use_auth = False
         self.url = ""
+        self.auto1111_path = ""
         self.metadata = None
         self.hashes = []
         self.hashmap = {}
@@ -41,11 +46,27 @@ class Civitai:
         if os.path.exists('civitai-auth.json'):
             self.use_auth = True
 
-
     def flush_metadata_buffer(self):
         self.metadata = []
 
+    def get_auto1111_path(self):
+        config_filename = os.path.join('..', 'config.txt')
+        if os.path.exists(config_filename):
+            with open(config_filename, 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+
+            for line in lines:
+                if not line.strip().startswith('#'):
+                    if 'SD_LOCATION =' in line:
+                        loc = line.split('=', 1)[1].strip()
+                        loc = os.path.join(loc, 'models')
+                        loc = os.path.join(loc, 'Stable-diffusion')
+                        if os.path.exists(loc):
+                            self.auto1111_path = loc
+                        break
+
     def get_trigger_hashes(self):
+        self.get_auto1111_path()
         triggers_filename = os.path.join('..', 'model-triggers.txt')
         if os.path.exists(triggers_filename):
             with open(triggers_filename, 'r', encoding="utf-8") as f:
@@ -57,7 +78,13 @@ class Civitai:
                         hash = line.split('[', 1)[1]
                         hash = hash.split(']', 1)[0].strip()
                         if hash not in self.hashes:
-                            self.hashes.append(hash)
+                            if self.auto1111_path != "":
+                                model_filename = line.split('[', 1)[0].strip()
+                                model_filename = os.path.join(self.auto1111_path, model_filename)
+                                if os.path.exists(model_filename):
+                                    self.hashes.append(hash)
+                            else:
+                                self.hashes.append(hash)
 
     # returns a dict, key is civitai ID, value is list of image metadata
     def lookup_hash(self, hash):
@@ -167,12 +194,16 @@ class Civitai:
 
     # writes output .prompts file from given list of image metadata
     def write(self, hash, model_name, metadata = []):
+        global resize
         if metadata == []:
             metadata = self.metadata
 
         filename = 'civitai-' + model_name + '.prompts'
         with open(filename, 'w', encoding="utf-8") as f:
-            f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n!WIDTH = 1408\n!HEIGHT = 1408\n')
+            resize_txt = '!AUTO_SIZE = off'
+            if int(resize) > 0:
+                resize_txt = '!AUTO_SIZE = resize_longest_dimension: ' + str(resize)
+            f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n' + str(resize_txt) + '\n')
             f.write('!HIGHRES_FIX = yes\n!STRENGTH = 0.68\n!FILENAME = <model>-<date>-<time>\n')
             f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n!CKPT_FILE = ' + hash)
             f.write('\n\n[prompts]\n')
@@ -181,14 +212,15 @@ class Civitai:
                 prompt = image["prompt"].replace('\n', '')
                 if prompt.startswith('['):
                     prompt = 'image of ' + prompt
-                if prompt.endswith(','):
+                while prompt.endswith(','):
                     prompt = prompt[:-1]
+                prompt = prompt.strip()
                 negPrompt = ""
                 sampler = ""
                 scale = -1
                 steps = 20
                 if "negativePrompt" in image:
-                    negPrompt = image["negativePrompt"].replace('\n', '')
+                    negPrompt = image["negativePrompt"].replace('\n', '').strip()
                     f.write('\n!NEG_PROMPT = ' + negPrompt + '\n')
                 if "sampler" in image:
                     sampler = image["sampler"]
@@ -198,7 +230,13 @@ class Civitai:
                     f.write('!SCALE = ' + str(scale) + '\n')
                 if "steps" in image:
                     steps = image["steps"]
+                    steps = check_steps(steps, max_steps)
                     f.write('!STEPS = ' + str(steps) + '\n')
+                if "Size" in image:
+                    if "x" in image["Size"]:
+                        meta_size = image["Size"].split('x', 1)
+                        f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
+                        f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
                 f.write(prompt + '\n\n')
 
 
@@ -221,16 +259,45 @@ def slugify(value, allow_unicode=False):
     # added in case of very long filenames due to multiple prompts
     return value[0:180]
 
+def check_steps(value, max):
+    new_value = value
+    if max > 0:
+        try:
+            int(value)
+        except:
+            pass
+        else:
+            if int(value) > max:
+                new_value = max
+    return new_value
 
 # entry point
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--max_steps",
+        type=int,
+        default=0,
+        help="step values higher than this will be set to this; leave at zero to disable (default)"
+    )
+    parser.add_argument(
+        "--resolution",
+        type=int,
+        default=0,
+        help="auto-resize longest image dimension to this size (aspect ratio will be maintained); leave at zero to disable (default)"
+    )
+
+    opt = parser.parse_args()
+    resize = opt.resolution
+    max_steps = opt.max_steps
 
     count = 0
     all_data = {}
 
     with sync_playwright() as playwright:
         civitai = Civitai()
-
+        
         for hash in civitai.hashes:
             print('\nLooking up hash ' + hash + '...')
             fulldata = civitai.lookup_hash(hash)
@@ -260,9 +327,12 @@ if __name__ == '__main__':
 
 
     # write all to a single file
-    filename = 'civitai-all.prompts'
+    filename = 'civitai-0-all.prompts'
     with open(filename, 'w', encoding="utf-8") as f:
-        f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n!WIDTH = 1408\n!HEIGHT = 1408\n')
+        resize_txt = '!AUTO_SIZE = off'
+        if int(resize) > 0:
+            resize_txt = '!AUTO_SIZE = resize_longest_dimension: ' + str(resize)
+        f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n' + str(resize_txt) + '\n')
         f.write('!HIGHRES_FIX = yes\n!STRENGTH = 0.68\n!FILENAME = <model>-<date>-<time>\n')
         f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n[prompts]\n')
 
@@ -289,5 +359,11 @@ if __name__ == '__main__':
                     f.write('!SCALE = ' + str(scale) + '\n')
                 if "steps" in image:
                     steps = image["steps"]
+                    steps = check_steps(steps, max_steps)
                     f.write('!STEPS = ' + str(steps) + '\n')
+                if "Size" in image:
+                    if "x" in image["Size"]:
+                        meta_size = image["Size"].split('x', 1)
+                        f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
+                        f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
                 f.write(prompt + '\n\n')
