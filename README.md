@@ -393,7 +393,7 @@ Use this to enable (yes) or disable (no, the default) low VRAM mode when using C
 ```
 This may be helpful if you have a GPU with less VRAM.
 #### !AUTO_SIZE
-Allows you to have Dream Factory automatically size your output images based in the size of input images or ControlNet input images. Valid options are **match_input_image_size**, **match_controlnet_image_size**, **match_input_image_aspect_ratio**, **match_controlnet_image_aspect_ratio**, or **off** (default).
+Allows you to have Dream Factory automatically size your output images based in the size of input images or ControlNet input images. Valid options are **match_input_image_size**, **match_controlnet_image_size**, **match_input_image_aspect_ratio**, **match_controlnet_image_aspect_ratio**, **resize_longest_dimension:<size>**, or **off** (default).
 ```
 # output image will be set to the same size as your input image, regardless of any !WIDTH & !HEIGHT directives
 !AUTO_SIZE = match_input_image_size
@@ -401,6 +401,11 @@ Allows you to have Dream Factory automatically size your output images based in 
 # output image will use the larger of your !WIDTH & !HEIGHT directives as the longer output dimension
 # the shorter output dimension will be calculated so that the output image has the same aspect ratio as the ControlNet input image
 !AUTO_SIZE = match_controlnet_image_aspect_ratio
+
+# the output image will be re-sized so that the longer of your !WIDTH/!HEIGHT settings becomes the size specified here
+# the shorter dimension will be calculated to maintain the same aspect ratio as the original !WIDTH/!HEIGHT settings
+# useful if you have an existing prompt file full of size directives and want to quickly change the size on all of them
+!AUTO_SIZE = resize_longest_dimension: 1280
 ```
 Note that all resizings will result in image dimensions that are divisible by 64 (both dimensions will be rounded down to the nearest divisible-by-64 number).
 
