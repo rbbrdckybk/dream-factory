@@ -645,7 +645,11 @@ class Worker(threading.Thread):
                         output_fn = os.path.join(output_dir, newfilename + ".jpg")
                         if process_mode and self.command.get('output_dir') != '':
                             output_fn =os.path.join(self.command.get('output_dir'), newfilename + ".jpg")
-                        im.save(output_fn, exif=exif, quality=quality)
+
+                        try:
+                            im.save(output_fn, exif=exif, quality=quality)
+                        except:
+                            self.print("OS error when attempting to save output image!")
 
                         iptc_append = False
                         if process_mode:
