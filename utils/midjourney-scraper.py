@@ -12,8 +12,22 @@ from playwright.sync_api import Playwright, sync_playwright
 from datetime import datetime
 import time
 import json
+import argparse
 
 url = "https://www.midjourney.com/showcase/recent/"
+top = False
+
+# entry point
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--top",
+        action='store_true',
+        help="fetch the top showcase instead of recent"
+    )
+    opt = parser.parse_args()
+    top = opt.top
+
 
 def run(playwright: Playwright) -> None:
     browser = playwright.chromium.launch(headless = True)
@@ -28,9 +42,13 @@ def run(playwright: Playwright) -> None:
 
 with sync_playwright() as playwright:
     def handle_response(response):
+        global top
         # the endpoint we are insterested in
         #print(response.url)
-        if ("recent.json" in response.url):
+        search = 'recent.json'
+        if top:
+            search = 'top.json'
+        if (search in response.url):
             #resp = json.dumps(response.json(), indent=2)
             #with open('midjourney.json', 'w') as f:
             #    f.write(resp)
@@ -46,14 +64,28 @@ with sync_playwright() as playwright:
                         prompt = job["prompt"].replace('\n', '').strip()
                         if prompt.startswith('['):
                             prompt = 'image of ' + prompt
+                        if '--ar' in prompt:
+                            prompt = prompt.split('--ar', 1)[0].strip()
                         while prompt.endswith(','):
                             prompt = prompt[:-1]
+                        while prompt.startswith('*'):
+                            prompt = prompt[1:]
+                        if prompt.lower().startswith('/imagine'):
+                            prompt = prompt[8:].strip()
+                        if '<<<' in prompt and '>>>' in prompt:
+                            start = prompt.split('<<<', 1)[0]
+                            end = prompt.split('>>>', 1)[1]
+                            prompt = start + ' ' + end
                         prompt = prompt.strip()
                         prompts.append(prompt)
 
                 prompts = list(set(prompts))
+                prompts.sort()
+
                 date = datetime.today().strftime('%Y-%m-%d')
                 filename = 'midjourney-' + date + '.prompts'
+                if top:
+                    filename = 'midjourney-showcase-top.prompts'
                 with open(filename, 'w', encoding="utf-8") as f:
                     f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n!WIDTH = 1024\n!HEIGHT = 1024\n')
                     f.write('!HIGHRES_FIX = yes\n!STRENGTH = 0.68\n!FILENAME = <model>-<date>-<time>\n')
@@ -61,5 +93,6 @@ with sync_playwright() as playwright:
                     f.write('\n\n[prompts]\n\n')
                     for prompt in prompts:
                         f.write(prompt + '\n\n')
+
 
     run(playwright)
