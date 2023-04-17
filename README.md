@@ -166,6 +166,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_input_image)
  * [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_model)
  * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pre)
+ * [!CONTROLNET_GUESSMODE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_guessmode)
  * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
  * [!AUTO_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)
  * [!CLIP_SKIP](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#clip_skip)
@@ -220,6 +221,7 @@ The number of denoising steps (default = 20). More steps will generally improve 
 ```
 !STEPS = 20
 ```
+You may also specify a range (e.g. !STEPS = 30-55) and a random value within your range will be chosen when the prompt is executed.
 #### !SAMPLER
 The sampler to use (default is DPM++ 2M Karras). This must match an available option in your Auto1111 SD webui exactly. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available samplers (click on a sampler to copy it to the clipboard so that you can easily paste it into the editor).
 ```
@@ -230,6 +232,7 @@ The guidance scale, or how closely you want Stable Diffusion to follow your text
 ```
 !SCALE = 7.5
 ```
+You may also specify a range (e.g. !SCALE = 5.5 - 9) and a random value within your range will be chosen when the prompt is executed.
 #### !SAMPLES
 How many images to produce of each prompt before moving on to the next one (default = 1). Unlike the below BATCH_SIZE option, there is no additional cost in terms of GPU memory when increasing this. There will be a liner increase in processing time when increasing this (e.g.: !SAMPLES = 10 will take ten times as long as !SAMPLES = 1).
 ```
@@ -257,6 +260,7 @@ Sets the strength of the input image influence. Valid values are 0-1 (default = 
 ```
 !STRENGTH = 0.75
 ```
+You may also specify a range (e.g. !STRENGTH = 0.55 - 0.75) and a random value within your range will be chosen when the prompt is executed.
 #### !CKPT_FILE
 Sets the model to use. Any custom models should be installed to the appropriate models directory of your auto1111 installation. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available models (click on a model to copy it to the clipboard so that you can easily paste it into the editor). Setting this to nothing will default back to whatever model you have set in your config.txt file (if you haven't set a default, setting this to nothing won't do anything!).
 
@@ -386,6 +390,12 @@ Sets the ControlNet preprocessor to use. This is used to "extract" pose informat
 !CONTROLNET_PRE = openpose
 ```
 You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet preprocessors. Note that setting a ControlNet preprocessor will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
+#### !CONTROLNET_GUESSMODE
+Use this to enable (yes) or disable (no, the default) guess mode (or "non-prompt mode") when using ControlNet. 
+```
+!CONTROLNET_GUESSMODE = yes
+```
+You can [read about guess mode here](https://github.com/lllyasviel/ControlNet#guess-mode--non-prompt-mode).
 #### !CONTROLNET_LOWVRAM
 Use this to enable (yes) or disable (no, the default) low VRAM mode when using ControlNet. 
 ```
@@ -450,21 +460,25 @@ When using random mode prompt files, sets the minimum !SCALE value to use. If !M
 ```
 !MIN_SCALE = 6.0
 ```
+*Deprecated - consider using !SCALE = x.x - xx.x format instead.*
 #### !MAX_SCALE
 When using random mode prompt files, sets the maximum !SCALE value to use. If !MIN_SCALE and !MAX_SCALE are set to different values, Dream Factory will choose a random value between them for each prompt.
 ```
 !MIN_SCALE = 18.5
 ```
+*Deprecated - consider using !SCALE = x.x - xx.x format instead.*
 #### !MIN_STRENGTH
 When using random mode prompt files, sets the minimum !STRENGTH value to use. If !MIN_STRENGTH and !MAX_STRENGTH are set to different values, Dream Factory will choose a random value between them for each prompt.
 ```
 !MIN_STRENGTH = 0.45
 ```
+*Deprecated - consider using !STRENGTH = 0.xx - 0.xx format instead.*
 #### !MAX_STRENGTH
 When using random mode prompt files, sets the maximum !STRENGTH value to use. If !MIN_STRENGTH and !MAX_STRENGTH are set to different values, Dream Factory will choose a random value between them for each prompt.
 ```
 !MAX_STRENGTH = 0.80
 ```
+*Deprecated - consider using !STRENGTH = 0.xx - 0.xx format instead.*
 #### !RANDOM_INPUT_IMAGE_DIR
 When using random mode prompt files, sets a directory that random input images should be pulled from. If this is set, Dream Factory will choose a random input image to use for each prompt.
 ```
