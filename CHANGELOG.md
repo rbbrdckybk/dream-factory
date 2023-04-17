@@ -6,6 +6,21 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.04.16]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
+
+### Added
+- Added additional support that should enable most ControlNet v1.1 functionality to work. Note that the ControlNet extension is under pretty heavy development at the moment and things may change. My own changes were tested against ControlNet extension hash ```d499bd4```. If you have old prompt files that make use of preprocessors, note that some of the name references may have changed (and that they don't necessarily match what is displayed in the Auto1111 UI) - this is unfortunately out of my hands as the names are now retrieved via API call.
+- Support for ControlNet [guess mode](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_guessmode) is in.
+- The [!STEPS directive now supports specifying a range](https://github.com/rbbrdckybk/dream-factory/issues/38).
+
+### Changed
+- The !SCALE and !STRENGTH directives also support specifying a range. !MIN_SCALE, !MAX_SCALE, !MIN_STRENGTH, and !MAX_STRENGTH are still supported (within random prompt files) if you already have .prompts files using the old syntax.
+- Specifying a single period (".") as your prompt (or within any prompts section) will be considered an empty prompt. Useful if you have ```[prompts]``` sections full of settings directives but don't want to actually add anything else to your prompt. Or if you just actually want an empty prompt (e.g. for ControlNet guessmode, etc).
+
+### Fixed
+- Fixed an issue where prompts that started with a ```[``` character would cause the rest of that ```[prompts]``` section to be ignored.
+
 ## [2023.03.24]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
 
