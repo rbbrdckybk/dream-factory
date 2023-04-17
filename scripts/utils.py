@@ -265,6 +265,48 @@ class PromptManager():
             print("prompts list is empty")
 
 
+    # value is a string
+    # returns true if the value is a valid int,
+    # or if the value is a valid int range (e.g. 'xxx - xxx')
+    def validate_int_range(self, value):
+        r = True
+        if '-' in value:
+            values = value.split('-', 1)
+            try:
+                int(values[0].strip())
+                int(values[1].strip())
+            except:
+                r = False
+        else:
+            value = value.strip()
+            try:
+                int(value)
+            except:
+                r = False
+        return r
+
+
+    # value is a string
+    # returns true if the value is a valid float,
+    # or if the value is a valid float range (e.g. 'xxx.x - xxx')
+    def validate_float_range(self, value):
+        r = True
+        if '-' in value:
+            values = value.split('-', 1)
+            try:
+                float(values[0].strip())
+                float(values[1].strip())
+            except:
+                r = False
+        else:
+            value = value.strip()
+            try:
+                float(value)
+            except:
+                r = False
+        return r
+
+
     # handle prompt file config directives
     def handle_directive(self, command, value):
         if command == 'width':
@@ -323,23 +365,17 @@ class PromptManager():
 
         elif command == 'steps':
             if value != '':
-                try:
-                    int(value)
-                except:
-                    self.control.print("*** WARNING: specified 'STEPS' is not a valid number; it will be ignored!")
-                else:
+                if self.validate_int_range(value):
                     self.config.update({'steps' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'STEPS' is not a valid number; it will be ignored!")
 
         elif command == 'scale':
             if value != '':
-                try:
-                    float(value)
-                except:
-                    self.control.print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
-                else:
+                if self.validate_float_range(value):
                     self.config.update({'scale' : value})
-                    self.config.update({'min_scale' : value})
-                    self.config.update({'max_scale' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'SCALE' is not a valid number; it will be ignored!")
 
         elif command == 'min_scale':
             if value != '':
@@ -379,14 +415,10 @@ class PromptManager():
 
         elif command == 'strength':
             if value != '':
-                try:
-                    float(value)
-                except:
-                    self.control.print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
-                else:
+                if self.validate_float_range(value):
                     self.config.update({'strength' : value})
-                    self.config.update({'min_strength' : value})
-                    self.config.update({'max_strength' : value})
+                else:
+                    self.control.print("*** WARNING: specified 'STRENGTH' is not a valid number; it will be ignored!")
 
         elif command == 'min_strength':
             if value != '':
