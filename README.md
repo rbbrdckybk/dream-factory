@@ -403,7 +403,7 @@ Use this to enable (yes) or disable (no, the default) low VRAM mode when using C
 ```
 This may be helpful if you have a GPU with less VRAM.
 #### !AUTO_SIZE
-Allows you to have Dream Factory automatically size your output images based in the size of input images or ControlNet input images. Valid options are **match_input_image_size**, **match_controlnet_image_size**, **match_input_image_aspect_ratio**, **match_controlnet_image_aspect_ratio**, **resize_longest_dimension:<size>**, or **off** (default).
+Allows you to have Dream Factory automatically size your output images based in the size of input images or ControlNet input images. Valid options are **match_input_image_size**, **match_controlnet_image_size**, **match_input_image_aspect_ratio**, **match_controlnet_image_aspect_ratio**, **resize_longest_dimension:[size]**, or **off** (default).
 ```
 # output image will be set to the same size as your input image, regardless of any !WIDTH & !HEIGHT directives
 !AUTO_SIZE = match_input_image_size
