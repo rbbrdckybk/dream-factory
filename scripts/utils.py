@@ -98,6 +98,17 @@ class PromptManager():
 
         #self.debug_print()
 
+    # checks a line of text to see if it starts with a known header
+    def is_header(self, line):
+        valid_headers = ['config', 'prompts']
+        r = False
+        check = line.lower().strip()
+        for h in valid_headers:
+            if check.startswith('[' + h):
+                r = True
+                break
+        return r
+
     # init the prompts list
     def __init_prompts(self, which_list, search_text):
         with open(self.control.prompt_file, encoding = 'utf-8') as f:
@@ -116,7 +127,8 @@ class PromptManager():
                 line = line[0]
 
                 # if we already found the header we want and we see another header,
-                if found_header and len(line) > 0 and line.startswith('['):
+                #if found_header and len(line) > 0 and line.startswith('['):
+                if found_header and len(line) > 0 and self.is_header(line):
                     # save PromptSection if not empty
                     if len(ps.tokens) > 0:
                         which_list.append(ps)
@@ -212,6 +224,7 @@ class PromptManager():
             'controlnet_pre' : "none",
             'controlnet_model' : "",
             'controlnet_lowvram' : False,
+            'controlnet_guessmode' : False,
             'strength' : 0.75,
             'min_strength' : 0.75,
             'max_strength' : 0.75,
@@ -492,6 +505,12 @@ class PromptManager():
                 self.config.update({'controlnet_lowvram' : True})
             elif value == 'no' or value == 'off':
                 self.config.update({'controlnet_lowvram' : False})
+
+        elif command == 'controlnet_guessmode':
+            if value == 'yes' or value == 'on':
+                self.config.update({'controlnet_guessmode' : True})
+            elif value == 'no' or value == 'off':
+                self.config.update({'controlnet_guessmode' : False})
 
         elif command == 'repeat':
             if value == 'yes':
@@ -780,11 +799,12 @@ class PromptManager():
                     is_directive = True
                     break
 
-                if fragments > 0:
-                    if not (fragment.startswith(',') or fragment.startswith(';')):
-                        str_prompt += self.config.get('delim')
-                str_prompt += fragment
-                fragments += 1
+                if fragment.strip() != '.':
+                    if fragments > 0:
+                        if not (fragment.startswith(',') or fragment.startswith(';')):
+                            str_prompt += self.config.get('delim')
+                    str_prompt += fragment
+                    fragments += 1
 
             if not is_directive:
                 work['prompt'] = str_prompt

@@ -158,6 +158,18 @@ class ControlNet_GetModelsRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching ControlNet modules
+class ControlNet_GetModulesRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/controlnet/module_list')
+        self.callback(response)
+
+
 # for changing server options, including model swaps
 class SetOptionsRequest(threading.Thread):
     def __init__(self, sdi_ref, payload, callback=lambda: None, *args):
@@ -499,17 +511,50 @@ class SDI:
 
     # handle server controlnet model response
     def controlnet_model_response(self, response):
-        r = response.json()
-        models = []
-        for i in r['model_list']:
-            models.append(i)
+        try:
+            r = response.json()
+            models = []
+            for i in r['model_list']:
+                models.append(i)
 
-        if len(models) > 0:
-            self.log('received ControlNet query response: SD indicates ' + str(len(models)) + ' ControlNet models available for use...', True)
-            self.control_ref.sdi_controlnet_models = models
-        else:
-            self.log('received ControlNet query response: SD indicates no ControlNet models available; disabling ControlNet functionality (install at least one model)!', True)
+            if len(models) > 0:
+                self.log('received ControlNet query response: SD indicates ' + str(len(models)) + ' ControlNet models available for use...', True)
+                self.control_ref.sdi_controlnet_models = models
+            else:
+                self.log('received ControlNet query response: SD indicates no ControlNet models available; disabling ControlNet functionality (install at least one model)!', True)
+                self.control_ref.sdi_controlnet_available = False
+        except:
+            self.log('*** Error: received invalid ControlNet model response (is your ControlNet extension installed properly?); disabling ControlNet functionality!', True)
             self.control_ref.sdi_controlnet_available = False
+            
+        self.busy = False
+
+
+    # gets valid controlnet modules from server
+    def get_server_controlnet_modules(self):
+        self.busy = True
+        #self.log('Fetching modules from server...')
+        self.log('querying SD for available ControlNet preprocessors...', True)
+        query = ControlNet_GetModulesRequest(self, self.controlnet_module_response)
+        query.start()
+
+
+    # handle server controlnet module response
+    def controlnet_module_response(self, response):
+        try:
+            r = response.json()
+            modules = []
+            for i in r['module_list']:
+                modules.append(i)
+
+            if len(modules) > 0:
+                self.log('received ControlNet query response: SD indicates ' + str(len(modules)) + ' ControlNet preprocessors available for use...', True)
+                self.control_ref.sdi_controlnet_preprocessors = modules
+            else:
+                self.log('received ControlNet query response: SD indicates no ControlNet preprocessors available (is your ControlNet extension installed properly?)!', True)
+                #self.control_ref.sdi_controlnet_available = False
+        except:
+            self.log('*** Error: received invalid ControlNet preprocessor response (is your ControlNet extension up to date?)!', True)
 
         self.busy = False
 

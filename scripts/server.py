@@ -84,8 +84,11 @@ def build_gallery(control):
             short_prompt = params['prompt'][:300] + '...'
 
         prompt = ''
-        if params['prompt'] != '':
-            prompt = params['prompt'].replace('<', '&lt;').replace('>', '&gt;')
+        if params['prompt'] != '' or params['steps'] != '':
+            if params['prompt'] == '':
+                prompt = '(no prompt)'
+            else:
+                prompt = params['prompt'].replace('<', '&lt;').replace('>', '&gt;')
             if params['width'] != '':
                 param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
 
@@ -421,8 +424,8 @@ def build_controlnet_pre_reference(control):
             buffer = "none"
         else:
             for p in control.sdi_controlnet_preprocessors:
-                cpy = '!CONTROLNET_PRE = ' + p[0]
-                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + p[0] + "</li>\n"
+                cpy = '!CONTROLNET_PRE = ' + p
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + p + "</li>\n"
             buffer += "</ul>\n"
     return buffer
 

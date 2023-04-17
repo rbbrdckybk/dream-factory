@@ -117,6 +117,9 @@ class Worker(threading.Thread):
                         # wait for model change to complete
                         time.sleep(0.25)
 
+            if self.command.get('prompt').strip() == '.':
+                self.command['prompt'] = ''
+
             # check for auto-insertion of model trigger word
             if (control.model_trigger_words != None) and (self.command.get('auto_insert_model_trigger') != 'off'):
                 # check to see if the model we're using has an associated trigger
@@ -249,11 +252,21 @@ class Worker(threading.Thread):
 
                 # get preprocessor params
                 if len(self.command.get('controlnet_pre')) >= 3:
+                    found = False
                     for p in control.sdi_controlnet_preprocessors:
-                        if self.command.get('controlnet_pre').lower() == p[0]:
-                            self.command['controlnet_pre'] = p[0]
-                            cn_params = p[1]
+                        #if self.command.get('controlnet_pre').lower() == p[0]:
+                        #    self.command['controlnet_pre'] = p[0]
+                        #    cn_params = p[1]
+                        #    break
+                        if self.command.get('controlnet_pre').lower() == p.lower():
+                            self.command['controlnet_pre'] = p
+                            # these are the openpose defaults; not sure if these are needed
+                            # TODO: investigate
+                            cn_params = [512, 64, 64]
+                            found = True
                             break
+                    if not found:
+                        self.command['controlnet_pre'] = 'none'
                 else:
                     self.command['controlnet_pre'] = 'none'
 
@@ -356,14 +369,14 @@ class Worker(threading.Thread):
                             "module": str(self.command.get('controlnet_pre')),
                             "model": str(self.command.get('controlnet_model')),
                             "weight": 1,
-                            "resize_mode": "Scale to Fit (Inner Fit)",
+                            #"resize_mode": "Scale to Fit (Inner Fit)",
                             "lowvram": self.command.get('controlnet_lowvram'),
-                            "processor_res": cn_params[0],
-                            "threshold_a": cn_params[1],
-                            "threshold_b": cn_params[2],
+                            #"processor_res": cn_params[0],
+                            #"threshold_a": cn_params[1],
+                            #"threshold_b": cn_params[2],
                             "guidance_start": 0,
                             "guidance_end": 1,
-                            "guessmode": False
+                            "guessmode": self.command.get('controlnet_guessmode')
                         }]
                     }
                 }
@@ -745,6 +758,7 @@ class Controller:
         self.sdi_upscalers = None
         self.sdi_controlnet_available = False
         self.sdi_controlnet_request_made = False
+        self.sdi_controlnet_pre_request_made = False
         self.sdi_controlnet_models = None
         self.sdi_controlnet_preprocessors = None
         self.sdi_script_request_made = False
@@ -872,18 +886,19 @@ class Controller:
             self.sdi_controlnet_available = True
             self.print('ControlNet extension found; enabling ControlNet functionality...')
 
+            # 2023-04-16 API now supports this
             # build preprocesor list manually - no API call for this currently
-            pre = []
-            pre.append(['none', [64, 64, 64]])
-            pre.append(['canny', [512, 100, 200]])
-            pre.append(['depth', [384, 64, 64]])
-            pre.append(['hed', [512, 64, 64]])
-            pre.append(['mlsd', [512, 0.1, 0.1]])
-            pre.append(['normal_map', [512, 0.4, 64]])
-            pre.append(['openpose', [512, 64, 64]])
-            pre.append(['scribble', [512, 64, 64]])
-            pre.append(['segmentation', [512, 64, 64]])
-            self.sdi_controlnet_preprocessors = pre
+            #pre = []
+            #pre.append(['none', [64, 64, 64]])
+            #pre.append(['canny', [512, 100, 200]])
+            #pre.append(['depth', [384, 64, 64]])
+            #pre.append(['hed', [512, 64, 64]])
+            #pre.append(['mlsd', [512, 0.1, 0.1]])
+            #pre.append(['normal_map', [512, 0.4, 64]])
+            #pre.append(['openpose', [512, 64, 64]])
+            #pre.append(['scribble', [512, 64, 64]])
+            #pre.append(['segmentation', [512, 64, 64]])
+            #self.sdi_controlnet_preprocessors = pre
 
             # read/init pose files
             if os.path.exists('poses'):
@@ -2042,6 +2057,13 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_controlnet_models()
                 control.sdi_controlnet_request_made = True
+                skip = True
+
+            if not control.sdi_controlnet_pre_request_made and control.sdi_controlnet_available:
+                # get available controlnet modules from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_controlnet_modules()
+                control.sdi_controlnet_pre_request_made = True
                 skip = True
 
             # worker is idle, start some work
