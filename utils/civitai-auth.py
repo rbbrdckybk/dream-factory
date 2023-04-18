@@ -7,7 +7,7 @@
 # 2) click the "login link"
 # 3) enter your email address and click the button
 # 4) when you receive the email, do not click the link
-# 5) instead copy it (right click and select copy), & paste it below on line 25
+# 5) instead copy it (right click and select copy), & paste it below on line 27 (between the single quotes)
 # 6) after that, do not run this again unless your login expires (in which case follow all steps again)
 
 import time
