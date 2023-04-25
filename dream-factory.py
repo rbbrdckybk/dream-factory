@@ -98,49 +98,51 @@ class Worker(threading.Thread):
 
             # if this is a random prompt, settle on random values
             if self.command.get('mode') == 'random':
-                self.command['scale'] = round(random.uniform(float(self.command.get('min_scale')), float(self.command.get('max_scale'))), 1)
-                self.command['strength'] = round(random.uniform(float(self.command.get('min_strength')), float(self.command.get('max_strength'))), 2)
+                if float(self.command.get('min_scale')) > 0 and float(self.command.get('max_scale')) > 0:
+                    self.command['scale'] = round(random.uniform(float(self.command.get('min_scale')), float(self.command.get('max_scale'))), 1)
+                if float(self.command.get('min_strength')) > 0 and float(self.command.get('max_strength')) > 0:
+                    self.command['strength'] = round(random.uniform(float(self.command.get('min_strength')), float(self.command.get('max_strength'))), 2)
                 if self.command.get('random_input_image_dir') != "":
                     self.command['input_image'] = utils.InputManager(self.command.get('random_input_image_dir')).pick_random()
 
             # settle on random values for ranges specified in scale directive
-            try:
-                if '-' in self.command['scale']:
-                    values = self.command['scale'].split('-', 1)
+            if '-' in str(self.command['scale']):
+                try:
+                    values = str(self.command['scale']).split('-', 1)
                     first = float(values[0].strip())
                     second = float(values[1].strip())
                     if second >= first:
                         self.command['scale'] = round(random.uniform(first, second), 1)
                     else:
                         self.command['scale'] = round(random.uniform(second, first), 1)
-            except:
-                pass
+                except:
+                    pass
 
             # settle on random values for ranges specified in strength directive
-            try:
-                if '-' in self.command['strength']:
-                    values = self.command['strength'].split('-', 1)
-                    first = float(values[0].strip())
-                    second = float(values[1].strip())
-                    if second >= first:
-                        self.command['strength'] = round(random.uniform(first, second), 2)
-                    else:
-                        self.command['strength'] = round(random.uniform(second, first), 2)
-            except:
-                pass
+            if '-' in str(self.command['strength']):
+                try:
+                        values = str(self.command['strength']).split('-', 1)
+                        first = float(values[0].strip())
+                        second = float(values[1].strip())
+                        if second >= first:
+                            self.command['strength'] = round(random.uniform(first, second), 2)
+                        else:
+                            self.command['strength'] = round(random.uniform(second, first), 2)
+                except:
+                    pass
 
             # settle on random values for ranges specified in steps directive
-            try:
-                if '-' in self.command['steps']:
-                    values = self.command['steps'].split('-', 1)
-                    first = int(values[0].strip())
-                    second = int(values[1].strip())
-                    if second >= first:
-                        self.command['steps'] = random.randint(first, second)
-                    else:
-                        self.command['steps'] = random.randint(second, first)
-            except:
-                pass
+            if '-' in str(self.command['steps']):
+                try:
+                        values = str(self.command['steps']).split('-', 1)
+                        first = int(values[0].strip())
+                        second = int(values[1].strip())
+                        if second >= first:
+                            self.command['steps'] = random.randint(first, second)
+                        else:
+                            self.command['steps'] = random.randint(second, first)
+                except:
+                    pass
 
             # check if a model change is needed
             if self.command.get('ckpt_file') != '' and (self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
