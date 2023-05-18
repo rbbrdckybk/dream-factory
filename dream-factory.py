@@ -654,8 +654,11 @@ class Worker(threading.Thread):
 
                             newfilename = self.command['filename']
                             if not process_mode:
-                                newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
-                                newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
+                                try:
+                                    newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
+                                    newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
+                                except:
+                                    pass
                                 newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
