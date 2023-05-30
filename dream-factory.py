@@ -800,6 +800,8 @@ class Controller:
         self.sdi_models = None
         self.sdi_hypernetwork_request_made = False
         self.sdi_hypernetworks = None
+        self.sdi_lora_request_made = False
+        self.sdi_loras = None                       # list of dicts
         self.sdi_upscaler_request_made = False
         self.sdi_upscalers = None
         self.sdi_controlnet_available = False
@@ -852,7 +854,7 @@ class Controller:
         # do an initial read of user-installed files
         self.read_wildcards()
         self.read_embeddings()
-        self.read_loras()
+        #self.read_loras()          # 2023-05-30 API call now available for this
         self.init_controlnet()
 
 
@@ -912,6 +914,7 @@ class Controller:
 
     # checks for user lora files in Auto1111 embeddings dir
     # 2023-02-28 BK there is no API request for these; doing this instead
+    # 2023-05-30 BK API call now available, no longer using this
     def read_loras(self):
         self.loras = []
         lora_dir = os.path.join(self.config['sd_location'], 'models')
@@ -2078,6 +2081,14 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_hypernetworks()
                 control.sdi_hypernetwork_request_made = True
+                skip = True
+
+            if not control.sdi_lora_request_made:
+                # get available loras from the server
+                # when the first worker is ready
+                #worker['sdi_instance'].update_server_loras()
+                worker['sdi_instance'].get_server_loras()
+                control.sdi_lora_request_made = True
                 skip = True
 
             if not control.sdi_script_request_made:

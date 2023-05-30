@@ -122,6 +122,30 @@ class GetHyperNetworksRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching loras
+class GetLorasRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/loras')
+        self.callback(response)
+
+
+# for updating loras
+class LoraRefreshRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.post(url=f'{self.sdi_ref.url}/sdapi/v1/refresh-loras')
+        self.callback(response)
+
+
 # for fetching scripts
 class GetScriptsRequest(threading.Thread):
     def __init__(self, sdi_ref, callback=lambda: None, *args):
@@ -526,7 +550,7 @@ class SDI:
         except:
             self.log('*** Error: received invalid ControlNet model response (is your ControlNet extension installed properly?); disabling ControlNet functionality!', True)
             self.control_ref.sdi_controlnet_available = False
-            
+
         self.busy = False
 
 
@@ -567,6 +591,22 @@ class SDI:
         query.start()
 
 
+    # gets valid loras from server
+    def get_server_loras(self):
+        self.busy = True
+        self.log('querying SD for available LoRAs...', True)
+        query = GetLorasRequest(self, self.lora_response)
+        query.start()
+
+
+    # update loras on server
+    def update_server_loras(self):
+        #self.busy = True       # don't wait for response before starting work
+        #self.log('asking SD to refresh LoRAs...', True)
+        query = LoraRefreshRequest(self, self.lora_refresh_response)
+        query.start()
+
+
     # gets valid scripts from server
     def get_server_scripts(self):
         self.busy = True
@@ -593,6 +633,42 @@ class SDI:
         self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
         self.control_ref.sdi_hypernetworks = networks
         self.busy = False
+
+
+    # handle server lora response
+    def lora_response(self, response):
+        r = response.json()
+        loras = []
+        for i in r:
+            if 'name' in i:
+                lora = {}
+                lora['name'] = i['name']
+                if 'path' in i:
+                    lora['path'] = i['path']
+                if 'metadata' in i:
+                    if 'ss_sd_model_hash' in i['metadata']:
+                        # no hashes in metadata appear to correspond to a civitai hash
+                        #lora['hash'] = i['metadata']['ss_sd_model_hash']
+                        pass
+                loras.append(lora)
+
+        self.log('received LoRA query response: SD indicates ' + str(len(loras)) + ' LoRAs available for use...', True)
+        self.control_ref.sdi_loras = loras
+
+        llist = []
+        for l in loras:
+            llist.append(l['name'])
+        llist.sort()
+        self.control_ref.loras = llist
+
+        self.busy = False
+
+
+    # handle server lora response
+    def lora_refresh_response(self, response):
+        r = response.json()
+        #self.log('received LoRA refresh response...', True)
+        #self.busy = False
 
 
     # handle server script response
