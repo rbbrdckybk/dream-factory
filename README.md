@@ -393,7 +393,7 @@ Sets the ControlNet preprocessor to use. This is used to "extract" pose informat
 ```
 You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet preprocessors. Note that setting a ControlNet preprocessor will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
 #### !CONTROLNET_GUESSMODE
-*!CONTROLNET_GUESSMODE is no longer supported as CN extension v1.1.09 - see !CONTROLNET_CONTROLMODE below for the replacement!*
+*GUESSMODE is no longer supported as of CN extension v1.1.09 - see below for the replacement!*
 
 Use this to enable (yes) or disable (no, the default) guess mode (or "non-prompt mode") when using ControlNet. 
 ```
