@@ -167,6 +167,8 @@ These directives are valid in both the [config] section of both standard and ran
  * [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_model)
  * [!CONTROLNET_PRE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pre)
  * [!CONTROLNET_GUESSMODE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_guessmode)
+ * [!CONTROLNET_CONTROLMODE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_controlmode)
+ * [!CONTROLNET_PIXELPERFECT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pixelperfect)
  * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
  * [!AUTO_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)
  * [!CLIP_SKIP](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#clip_skip)
@@ -391,11 +393,23 @@ Sets the ControlNet preprocessor to use. This is used to "extract" pose informat
 ```
 You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet preprocessors. Note that setting a ControlNet preprocessor will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
 #### !CONTROLNET_GUESSMODE
+**!CONTROLNET_GUESSMODE is no longer supported as CN extension v1.1.09 - see !CONTROLNET_CONTROLMODE below for the replacement!**
 Use this to enable (yes) or disable (no, the default) guess mode (or "non-prompt mode") when using ControlNet. 
 ```
 !CONTROLNET_GUESSMODE = yes
 ```
 You can [read about guess mode here](https://github.com/lllyasviel/ControlNet#guess-mode--non-prompt-mode).
+#### !CONTROLNET_CONTROLMODE
+Use this to tell ControlNet to favor your prompt more than ControlNet, or vice-versa, or take a balanced approach. Options are 'balanced' (default), 'prompt' (to favor your prompt more), or 'controlnet' (to favor ControlNet more). 
+```
+!CONTROLNET_GUESSMODE = balanced
+```
+You can [read about control mode here](https://github.com/Mikubill/sd-webui-controlnet/issues/1011).
+#### !CONTROLNET_PIXELPERFECT
+Use this to enable (yes) or disable (no, the default) pixel perfect mode when using ControlNet. When enabling this, the image height and width you specified (with !WIDTH and !HEIGHT) will be used to generate ControlNet's preprocessed image.
+```
+!CONTROLNET_PIXELPERFECT = yes
+```
 #### !CONTROLNET_LOWVRAM
 Use this to enable (yes) or disable (no, the default) low VRAM mode when using ControlNet. 
 ```
