@@ -172,6 +172,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
  * [!AUTO_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)
  * [!CLIP_SKIP](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#clip_skip)
+ * [!SEAMLESS_TILING](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#seamless_tiling)
  * [!IPTC_TITLE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_title)
  * [!IPTC_DESCRIPTION](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_description)
  * [!IPTC_KEYWORDS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_keywords)
@@ -358,6 +359,12 @@ Sets the [CLIP skip](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wik
 !CLIP_SKIP = 2
 ```
 You may set this to nothing (!CLIP_SKIP = ) to clear it.
+#### !SEAMLESS_TILING
+Enables or disables seamless tiling mode. When enabled, output images will be suitable for tiling without visible seams/edges.
+```
+!SEAMLESS_TILING = on
+```
+Set to **off** to disable (the default).
 #### !CONTROLNET_INPUT_IMAGE
 Sets an input image for use with ControlNet.
 ```
