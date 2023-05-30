@@ -6,6 +6,18 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.05.29]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **20ae71faa8ef035c31aa3a410b707d792c8203a3**
+
+### Added
+- Added support for the creation of seamless tiled output images.
+- Support added for ControlNet [control mode](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_controlmode).
+- Support added for ControlNet [pixel perfect mode](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pixelperfect).
+
+### Changed
+- Added a warning when attempting to use ControlNet [guess mode](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_guessmode), as it has been removed in the latest version of the ControlNet extension (replaced by [control mode](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_controlmode)).
+- Prompt file loading is now deferred until after all startup initialization is complete. This should prevent warnings when attempting to validate custom models before the list of valid models has been retrieved from Auto1111 via the API.
+
 ## [2023.04.16]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **a9fed7c364061ae6efb37f797b6b522cb3cf7aa2**
 
