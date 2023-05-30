@@ -401,9 +401,9 @@ Use this to enable (yes) or disable (no, the default) guess mode (or "non-prompt
 ```
 You can [read about guess mode here](https://github.com/lllyasviel/ControlNet#guess-mode--non-prompt-mode).
 #### !CONTROLNET_CONTROLMODE
-Use this to tell ControlNet to favor your prompt more than ControlNet, or vice-versa, or take a balanced approach. Options are 'balanced' (default), 'prompt' (to favor your prompt more), or 'controlnet' (to favor ControlNet more). 
+Use this to tell ControlNet to favor your prompt more than ControlNet, or vice-versa, or take a balanced approach. Options are '**balanced**' (default), '**prompt**' (to favor your prompt more), or '**controlnet**' (to favor ControlNet more). 
 ```
-!CONTROLNET_GUESSMODE = balanced
+!CONTROLNET_CONTROLMODE = balanced
 ```
 You can [read about control mode here](https://github.com/Mikubill/sd-webui-controlnet/issues/1011).
 #### !CONTROLNET_PIXELPERFECT
@@ -584,10 +584,10 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout a9fed7c364061ae6efb37f797b6b522cb3cf7aa2
+git checkout 20ae71faa8ef035c31aa3a410b707d792c8203a3
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
 If/when you want to go back to the latest version, you can just run ```git checkout master```.
 
-(updated 2023-03-21, previous supported hash: dfeee786f903e392dbef1519c7c246b9856ebab3)
+(updated 2023-05-29, previous supported hash: a9fed7c364061ae6efb37f797b6b522cb3cf7aa2)
