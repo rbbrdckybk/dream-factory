@@ -377,7 +377,7 @@ class Worker(threading.Thread):
                   "width": self.command.get('width'),
                   "height": self.command.get('height'),
                   #"restore_faces": False,
-                  #"tiling": False,
+                  "tiling": self.command.get('tiling'),
                   "negative_prompt": str(self.command.get('neg_prompt'))
                 }
             else:
@@ -395,7 +395,7 @@ class Worker(threading.Thread):
                   "width": self.command.get('width'),
                   "height": self.command.get('height'),
                   #"restore_faces": False,
-                  #"tiling": False,
+                  "tiling": self.command.get('tiling'),
                   "negative_prompt": str(self.command.get('neg_prompt'))
                 }
 
@@ -417,7 +417,9 @@ class Worker(threading.Thread):
                             #"threshold_b": cn_params[2],
                             "guidance_start": 0,
                             "guidance_end": 1,
-                            "guessmode": self.command.get('controlnet_guessmode')
+                            "control_mode": str(self.command.get('controlnet_controlmode')),
+                            "pixel_perfect": self.command.get('controlnet_pixelperfect')
+                            #"guessmode": self.command.get('controlnet_guessmode')  # removed in CN extension v 1.1.09
                         }]
                     }
                 }
@@ -1609,26 +1611,29 @@ class Controller:
     # loads a new prompt file
     # note that new_file is an absolute path reference
     def new_prompt_file(self, new_file):
-        # TODO validate everything is ok before making the switch
+        # if we haven't validated models/etc, defer loading
+        if not self.default_model_validated:
+            self.print("Waiting for model initialization to finish before loading requested prompt file...")
+            opt.prompt_file = new_file
+        else:
+            if self.prompt_file != '':
+                # clean up empty output subdirs on every prompt file switch
+                self.clean_output_subdirs(self.config.get('output_location'))
 
-        if self.prompt_file != '':
-            # clean up empty output subdirs on every prompt file switch
-            self.clean_output_subdirs(self.config.get('output_location'))
+            # clear model queue
+            self.models = []
+            self.model_index = 0
 
-        # clear model queue
-        self.models = []
-        self.model_index = 0
+            self.clear_work_queue()
 
-        self.clear_work_queue()
+            self.read_wildcards()
+            self.prompt_file = new_file
+            self.prompt_manager = utils.PromptManager(self)
 
-        self.read_wildcards()
-        self.prompt_file = new_file
-        self.prompt_manager = utils.PromptManager(self)
+            self.prompt_manager.handle_config()
+            self.input_manager = utils.InputManager(self.prompt_manager.config.get('random_input_image_dir'))
 
-        self.prompt_manager.handle_config()
-        self.input_manager = utils.InputManager(self.prompt_manager.config.get('random_input_image_dir'))
-
-        self.init_work_queue()
+            self.init_work_queue()
 
 
     # sets a new active editor file
@@ -2033,13 +2038,6 @@ if __name__ == '__main__':
         control.print("ERROR: unable to initialize any GPUs for work; exiting!")
         exit()
 
-    # load initial prompt file if specified
-    if (opt.prompt_file) != "":
-        if exists(opt.prompt_file):
-            control.new_prompt_file(opt.prompt_file)
-        else:
-            control.print("ERROR: specified prompt file '" + opt.prompt_file + "' does not exist - load one from the control panel instead!")
-
     # main work loop
     while not control.work_done:
         # check for un-initialized workers
@@ -2111,7 +2109,15 @@ if __name__ == '__main__':
                 skip = True
 
             # worker is idle, start some work
-            if not control.is_paused and not skip:
+            if not control.is_paused and not skip and control.default_model_validated:
+                # load initial prompt file if specified
+                if opt.prompt_file != "":
+                    if exists(opt.prompt_file):
+                        control.new_prompt_file(opt.prompt_file)
+                    else:
+                        control.print("ERROR: specified prompt file '" + opt.prompt_file + "' does not exist - load one from the control panel instead!")
+                    opt.prompt_file = ""
+
                 if len(control.work_queue) > 0:
                     # get a new prompt or setting directive from the queue
                     new_work = control.work_queue.popleft()

@@ -225,10 +225,13 @@ class PromptManager():
             'controlnet_model' : "",
             'controlnet_lowvram' : False,
             'controlnet_guessmode' : False,
+            'controlnet_controlmode' : 0,
+            'controlnet_pixelperfect' : False,
             'strength' : 0.75,
             'min_strength' : 0.0,
             'max_strength' : 0.0,
             'delim' : " ",
+            'tiling' : False,
             'next_prompt_file' : "",
             'iptc_title' : "",
             'iptc_title_history' : {},
@@ -510,6 +513,12 @@ class PromptManager():
                 #else:
                 #    self.control.print("*** WARNING: specified 'OUTPUT_DIR' (" + value + ") does not exist; it will be ignored!")
 
+        elif command == 'seamless_tiling':
+            if value == 'yes' or value == 'on':
+                self.config.update({'tiling' : True})
+            elif value == 'no' or value == 'off':
+                self.config.update({'tiling' : False})
+
         elif command == 'controlnet_input_image':
             if value != '':
                 if os.path.exists(value):
@@ -539,10 +548,27 @@ class PromptManager():
                 self.config.update({'controlnet_lowvram' : False})
 
         elif command == 'controlnet_guessmode':
+            self.control.print("*** WARNING: specified 'CONTROLNET_GUESSMODE' (" + value + ") is deprecated; it will be ignored in the latest ControlNet extension!")
             if value == 'yes' or value == 'on':
                 self.config.update({'controlnet_guessmode' : True})
             elif value == 'no' or value == 'off':
                 self.config.update({'controlnet_guessmode' : False})
+
+        elif command == 'controlnet_controlmode':
+            if value == 'balanced':
+                self.config.update({'controlnet_controlmode' : "Balanced"})
+            elif value == 'prompt':
+                self.config.update({'controlnet_controlmode' : "My prompt is more important"})
+            elif value == 'controlnet':
+                self.config.update({'controlnet_controlmode' : "ControlNet is more important"})
+            else:
+                self.control.print("*** WARNING: specified 'CONTROLNET_CONTROLMODE' (" + value + ") is not valid; it will be ignored!")
+
+        elif command == 'controlnet_pixelperfect':
+            if value == 'yes' or value == 'on':
+                self.config.update({'controlnet_pixelperfect' : True})
+            elif value == 'no' or value == 'off':
+                self.config.update({'controlnet_pixelperfect' : False})
 
         elif command == 'repeat':
             if value == 'yes':
@@ -1119,6 +1145,15 @@ def create_command(command, output_dir_ext, gpu_id):
 
     if command.get('controlnet_input_image') != "" and command.get('controlnet_model') != "":
         py_command += " --cn-img \"" + str(command.get('controlnet_input_image')) + "\"" + " --cn-model \"" + str(command.get('controlnet_model')) + "\""
+        if command.get('controlnet_controlmode') != "":
+            cmode = 'balanced'
+            if str(command.get('controlnet_controlmode')) == "My prompt is more important":
+                cmode = 'prompt'
+            if str(command.get('controlnet_controlmode')) == "ControlNet is more important":
+                cmode = 'controlnet'
+            py_command += " --cn-cmode " + cmode
+        if command.get('controlnet_pixelperfect') == True:
+            py_command += " --cn-pp"
 
     if command.get('input_image') != "":
         #py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
@@ -1126,6 +1161,9 @@ def create_command(command, output_dir_ext, gpu_id):
 
     if command.get('clip_skip') != "":
         py_command += " --clip-skip " + str(command.get('clip_skip'))
+
+    if command.get('tiling') == True:
+        py_command += " --tiles"
 
     if command.get('width') != "":
         py_command += " --W " + str(command.get('width')) + " --H " + str(command.get('height'))
@@ -1166,7 +1204,10 @@ def extract_params_from_command(command):
         'ckpt_file' : "",
         'controlnet_model' : "",
         'controlnet_input_image' : "",
-        'clip_skip' : ""
+        'controlnet_controlmode' : "",
+        'controlnet_pixelperfect' : "",
+        'clip_skip' : "",
+        'tiling' : ""
     }
 
     if command != "":
@@ -1291,6 +1332,17 @@ def extract_params_from_command(command):
             temp = filename_from_abspath(temp)
             params.update({'controlnet_model' : temp.strip()})
 
+        if '--cn-cmode' in command:
+            temp = command.split('--cn-cmode', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'controlnet_controlmode' : temp.strip()})
+
+        if '--cn-pp' in command:
+            params.update({'controlnet_pixelperfect' : 'yes'})
+
+        if '--tiles' in command:
+            params.update({'tiling' : 'yes'})
 
     return params
 

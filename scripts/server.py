@@ -105,6 +105,11 @@ def build_gallery(control):
                 model = model.split('[', 1)[0].strip()
                 param_string += 'model: ' + model
 
+            if params['tiling'] == 'yes':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'seamless tiling enabled'
+
             if params['controlnet_model'] != '' and params['controlnet_input_image'] != '':
                 if param_string != '':
                     param_string += '  |  '
@@ -112,6 +117,12 @@ def build_gallery(control):
                 model = str(params['controlnet_model'])
                 model = model.split('[', 1)[0].strip()
                 param_string += 'ControlNet enabled: ' + params['controlnet_input_image'] + ' (' + model + ')'
+                if params['controlnet_controlmode'] == 'prompt':
+                    param_string += ' (favor prompt)'
+                elif params['controlnet_controlmode'] == 'controlnet':
+                    param_string += ' (favor ControlNet)'
+                if params['controlnet_pixelperfect'] == 'yes':
+                    param_string += ' (pixel perfect)'
 
             if params['sampler'] != '':
                 if param_string != '':
