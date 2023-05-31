@@ -337,8 +337,8 @@ def build_hypernetwork_reference(control):
             buffer = "none"
         else:
             for h in control.sdi_hypernetworks:
-                cpy = '<hypernet:' + h + ':1.0>'
-                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + h + "</li>\n"
+                cpy = '<hypernet:' + h['name'] + ':1.0>'
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + h['name'] + "</li>\n"
             buffer += "</ul>\n"
     return buffer
 

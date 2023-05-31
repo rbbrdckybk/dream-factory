@@ -22,6 +22,7 @@ from PIL import Image
 from io import BytesIO
 import scripts.utils as utils
 import scripts.metadata as metadata
+import scripts.civitai as civitai
 from os.path import exists
 from datetime import datetime as dt
 from datetime import date
@@ -799,7 +800,7 @@ class Controller:
         self.sdi_model_request_made = False
         self.sdi_models = None
         self.sdi_hypernetwork_request_made = False
-        self.sdi_hypernetworks = None
+        self.sdi_hypernetworks = None               # 2023-05-30 changed to list of dicts
         self.sdi_lora_request_made = False
         self.sdi_loras = None                       # list of dicts
         self.sdi_upscaler_request_made = False
@@ -814,6 +815,9 @@ class Controller:
         self.sdi_img2img_scripts = None
         self.wildcards = None
         self.default_model_validated = False
+        self.civitai_startup_done = False
+        self.civitai_new_stage = False
+        self.civitai_startup_stage = 0
         self.embeddings = []
         self.loras = []
         self.poses = []     # [ path, [filename, str(WxH img dimensions), str(preview ext: '', 'jpg', 'png')] ]
@@ -926,6 +930,241 @@ class Controller:
         self.loras.sort()
 
 
+    # if civitai_integration is enabled in config,
+    # handle calculating hashes of all embeddings, loras, models, hypernets
+    # use hashes to perform lookups on civitai.com & cache info for each
+    # runs on background threads while GPUs do work
+    def civitai_startup(self):
+        if self.config['civitai_use']:
+            cache_dir = 'cache'
+
+            # do LoRA hashes
+            if self.civitai_startup_stage == 0:
+                # build list of loras that exist but aren't in hash cache
+                loras = []
+                for l in self.sdi_loras:
+                    if 'path' in l:
+                        loras.append(l['path'])
+                missing_loras = self.missing_models(loras, os.path.join(cache_dir, 'hashes-lora.txt'))
+
+                # start a worker to calculate hashes for missing models and add to cache
+                if len(missing_loras) > 0:
+                    self.print('Starting background hash calculations for ' + str(len(missing_loras)) + ' LoRA files without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'LoRA')
+                    worker.hashcalc_start(missing_loras)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            # do embedding hashes
+            elif self.civitai_startup_stage == 1:
+                embeddings = []
+                embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
+                for e in self.embeddings:
+                    embeddings.append(os.path.join(embed_dir, e))
+                missing_embeddings = self.missing_models(embeddings, os.path.join(cache_dir, 'hashes-embedding.txt'))
+
+                # start a worker to calculate hashes for missing models and add to cache
+                if len(missing_embeddings) > 0:
+                    self.print('Starting background hash calculations for ' + str(len(missing_embeddings)) + ' embedding files without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'embedding')
+                    worker.hashcalc_start(missing_embeddings)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            # do model hashes
+            elif self.civitai_startup_stage == 2:
+                models = []
+                model_dir = os.path.join(self.config['sd_location'], 'models')
+                model_dir = os.path.join(model_dir, 'Stable-diffusion')
+                for m in self.sdi_models:
+                    if '[' in m:
+                        m = m.split('[', 1)[0].strip()
+                    models.append(os.path.join(model_dir, m))
+                missing_models = self.missing_models(models, os.path.join(cache_dir, 'hashes-model.txt'))
+
+                # check model-triggers.txt for hashes that Auto1111 has already calculated
+                if exists('model-triggers.txt'):
+                    cache_file = os.path.join(cache_dir, 'hashes-model.txt')
+                    lines = ""
+                    with open('model-triggers.txt', 'r', encoding="utf-8") as f:
+                        lines = f.readlines()
+
+                    found_models = []
+                    for x in missing_models:
+                        filename = os.path.basename(x)
+                        found = False
+                        for line in lines:
+                            if filename in line:
+                                if '[' in line and ']' in line:
+                                    # retrieve hash and insert into cache
+                                    hash = line.split('[', 1)[1].strip()
+                                    hash = hash.split(']', 1)[0].strip()
+
+                                    with open(cache_file, 'a') as f:
+                                        f.write(filename + ', ' + hash + '\n')
+
+                                    # save so we can remove when we're done iterating
+                                    found_models.append(x)
+                                    break
+
+                    # remove founds from list of missing models
+                    for m in found_models:
+                        missing_models.remove(m)
+
+                # start a worker to calculate hashes for missing models and add to cache
+                if len(missing_models) > 0:
+                    self.print('Starting background hash calculations for ' + str(len(missing_models)) + ' model files without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'model')
+                    worker.hashcalc_start(missing_models)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            # do hypernet hashes
+            elif self.civitai_startup_stage == 3:
+                hypernets = []
+                for h in self.sdi_hypernetworks:
+                    if 'path' in h:
+                        hypernets.append(h['path'])
+                missing_hypernets = self.missing_models(hypernets, os.path.join(cache_dir, 'hashes-hypernet.txt'))
+
+                # start a worker to calculate hashes for missing models and add to cache
+                if len(missing_hypernets) > 0:
+                    self.print('Starting background hash calculations for ' + str(len(missing_hypernets)) + ' hypernet files without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'hypernetwork')
+                    worker.hashcalc_start(missing_hypernets)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+
+            # do lora civitai lookups
+            elif self.civitai_startup_stage == 4:
+                # build list of lora hashes that exist but aren't in civitai lookup cache
+                hashes = self.fetch_hashes(os.path.join(cache_dir, 'hashes-lora.txt'))
+                missing_hashes = self.missing_hashes(hashes, os.path.join(cache_dir, 'civitai-lora.txt'))
+
+                # start a worker to perform lookups on civitai.com for missing hashes
+                if len(missing_hashes) > 0:
+                    self.print('Starting background civitai.com lookups for ' + str(len(missing_hashes)) + ' LoRA hashes without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'LoRA')
+                    worker.civitai_lookup_start(missing_hashes)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            # do embedding civitai lookups
+            elif self.civitai_startup_stage == 5:
+                hashes = self.fetch_hashes(os.path.join(cache_dir, 'hashes-embedding.txt'))
+                missing_hashes = self.missing_hashes(hashes, os.path.join(cache_dir, 'civitai-embedding.txt'))
+
+                # start a worker to perform lookups on civitai.com for missing hashes
+                if len(missing_hashes) > 0:
+                    self.print('Starting background civitai.com lookups for ' + str(len(missing_hashes)) + ' embedding hashes without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'embedding')
+                    worker.civitai_lookup_start(missing_hashes)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            # do model civitai lookups
+            elif self.civitai_startup_stage == 6:
+                hashes = self.fetch_hashes(os.path.join(cache_dir, 'hashes-model.txt'))
+                missing_hashes = self.missing_hashes(hashes, os.path.join(cache_dir, 'civitai-model.txt'))
+
+                # start a worker to perform lookups on civitai.com for missing hashes
+                if len(missing_hashes) > 0:
+                    self.print('Starting background civitai.com lookups for ' + str(len(missing_hashes)) + ' model hashes without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'model')
+                    worker.civitai_lookup_start(missing_hashes)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            # do hypernet civitai lookups
+            elif self.civitai_startup_stage == 7:
+                hashes = self.fetch_hashes(os.path.join(cache_dir, 'hashes-hypernet.txt'))
+                missing_hashes = self.missing_hashes(hashes, os.path.join(cache_dir, 'civitai-hypernet.txt'))
+
+                # start a worker to perform lookups on civitai.com for missing hashes
+                if len(missing_hashes) > 0:
+                    self.print('Starting background civitai.com lookups for ' + str(len(missing_hashes)) + ' hypernetwork hashes without cache file entries...')
+                    worker = civitai.BackgroundWorker(self, self.config['debug_civitai'], 'hypernetwork')
+                    worker.civitai_lookup_start(missing_hashes)
+                else:
+                    self.civitai_startup_stage += 1
+                    self.civitai_new_stage = True
+
+            else:
+                self.civitai_new_stage = False
+                self.civitai_startup_stage = 999
+
+        else:
+            self.civitai_new_stage = False
+            self.civitai_startup_stage = 999
+            self.print('Civitai integration disabled via config.txt; skipping civitai.com lookup checks...')
+
+
+    # returns list of models that exist but aren't in hash cache
+    # full_list is a list of filenames (can be full paths, will be shortened)
+    # cache_location is path to corresponding cache file
+    def missing_models(self, full_list, cache_location):
+        missing = []
+        if exists(cache_location):
+            lines = ""
+            with open(cache_location, 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+            for x in full_list:
+                filename = os.path.basename(x)
+                found = False
+                for line in lines:
+                    if filename in line:
+                        found = True
+                        break
+                if not found:
+                    missing.append(x)
+        else:
+            # no cache, assume everything is missing
+            missing = full_list
+        return missing
+
+    # returns list of hashes that exist but aren't in hash cache
+    # full_list is a list of hashes
+    # cache_location is path to corresponding cache file
+    def missing_hashes(self, full_list, cache_location):
+        missing = []
+        if exists(cache_location):
+            lines = ""
+            with open(cache_location, 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+            for x in full_list:
+                found = False
+                for line in lines:
+                    if x in line:
+                        found = True
+                        break
+                if not found:
+                    missing.append(x)
+        else:
+            # no cache, assume everything is missing
+            missing = full_list
+        return missing
+
+    # get list of hashes from specified cache file
+    def fetch_hashes(self, cache_location):
+        hashes = []
+        if exists(cache_location):
+            lines = ""
+            with open(cache_location, 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+            for line in lines:
+                if ',' in line:
+                    hash = line.split(',', 1)[1].strip()
+                    hashes.append(hash)
+        return hashes
+
     # checks for presense of controlnet extension
     def init_controlnet(self):
         cn_dir = os.path.join(self.config['sd_location'], 'extensions')
@@ -1033,6 +1272,7 @@ class Controller:
             'output_location' : 'output',
             'use_gpu_devices' : 'auto',
             'webserver_use' : True,
+            'civitai_use' : False,      # BK TODO update to True when finished
             'webserver_port' : 80,
             'webserver_network_accessible' : False,
             'webserver_use_authentication' : False,
@@ -1046,6 +1286,7 @@ class Controller:
             'webserver_open_browser' : True,
             'webserver_console_log' : False,
             'debug_test_mode' : False,
+            'debug_civitai' : False,
             'random_queue_size' : 50,
             'editor_max_styling_chars' : 80000,
             'jpg_quality' : 88,
@@ -1129,6 +1370,13 @@ class Controller:
                                 self.config.update({'webserver_use' : True})
                             else:
                                 self.config.update({'webserver_use' : False})
+
+                    elif command == 'civitai_integration':
+                        if value == 'yes' or value == 'no':
+                            if value == 'yes':
+                                self.config.update({'civitai_use' : True})
+                            else:
+                                self.config.update({'civitai_use' : False})
 
                     elif command == 'webserver_port':
                         try:
@@ -1223,6 +1471,13 @@ class Controller:
                                 self.config.update({'debug_test_mode' : True})
                             else:
                                 self.config.update({'debug_test_mode' : False})
+
+                    elif command == 'debug_civitai':
+                        if value == 'yes' or value == 'no':
+                            if value == 'yes':
+                                self.config.update({'debug_civitai' : True})
+                            else:
+                                self.config.update({'debug_civitai' : False})
 
                     elif command == 'pf_auto_insert_model_trigger':
                         if value == 'start' or value == 'end' or value == 'first_comma' or value == 'off' or 'keyword:' in value:
@@ -2118,6 +2373,18 @@ if __name__ == '__main__':
                 worker['sdi_instance'].get_server_controlnet_modules()
                 control.sdi_controlnet_pre_request_made = True
                 skip = True
+
+            if not control.civitai_startup_done and control.default_model_validated and control.sdi_loras is not None:
+                # start background hashes and civitai lookups if civitai integration is enabled
+                control.civitai_startup_done = True
+                control.civitai_new_stage = False
+                control.civitai_startup()
+
+            if control.civitai_startup_done and control.civitai_new_stage and control.civitai_startup_stage <= 20:
+                # work through various stages of background work for civitai integration
+                # stages are incremented via callbacks as worker threads finish the prior stage
+                control.civitai_new_stage = False
+                control.civitai_startup()
 
             # worker is idle, start some work
             if not control.is_paused and not skip and control.default_model_validated:

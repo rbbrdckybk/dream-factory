@@ -628,8 +628,13 @@ class SDI:
         r = response.json()
         networks = []
         for i in r:
-            networks.append(i['name'])
-
+            if 'name' in i:
+                network = {}
+                network['name'] = i['name']
+                if 'path' in i:
+                    network['path'] = i['path']
+                networks.append(network)
+            
         self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
         self.control_ref.sdi_hypernetworks = networks
         self.busy = False
