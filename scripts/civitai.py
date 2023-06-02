@@ -66,24 +66,46 @@ class CivitaiFetcher(threading.Thread):
                         nsfw = 'nsfw'
                     #description = data['description']
                     self.print('Found hash ' + hash + ': ' + str(model_id) + ': ' + model_name + ' (' + version_name + ')')
+
+                    # remove non-triggers (e.g. '<lora:xxx:xxx>')
+                    # grab default weight if possible
+                    lora_weight = '1.0'
+                    bad_triggers = []
+                    for t in triggers:
+                        if '<' in t and '>' in t:
+                            bad_triggers.append(t)
+                            trig = t.split('<', 1)[1]
+                            trig = trig.split('>', 1)[0]
+                            if ':' in trig:
+                                weight = trig.rsplit(':', 1)[1]
+                                try:
+                                    float(weight)
+                                except ValueError:
+                                    pass
+                                else:
+                                    if float(weight) > 0 and float(weight) < 1:
+                                        lora_weight = str(weight)
+
+                    for t in bad_triggers:
+                        triggers.remove(t)
+
+                    # write info to cache file
                     #info += str(model_id) + ';' + model_name + ';' + version_name + ';' + baseModel + ';' + nsfw
-                    info += str(model_id) + ';' + model_name + ';' + baseModel + ';' + nsfw
-                    if len(triggers) == 0:
-                        #print('    -> Trigger: none')
-                        info += ';'
-                    elif len(triggers) == 1:
-                        #print('    -> Trigger: ' + triggers[0])
-                        info += ';' + triggers[0].strip()
-                    else:
-                        #print('    -> Triggers: multiple ' + str(triggers))
-                        tw = ''
-                        count = 0
-                        for trig in triggers:
-                            if count > 0:
-                                tw += ','
-                            tw += trig.strip()
-                            count += 1
-                        info += ';' + tw
+                    info += str(model_id) + ';' + model_name + ';' + baseModel + ';' + nsfw + ';'
+
+                    tw = ''
+                    count = 0
+                    for trig in triggers:
+                        if count > 0:
+                            tw += ','
+                        tw += trig.strip()
+                        count += 1
+                    info += tw
+
+                    # add default weight for loras
+                    if 'lora' in self.model_type_desc.lower() or 'hypernet' in self.model_type_desc.lower():
+                        info += ';' + lora_weight
+
                     if info not in cache:
                         with open(filename, 'a', encoding="utf-8") as f:
                             f.write(info + '\n')

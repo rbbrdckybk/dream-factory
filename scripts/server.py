@@ -276,7 +276,7 @@ def build_prompt_dropdown(control):
 def build_sampler_reference(control):
     buffer = ""
     if control.sdi_samplers == None:
-        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available samplers here."
+        buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available samplers here."
     else:
         buffer += "<div class=\"modal-help-header-pre\"><p>These samplers may be assigned to the !SAMPLER directive. Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
         buffer += "<div class=\"modal-help-header\">Samplers:</div>\n"
@@ -291,34 +291,101 @@ def build_sampler_reference(control):
 def build_model_reference(control):
     buffer = ""
     if control.sdi_models == None:
-        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available models here."
+        buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available models here."
     else:
         buffer += "<div class=\"modal-help-header-pre\"><p>These models may be assigned to the !CKPT_FILE directive. Add additional model files to your Automatic1111 models folder and restart Dream Factory to have them appear here.</p>\n"
         if control.model_trigger_words != None and len(control.model_trigger_words) > 0:
             if control.config.get('auto_insert_model_trigger') != 'off':
-                buffer += "<p>Asterisked trigger words will be automatically added "
+                buffer += "<p>Trigger words (right column beside each model name) will be automatically added "
                 if control.config.get('auto_insert_model_trigger') == 'first_comma':
                     buffer += "after the first comma in the prompt (or at the end, if there are no commas) when using the associated model."
                 else:
                     buffer += "at the " + control.config.get('auto_insert_model_trigger') + " of the prompt when using the associated model."
             else:
-                buffer += "<p>Asterisked trigger words will be automatically added to prompts when the associated model is in use."
+                buffer += "<p>Trigger words (right column beside each model name) will be automatically added to prompts when the associated model is in use."
             buffer += " You may override the automatic placement of trigger words with the !AUTO_INSERT_MODEL_TRIGGER directive (off, start, end, first_comma).</p>"
         else:
             buffer += "<p>Note that you may add model trigger words to the 'model-triggers.txt' file in your Dream Factory directory to have them automatically added to your prompts.</p>"
         buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
         buffer += "<div class=\"modal-help-header\">Models:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
+
+        # organize into subdirs
+        subdirs = []
         for m in control.sdi_models:
-            trigger = None
-            if control.model_trigger_words != None:
-                trigger = control.model_trigger_words.get(m)
-            m = m.split('[', 1)[0].strip()
-            cpy = '!CKPT_FILE = ' + m.replace("\\", "\\\\")
-            if trigger != None:
-                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*" + trigger + ")</li>\n"
-            else:
-                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + m + "</li>\n"
+            path = os.path.dirname(m['name'])
+            if path not in subdirs:
+                subdirs.append(path)
+        subdirs.sort()
+        if '' in subdirs:
+            # move base dir to end
+            subdirs.remove('')
+            subdirs.append('')
+
+        for subdir in subdirs:
+            subdir_display = subdir
+            if subdir_display == '':
+                subdir_display = '(root)'
+            buffer += "<details open>"
+            buffer += "<summary><li class=\"no-bullets-head\"\">" + subdir_display + "</li></summary>\n"
+            for m in control.sdi_models:
+                path = os.path.dirname(m['name'])
+                if path == subdir:
+                    trigger = None
+                    if control.model_trigger_words != None:
+                        trigger = control.model_trigger_words.get(m['name'])
+                    m['name'] = m['name'].split('[', 1)[0].strip()
+                    cpy = '!CKPT_FILE = ' + m['name'].replace("\\", "\\\\")
+                    filename = os.path.basename(m['name'])
+
+                    # civitai integration stuff
+                    civitai_link = '&nbsp;<img src=\"img/spacer.png\" height=\"20\" />'
+                    civitai_id = ''
+                    civitai_title = ''
+                    civitai_base_model = '&nbsp;'
+                    civitai_nsfw = '&nbsp;'
+                    civitai_triggers = ''
+                    if control.config['civitai_use']:
+                        if 'civitai_id' in m:
+                            civitai_id = m['civitai_id']
+                            c_path = 'https://civitai.com/models/' + str(civitai_id)
+                            civitai_link = '&nbsp;&nbsp;<a target=\"_blank\" href=\"' + c_path + '\"><img src=\"img/civitai_logo.png\" alt=\"view on civitai.com\"/></a>'
+                            civitai_title =  m['civitai_title']
+                            if civitai_title != '':
+                                filename = civitai_title
+                            civitai_base_model = m['civitai_base_model']
+                            if 'sd' not in civitai_base_model.lower():
+                                civitai_base_model = ''
+                            if m['civitai_nsfw']:
+                                civitai_nsfw = 'nsfw'
+                            count = 0
+                            for t in m['civitai_triggers']:
+                                if count > 0:
+                                    civitai_triggers += ', '
+                                civitai_triggers += t
+                                count += 1
+
+                    # model-triggers.txt trigger overrides civitai.com
+                    if trigger != None:
+                        civitai_triggers = trigger
+
+                    civitai_triggers_display = civitai_triggers
+                    if len(civitai_triggers_display) > 83:
+                        civitai_triggers_display = civitai_triggers_display[0:83] + '..'
+
+                    filename_display = filename
+                    if len(filename_display) > 83:
+                        filename_display = filename_display[0:83] + '..'
+
+                    buffer += '<div class=\"pose-row\">'
+                    buffer += '<div class=\"pose-column-short\">' + civitai_link + '</div>'
+                    buffer += "<div class=\"pose-column-very-long\"><li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + filename_display + "</li></div>"
+                    buffer += '<div class=\"pose-column-med\">' + civitai_base_model + '</div>'
+                    #buffer += '<div class=\"pose-column-short\">' + civitai_nsfw + '</div>'
+                    buffer += "<div class=\"pose-column-med-long\"><li class=\"no-bullets\" onclick=\"copyText('" + civitai_triggers + "')\">" + civitai_triggers_display + "</li></div>"
+                    buffer += '</div>'
+
+            buffer += "</details>"
         buffer += "</ul>\n"
     return buffer
 
@@ -326,7 +393,7 @@ def build_model_reference(control):
 def build_hypernetwork_reference(control):
     buffer = ""
     if control.sdi_hypernetworks == None:
-        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available hypernetworks here."
+        buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available hypernetworks here."
     else:
         buffer += "<div class=\"modal-help-header-pre\"><p>These hypernetworks may be included in your prompts (use &lt;hypernet:[hypernetwork name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\hypernetworks\' folder and restart Dream Factory to have them appear here.</p>\n"
         buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
@@ -346,7 +413,7 @@ def build_hypernetwork_reference(control):
 def build_wildcard_reference(control):
     buffer = ""
     if control.wildcards == None:
-        buffer = "Reload this page after Stable Diffusion has finished initializing to see a list of your available wildcards here."
+        buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available wildcards here."
     else:
         buffer += "<div class=\"modal-help-header-pre\"><p>These wildcards may be included in your prompts. Add additional wildcard files to '" + control.config.get('wildcard_location') + "' and restart Dream Factory to have them appear here.</p>\n"
         buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
@@ -375,7 +442,7 @@ def build_embedding_reference(control):
         buffer += "<ul class=\"no-bullets\">\n"
         keys = []
         for e in control.embeddings:
-            embed = e.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
+            embed = e['name']
             cpy = embed
             buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + cpy + "</li>\n"
         buffer += "</ul>\n"
@@ -383,22 +450,24 @@ def build_embedding_reference(control):
 
 
 def build_lora_reference(control):
-    buffer = ""
-    buffer += "<div class=\"modal-help-header-pre\"><p>These LoRA files may be included in your prompts (use &lt;lora:[LoRA name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\Lora\' folder and restart Dream Factory to have them appear here.</p>\n"
-    buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
-    buffer += "<div class=\"modal-help-header\">LoRA files:</div>\n"
-    buffer += "<ul class=\"no-bullets\">\n"
-
-    if len(control.loras) == 0:
-        #buffer += "none"
-        buffer = "none"
+    if control.sdi_loras == None:
+        buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available LoRAs here."
     else:
-        for e in control.loras:
-            lora = e.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
-            cpy = '<lora:' + lora + ':1.0>'
-            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + lora + "</li>\n"
-        buffer += "</ul>\n"
+        buffer = ""
+        buffer += "<div class=\"modal-help-header-pre\"><p>These LoRA files may be included in your prompts (use &lt;lora:[LoRA name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\Lora\' folder and restart Dream Factory to have them appear here.</p>\n"
+        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        buffer += "<div class=\"modal-help-header\">LoRA files:</div>\n"
+        buffer += "<ul class=\"no-bullets\">\n"
 
+        if len(control.sdi_loras) == 0:
+            #buffer += "none"
+            buffer = "none"
+        else:
+            for e in control.sdi_loras:
+                lora = e['name']
+                cpy = '<lora:' + lora + ':1.0>'
+                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + lora + "</li>\n"
+            buffer += "</ul>\n"
     return buffer
 
 

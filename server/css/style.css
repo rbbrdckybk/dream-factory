@@ -799,6 +799,11 @@ li.no-bullets:hover {
   width: 500px;
 }
 
+.pose-column-very-long {
+  float: left;
+  width: 580px;
+}
+
 .pose-column {
   float: left;
   width: 100px;
@@ -807,6 +812,16 @@ li.no-bullets:hover {
 .pose-column-short {
   float: left;
   width: 40px;
+}
+
+.pose-column-med {
+  float: left;
+  width: 85px;
+}
+
+.pose-column-med-long {
+  float: left;
+  width: 320px;
 }
 
 .pose-row:after {

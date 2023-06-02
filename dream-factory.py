@@ -798,11 +798,13 @@ class Controller:
         self.models_filename = 'model-triggers.txt'
         self.model_trigger_words = None
         self.sdi_model_request_made = False
-        self.sdi_models = None
+        self.sdi_models = None                      # 2023-05-30 changed to list of dicts
         self.sdi_hypernetwork_request_made = False
         self.sdi_hypernetworks = None               # 2023-05-30 changed to list of dicts
         self.sdi_lora_request_made = False
-        self.sdi_loras = None                       # list of dicts
+        self.sdi_loras = None                       # replaced self.loras with this, list of dicts
+        self.embeddings = []                        # 2023-05-30 changed to list of dicts
+        self.poses = []                             # [ path, [filename, str(WxH img dimensions), str(preview ext: '', 'jpg', 'png')] ]
         self.sdi_upscaler_request_made = False
         self.sdi_upscalers = None
         self.sdi_controlnet_available = False
@@ -818,9 +820,6 @@ class Controller:
         self.civitai_startup_done = False
         self.civitai_new_stage = False
         self.civitai_startup_stage = 0
-        self.embeddings = []
-        self.loras = []
-        self.poses = []     # [ path, [filename, str(WxH img dimensions), str(preview ext: '', 'jpg', 'png')] ]
         # for queuing multiple models to apply to prompt files
         self.models = []
         self.model_index = 0
@@ -912,8 +911,12 @@ class Controller:
         if os.path.exists(embed_dir):
             for x in os.listdir(embed_dir):
                 if x.endswith('.pt') or x.endswith('.bin') or x.endswith('.safetensors'):
-                    self.embeddings.append(x)
-        self.embeddings.sort()
+                    dict = {}
+                    dict['name'] = x.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
+                    dict['path'] = os.path.join(embed_dir, x)
+                    self.embeddings.append(dict)
+        #self.embeddings.sort()
+        self.embeddings = sorted(self.embeddings, key=lambda d: d['name'].lower())
 
 
     # checks for user lora files in Auto1111 embeddings dir
@@ -961,7 +964,7 @@ class Controller:
                 embeddings = []
                 embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
                 for e in self.embeddings:
-                    embeddings.append(os.path.join(embed_dir, e))
+                    embeddings.append(os.path.join(embed_dir, e['name']))
                 missing_embeddings = self.missing_models(embeddings, os.path.join(cache_dir, 'hashes-embedding.txt'))
 
                 # start a worker to calculate hashes for missing models and add to cache
@@ -979,9 +982,10 @@ class Controller:
                 model_dir = os.path.join(self.config['sd_location'], 'models')
                 model_dir = os.path.join(model_dir, 'Stable-diffusion')
                 for m in self.sdi_models:
-                    if '[' in m:
-                        m = m.split('[', 1)[0].strip()
-                    models.append(os.path.join(model_dir, m))
+                    short_name = m['name']
+                    if '[' in short_name:
+                        short_name = short_name.split('[', 1)[0].strip()
+                    models.append(os.path.join(model_dir, short_name))
                 missing_models = self.missing_models(models, os.path.join(cache_dir, 'hashes-model.txt'))
 
                 # check model-triggers.txt for hashes that Auto1111 has already calculated
@@ -1097,7 +1101,15 @@ class Controller:
                     self.civitai_startup_stage += 1
                     self.civitai_new_stage = True
 
+            # all hashing/lookups are complete;
+            # load all civitai info back into appropriate dictionaries
             else:
+                self.load_civitai_info_from_cache("model", self.sdi_models)
+                self.load_civitai_info_from_cache("lora", self.sdi_loras)
+                self.load_civitai_info_from_cache("hypernet", self.sdi_hypernetworks)
+                self.load_civitai_info_from_cache("embedding", self.embeddings)
+
+                # all civitai work complete
                 self.civitai_new_stage = False
                 self.civitai_startup_stage = 999
 
@@ -1105,6 +1117,78 @@ class Controller:
             self.civitai_new_stage = False
             self.civitai_startup_stage = 999
             self.print('Civitai integration disabled via config.txt; skipping civitai.com lookup checks...')
+
+
+    # loads civitai info from cache directory
+    # model_type_desc is "model", "lora", "hypernet", "embedding"
+    # list_ref corresponds to the list of dicts for that model_type_desc
+    def load_civitai_info_from_cache(self, model_type_desc, list_ref):
+        cache_dir = 'cache'
+        hash_file = 'hashes-' + model_type_desc + '.txt'
+        cache_file = 'civitai-' + model_type_desc + '.txt'
+        hash_path = os.path.join(cache_dir, hash_file)
+        cache_path = os.path.join(cache_dir, cache_file)
+        passed = True
+        if not exists(hash_path):
+            self.print('warning: ' + model_type_desc + ' hash file not found!')
+            passed = False
+        if not exists(cache_path):
+            self.print('warning: ' + model_type_desc + ' cache file not found!')
+            passed = False
+
+        if passed:
+            # read hash and cache files into memory
+            hash_lines = ''
+            with open(hash_path, encoding = 'utf-8') as f:
+                hash_lines = f.readlines()
+            cache_lines = ''
+            with open(cache_path, encoding = 'utf-8') as f:
+                cache_lines = f.readlines()
+
+            # iterate through each file in ref list and look for hash in hash file
+            for x in list_ref:
+                list_name = x['name']
+                if model_type_desc.lower() == 'model':
+                    if '[' in list_name:
+                        list_name = list_name.split('[', 1)[0].strip()
+
+                name = os.path.basename(list_name)
+                for line in hash_lines:
+                    if name in line:
+                        # found line containing hash info
+                        hash = line.split(',', 1)[1].strip()
+                        x['hash'] = hash
+                        break
+
+            # iterate through each file in ref list and try to match
+            # assigned hash with entry in civitai cache file
+            for x in list_ref:
+                if 'hash' in x:
+                    hash = x['hash']
+                    for line in cache_lines:
+                        if hash in line:
+                            # found line containing cache info
+                            if ';' in line:
+                                info = line.split(';')
+                                # try to read info into list_ref dict
+                                try:
+                                    x['civitai_id'] = info[1].strip()
+                                    x['civitai_title'] = info[2].strip()
+                                    x['civitai_base_model'] = info[3].strip()
+                                    x['civitai_nsfw'] = False
+                                    if info[4].lower().strip() == 'nsfw':
+                                        x['civitai_nsfw'] = True
+                                    x['civitai_triggers'] = []
+                                    if info[5].strip() != '':
+                                         triggers = info[5].split(',')
+                                         for t in triggers:
+                                             t = t.replace('\n', '').strip()
+                                             x['civitai_triggers'].append(t)
+                                    if 'lora' in model_type_desc.lower() or 'hypernet' in model_type_desc.lower():
+                                        x['civitai_weight'] = info[6].strip('\n', '').strip()
+                                except:
+                                    pass
+                            break
 
 
     # returns list of models that exist but aren't in hash cache
@@ -2122,17 +2206,17 @@ class Controller:
                 found = False
                 for line in lines:
                     # remove hash from m if present for compare
-                    compare_m = m
-                    if '[' in m and ']' in m:
-                        compare_m = m.split('[', 1)[0].strip()
+                    compare_m = m['name']
+                    if '[' in m['name'] and ']' in m['name']:
+                        compare_m = m['name'].split('[', 1)[0].strip()
                     if compare_m in line:
                         found = True
-                        new_line = self.hash_check(line, m)
+                        new_line = self.hash_check(line, m['name'])
                         if new_line != '':
                             updates.append([line, new_line])
                         break
                 if not found:
-                    missing.append(m)
+                    missing.append(m['name'])
 
             # handle updates if necessary
             if len(updates) > 0:
@@ -2216,9 +2300,9 @@ class Controller:
         if len(model) > 5:
             if self.sdi_models != None:
                 for m in self.sdi_models:
-                    if model.lower() in m.lower():
+                    if model.lower() in m['name'].lower():
                         # case-insensitive partial match; use the exact casing from the server
-                        validated_model = m
+                        validated_model = m['name']
                         break
         return validated_model
 

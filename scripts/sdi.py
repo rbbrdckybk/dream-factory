@@ -634,8 +634,9 @@ class SDI:
                 if 'path' in i:
                     network['path'] = i['path']
                 networks.append(network)
-            
+
         self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
+        networks = sorted(networks, key=lambda d: d['name'].lower())
         self.control_ref.sdi_hypernetworks = networks
         self.busy = False
 
@@ -650,22 +651,11 @@ class SDI:
                 lora['name'] = i['name']
                 if 'path' in i:
                     lora['path'] = i['path']
-                if 'metadata' in i:
-                    if 'ss_sd_model_hash' in i['metadata']:
-                        # no hashes in metadata appear to correspond to a civitai hash
-                        #lora['hash'] = i['metadata']['ss_sd_model_hash']
-                        pass
                 loras.append(lora)
 
         self.log('received LoRA query response: SD indicates ' + str(len(loras)) + ' LoRAs available for use...', True)
+        loras = sorted(loras, key=lambda d: d['name'].lower())
         self.control_ref.sdi_loras = loras
-
-        llist = []
-        for l in loras:
-            llist.append(l['name'])
-        llist.sort()
-        self.control_ref.loras = llist
-
         self.busy = False
 
 
@@ -720,18 +710,20 @@ class SDI:
     # handle server model response
     def model_response(self, response):
         r = response.json()
-
         models = []
-        model_str = ''
         for i in r:
-            models.append(i['title'])
-            model_str += '   - ' + i['title'] + '\n'
+            if 'title' in i:
+                model = {}
+                model['name'] = i['title']
+                if 'filename' in i:
+                    model['path'] = i['filename']
+                models.append(model)
 
-        #self.log('Server indicates the following models are available for use:\n' + model_str)
         self.log('received model query response: SD indicates ' + str(len(models)) + ' models available for use...', True)
 
         # send models to controller
-        models.sort()
+        #models.sort()
+        models = sorted(models, key=lambda d: d['name'].lower())
         self.control_ref.update_models(models)
 
         # reload prompt file if we have one to validate it against models
