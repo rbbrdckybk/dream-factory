@@ -50,7 +50,7 @@ Some UI screenshots:
  * Remote management. Access and fully manage your Dream Factory installation from anywhere (and easily download your created images in bulk as .zip files!). Can be configured to be accessible via LAN, WAN (internet), or just locally on the computer that Dream Factory is running on. Includes very basic HTTP-based authentication for WAN access.
  * Integrated optional [ESRGAN upscaling](https://github.com/xinntao/ESRGAN) with [GFPGAN face correction](https://xinntao.github.io/projects/gfpgan). 
  * A special prompt file type for batch processing of existing images: automated upscaling, IPTC metadata tagging, image renaming, etc!
- * Easy setup. If you can download a file and copy & paste a few lines ([see below](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#setup)), you can get this working. Uses Anaconda so Dream Factory will happily run alongside other Stable Diffusion repos without disturbing them.
+ * Easy setup. If you can download a file and copy & paste a few lines ([see below](https://github.com/rbbrdckybk/dream-factory/main/README.md#setup)), you can get this working. Uses Anaconda so Dream Factory will happily run alongside other Stable Diffusion repos without disturbing them.
 
 # Requirements
 
@@ -370,7 +370,7 @@ Sets an input image for use with ControlNet.
 ```
 !CONTROLNET_INPUT_IMAGE = poses\examples\openpose-standing_arms_in_front.png
 ```
-The above example will use **openpose-standing_arms_in_front.png** as the ControlNet input image. Note that this will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet model via the [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_model) directive.
+The above example will use **openpose-standing_arms_in_front.png** as the ControlNet input image. Note that this will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet model via the [!CONTROLNET_MODEL](https://github.com/rbbrdckybk/dream-factory/main/README.md#controlnet_model) directive.
 
 You may clear previously-set input images by issuing another directive to set it to nothing (!CONTROLNET_INPUT_IMAGE = ).
 
@@ -384,9 +384,9 @@ Sets the ControlNet model to use.
 ```
 !CONTROLNET_MODEL = openpose
 ```
-You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet models. Note that setting a ControlNet model will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
+You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet models. Note that setting a ControlNet model will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/main/README.md#controlnet_input_image) directive.
 
-Note that you may optionally specify **auto** for !CONTROLNET_MODEL (or **auto, [default]**) if you want Dream Factory to extract the model from your [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) filename(s). You must name your image in the following format for this to work: ```[ControlNet model to use]-[rest of filename].ext```. For example, an image named **openpose-standing_arms_in_front.png** would indicate that the openpose model should be used when !CONTROLNET_MODEL = auto.
+Note that you may optionally specify **auto** for !CONTROLNET_MODEL (or **auto, [default]**) if you want Dream Factory to extract the model from your [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/main/README.md#controlnet_input_image) filename(s). You must name your image in the following format for this to work: ```[ControlNet model to use]-[rest of filename].ext```. For example, an image named **openpose-standing_arms_in_front.png** would indicate that the openpose model should be used when !CONTROLNET_MODEL = auto.
 ```
 !CONTROLNET_MODEL = auto, depth
 ```
@@ -398,7 +398,7 @@ Sets the ControlNet preprocessor to use. This is used to "extract" pose informat
 ```
 !CONTROLNET_PRE = openpose
 ```
-You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet preprocessors. Note that setting a ControlNet preprocessor will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/edit/main/README.md#controlnet_input_image) directive.
+You may press control-H (or press the appropriate button) within the integrated editor to open a reference that displays your available ControlNet preprocessors. Note that setting a ControlNet preprocessor will have no effect if you do not have the ControlNet extension installed, and/or you do not also specify a ControlNet input image via the [!CONTROLNET_INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/main/README.md#controlnet_input_image) directive.
 #### !CONTROLNET_GUESSMODE
 *GUESSMODE is no longer supported as of CN extension v1.1.09 - see below for the replacement!*
 
