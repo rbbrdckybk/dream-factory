@@ -37,8 +37,7 @@ OUTPUT_LOCATION = output
 # Use civitai.com integration in the editor (yes/no)?
 # If yes, will attempt to grab some basic info about your models, loras, embeddings, etc from civitai.com 
 # and display it in the integrated editor reference. 
-# WIP - leave disabled for now!
-CIVITAI_INTEGRATION = no
+CIVITAI_INTEGRATION = yes
 
 # Use the webserver (yes/no)? This is required to use the browser interface.
 WEBSERVER_USE = yes

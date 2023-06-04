@@ -282,7 +282,7 @@ class Worker(threading.Thread):
             scribble_mode = False
             cn_params = [64, 64, 64]
             img2img = False
-            if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and self.command.get('controlnet_model') != '':
+            if control.sdi_controlnet_available and self.command.get('controlnet_input_image') != '' and (self.command.get('controlnet_model') != '' or 'reference' in self.command.get('controlnet_pre')):
                 use_controlnet = True
                 if self.command.get('input_image') != '':
                     img2img = True
@@ -909,12 +909,27 @@ class Controller:
         self.embeddings = []
         embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
         if os.path.exists(embed_dir):
+            # get root dir files
             for x in os.listdir(embed_dir):
                 if x.endswith('.pt') or x.endswith('.bin') or x.endswith('.safetensors'):
                     dict = {}
                     dict['name'] = x.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
                     dict['path'] = os.path.join(embed_dir, x)
                     self.embeddings.append(dict)
+
+            # 2023-06-04 get subdir files
+            for entry in os.scandir(embed_dir):
+                if entry.is_dir():
+                    subdir = os.path.join(embed_dir, entry.name)
+                    for subdir_entry in os.scandir(subdir):
+                       if subdir_entry.is_file():
+                           x = subdir_entry.name.lower()
+                           if x.endswith('.pt') or x.endswith('.bin') or x.endswith('.safetensors'):
+                               dict = {}
+                               dict['name'] = x.replace('.pt', '').replace('.bin', '').replace('.safetensors', '')
+                               dict['path'] = os.path.join(subdir, subdir_entry.name)
+                               self.embeddings.append(dict)
+
         #self.embeddings.sort()
         self.embeddings = sorted(self.embeddings, key=lambda d: d['name'].lower())
 
@@ -964,7 +979,8 @@ class Controller:
                 embeddings = []
                 embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
                 for e in self.embeddings:
-                    embeddings.append(os.path.join(embed_dir, e['name']))
+                    filename = os.path.basename(e['path'])
+                    embeddings.append(os.path.join(embed_dir, filename))
                 missing_embeddings = self.missing_models(embeddings, os.path.join(cache_dir, 'hashes-embedding.txt'))
 
                 # start a worker to calculate hashes for missing models and add to cache
@@ -1119,10 +1135,34 @@ class Controller:
             self.print('Civitai integration disabled via config.txt; skipping civitai.com lookup checks...')
 
 
+    # returns the short subdir of a given model path
+    # e.g. full path minus the base path of SD
+    def model_subdir(self, full_path):
+        sd_path = self.config['sd_location']
+        path = full_path.replace(sd_path, '')
+
+        if '\\models\\lora\\' in path.lower():
+            path = re.sub('\\\\models\\\\lora\\\\', '', path, flags=re.IGNORECASE)
+        if '/models/lora/' in path.lower():
+            path = re.sub('/models/lora/', '', path, flags=re.IGNORECASE)
+
+        if '\\models\\hypernetworks\\' in path.lower():
+            path = re.sub('\\\\models\\\\hypernetworks\\\\', '', path, flags=re.IGNORECASE)
+        if '/models/hypernetworks/' in path.lower():
+            path = re.sub('/models/hypernetworks/', '', path, flags=re.IGNORECASE)
+
+        if '\\embeddings\\' in path.lower():
+            path = re.sub('\\\\embeddings\\\\', '', path, flags=re.IGNORECASE)
+        if '/embeddings/' in path.lower():
+            path = re.sub('/embeddings/', '', path, flags=re.IGNORECASE)
+
+        return path
+
+
     # loads civitai info from cache directory
     # model_type_desc is "model", "lora", "hypernet", "embedding"
     # list_ref corresponds to the list of dicts for that model_type_desc
-    def load_civitai_info_from_cache(self, model_type_desc, list_ref):
+    def load_civitai_info_from_cache(self, model_type_desc, list_ref, suppress_warnings=False):
         cache_dir = 'cache'
         hash_file = 'hashes-' + model_type_desc + '.txt'
         cache_file = 'civitai-' + model_type_desc + '.txt'
@@ -1130,10 +1170,12 @@ class Controller:
         cache_path = os.path.join(cache_dir, cache_file)
         passed = True
         if not exists(hash_path):
-            self.print('warning: ' + model_type_desc + ' hash file not found!')
+            if not suppress_warnings:
+                self.print('warning: ' + model_type_desc + ' hash file not found!')
             passed = False
         if not exists(cache_path):
-            self.print('warning: ' + model_type_desc + ' cache file not found!')
+            if not suppress_warnings:
+                self.print('warning: ' + model_type_desc + ' cache file not found!')
             passed = False
 
         if passed:
@@ -1185,7 +1227,7 @@ class Controller:
                                              t = t.replace('\n', '').strip()
                                              x['civitai_triggers'].append(t)
                                     if 'lora' in model_type_desc.lower() or 'hypernet' in model_type_desc.lower():
-                                        x['civitai_weight'] = info[6].strip('\n', '').strip()
+                                        x['civitai_weight'] = info[6].replace('\n', '').strip()
                                 except:
                                     pass
                             break
@@ -1356,7 +1398,7 @@ class Controller:
             'output_location' : 'output',
             'use_gpu_devices' : 'auto',
             'webserver_use' : True,
-            'civitai_use' : False,      # BK TODO update to True when finished
+            'civitai_use' : True,
             'webserver_port' : 80,
             'webserver_network_accessible' : False,
             'webserver_use_authentication' : False,
@@ -2389,6 +2431,29 @@ if __name__ == '__main__':
                     # init this worker as long as we're not already at the init limit
                     worker['sdi_instance'].initialize()
 
+        # do background civitai hash/lookup work
+        if not control.civitai_startup_done \
+                and control.default_model_validated \
+                and control.sdi_hypernetworks is not None \
+                and control.sdi_loras is not None:
+            # start background hashes and civitai lookups if civitai integration is enabled
+            control.civitai_startup_done = True
+            control.civitai_new_stage = False
+
+            # do an initial cache load, another will be done after all lookups complete
+            control.load_civitai_info_from_cache("model", control.sdi_models, True)
+            control.load_civitai_info_from_cache("lora", control.sdi_loras, True)
+            control.load_civitai_info_from_cache("hypernet", control.sdi_hypernetworks, True)
+            control.load_civitai_info_from_cache("embedding", control.embeddings, True)
+
+            control.civitai_startup()
+
+        if control.civitai_startup_done and control.civitai_new_stage and control.civitai_startup_stage <= 20:
+            # work through various stages of background work for civitai integration
+            # stages are incremented via callbacks as worker threads finish the prior stage
+            control.civitai_new_stage = False
+            control.civitai_startup()
+
         # check for idle workers
         worker = control.get_idle_gpu_worker()
         skip = False
@@ -2457,18 +2522,6 @@ if __name__ == '__main__':
                 worker['sdi_instance'].get_server_controlnet_modules()
                 control.sdi_controlnet_pre_request_made = True
                 skip = True
-
-            if not control.civitai_startup_done and control.default_model_validated and control.sdi_loras is not None:
-                # start background hashes and civitai lookups if civitai integration is enabled
-                control.civitai_startup_done = True
-                control.civitai_new_stage = False
-                control.civitai_startup()
-
-            if control.civitai_startup_done and control.civitai_new_stage and control.civitai_startup_stage <= 20:
-                # work through various stages of background work for civitai integration
-                # stages are incremented via callbacks as worker threads finish the prior stage
-                control.civitai_new_stage = False
-                control.civitai_startup()
 
             # worker is idle, start some work
             if not control.is_paused and not skip and control.default_model_validated:

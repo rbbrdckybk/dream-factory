@@ -225,7 +225,7 @@ class PromptManager():
             'controlnet_model' : "",
             'controlnet_lowvram' : False,
             'controlnet_guessmode' : False,
-            'controlnet_controlmode' : 0,
+            'controlnet_controlmode' : "Balanced",
             'controlnet_pixelperfect' : False,
             'strength' : 0.75,
             'min_strength' : 0.0,
@@ -1116,12 +1116,12 @@ def create_command(command, output_dir_ext, gpu_id):
 
     #py_command = "python scripts/txt2img.py"
     py_command = 'txt2img:'
-    if command.get('controlnet_input_image') != '' and command.get('controlnet_model') != '':
+    if command.get('controlnet_input_image') != '' and (command.get('controlnet_model') != '' or 'reference' in command.get('controlnet_pre')):
         py_command = 'txt2img with ControlNet:'
 
     if command.get('input_image') != '':
         #py_command = "python scripts/img2img.py"
-        if command.get('controlnet_input_image') != '' and command.get('controlnet_model') != '':
+        if command.get('controlnet_input_image') != '' and (command.get('controlnet_model') != '' or 'reference' in command.get('controlnet_pre')):
             py_command = 'img2img with ControlNet:'
         else:
             py_command = 'img2img:'
@@ -1143,8 +1143,11 @@ def create_command(command, output_dir_ext, gpu_id):
     if neg_prompt != "":
         py_command += " --neg_prompt \"" + neg_prompt + "\"" \
 
-    if command.get('controlnet_input_image') != "" and command.get('controlnet_model') != "":
+    if command.get('controlnet_input_image') != "" and (command.get('controlnet_model') != "" or 'reference' in command.get('controlnet_pre')):
+        if command.get('controlnet_model') == "":
+            command['controlnet_model'] = 'reference image only'
         py_command += " --cn-img \"" + str(command.get('controlnet_input_image')) + "\"" + " --cn-model \"" + str(command.get('controlnet_model')) + "\""
+
         if command.get('controlnet_controlmode') != "":
             cmode = 'balanced'
             if str(command.get('controlnet_controlmode')) == "My prompt is more important":

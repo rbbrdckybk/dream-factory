@@ -110,7 +110,7 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += 'seamless tiling enabled'
 
-            if params['controlnet_model'] != '' and params['controlnet_input_image'] != '':
+            if params['controlnet_input_image'] != '' and (params['controlnet_model'] != '' or 'reference' in params['controlnet_pre']):
                 if param_string != '':
                     param_string += '  |  '
                 # remove the hash from the model string
@@ -337,6 +337,7 @@ def build_model_reference(control):
                     m['name'] = m['name'].split('[', 1)[0].strip()
                     cpy = '!CKPT_FILE = ' + m['name'].replace("\\", "\\\\")
                     filename = os.path.basename(m['name'])
+                    filename_display = filename
 
                     # civitai integration stuff
                     civitai_link = '&nbsp;<img src=\"img/spacer.png\" height=\"20\" />'
@@ -352,10 +353,11 @@ def build_model_reference(control):
                             civitai_link = '&nbsp;&nbsp;<a target=\"_blank\" href=\"' + c_path + '\"><img src=\"img/civitai_logo.png\" alt=\"view on civitai.com\"/></a>'
                             civitai_title =  m['civitai_title']
                             if civitai_title != '':
-                                filename = civitai_title
-                            civitai_base_model = m['civitai_base_model']
+                                filename_display = civitai_title
+                            if m['civitai_base_model'] != '':
+                                civitai_base_model = m['civitai_base_model']
                             if 'sd' not in civitai_base_model.lower():
-                                civitai_base_model = ''
+                                civitai_base_model = '&nbsp;'
                             if m['civitai_nsfw']:
                                 civitai_nsfw = 'nsfw'
                             count = 0
@@ -373,7 +375,6 @@ def build_model_reference(control):
                     if len(civitai_triggers_display) > 83:
                         civitai_triggers_display = civitai_triggers_display[0:83] + '..'
 
-                    filename_display = filename
                     if len(filename_display) > 83:
                         filename_display = filename_display[0:83] + '..'
 
@@ -396,16 +397,89 @@ def build_hypernetwork_reference(control):
         buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available hypernetworks here."
     else:
         buffer += "<div class=\"modal-help-header-pre\"><p>These hypernetworks may be included in your prompts (use &lt;hypernet:[hypernetwork name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\hypernetworks\' folder and restart Dream Factory to have them appear here.</p>\n"
-        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        if not control.config['civitai_use']:
+            buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        else:
+            buffer += "<p>Click on an item to copy it to the clipboard and close this reference. If hypernet trigger(s) are available from civitai.com, click them to copy both the hypernetwork reference and trigger word(s) to the clipboard.</p></div>\n"
         buffer += "<div class=\"modal-help-header\">Hypernetworks:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         if len(control.sdi_hypernetworks) == 0:
             #buffer += "none"
             buffer = "none"
         else:
-            for h in control.sdi_hypernetworks:
-                cpy = '<hypernet:' + h['name'] + ':1.0>'
-                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + h['name'] + "</li>\n"
+            # organize into subdirs
+            subdirs = []
+            for m in control.sdi_hypernetworks:
+                path = os.path.dirname(control.model_subdir(m['path']))
+                if path not in subdirs:
+                    subdirs.append(path)
+            subdirs.sort()
+            if '' in subdirs:
+                # move base dir to end
+                subdirs.remove('')
+                subdirs.append('')
+
+            for subdir in subdirs:
+                subdir_display = subdir
+                if subdir_display == '':
+                    subdir_display = '(root)'
+                buffer += "<details open>"
+                buffer += "<summary><li class=\"no-bullets-head\"\">" + subdir_display + "</li></summary>\n"
+                for m in control.sdi_hypernetworks:
+                    path = os.path.dirname(control.model_subdir(m['path']))
+                    if path == subdir:
+                        filename = os.path.basename(m['name'])
+                        filename_display = filename
+                        cpy = '<lora:' + filename + ':1.0>'
+
+                        # civitai integration stuff
+                        civitai_link = '&nbsp;<img src=\"img/spacer.png\" height=\"20\" />'
+                        civitai_id = ''
+                        civitai_title = ''
+                        civitai_base_model = '&nbsp;'
+                        civitai_nsfw = '&nbsp;'
+                        civitai_triggers = ''
+                        if control.config['civitai_use']:
+                            if 'civitai_id' in m:
+                                civitai_id = m['civitai_id']
+                                c_path = 'https://civitai.com/models/' + str(civitai_id)
+                                civitai_link = '&nbsp;&nbsp;<a target=\"_blank\" href=\"' + c_path + '\"><img src=\"img/civitai_logo.png\" alt=\"view on civitai.com\"/></a>'
+                                civitai_title =  m['civitai_title']
+                                if civitai_title != '':
+                                    filename_display = civitai_title
+                                if m['civitai_base_model'] != '':
+                                    civitai_base_model = m['civitai_base_model']
+                                if 'sd' not in civitai_base_model.lower():
+                                    civitai_base_model = '&nbsp;'
+                                if m['civitai_nsfw']:
+                                    civitai_nsfw = 'nsfw'
+                                count = 0
+                                for t in m['civitai_triggers']:
+                                    if count > 0:
+                                        civitai_triggers += ', '
+                                    civitai_triggers += t
+                                    count += 1
+
+                                if 'civitai_weight' in m:
+                                    if m['civitai_weight'] != '':
+                                        cpy = '<lora:' + filename + ':' + str(m['civitai_weight']) + '>'
+
+                        civitai_triggers_display = civitai_triggers
+                        if len(civitai_triggers_display) > 83:
+                            civitai_triggers_display = civitai_triggers_display[0:83] + '..'
+
+                        if len(filename_display) > 83:
+                            filename_display = filename_display[0:83] + '..'
+
+                        buffer += '<div class=\"pose-row\">'
+                        buffer += '<div class=\"pose-column-short\">' + civitai_link + '</div>'
+                        buffer += "<div class=\"pose-column-very-long\"><li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + filename_display + "</li></div>"
+                        buffer += '<div class=\"pose-column-med\">' + civitai_base_model + '</div>'
+                        #buffer += '<div class=\"pose-column-short\">' + civitai_nsfw + '</div>'
+                        buffer += "<div class=\"pose-column-med-long\"><li class=\"no-bullets\" onclick=\"copyText('" + civitai_triggers + ' ' + cpy + "')\">" + civitai_triggers_display + "</li></div>"
+                        buffer += '</div>'
+
+                buffer += "</details>"
             buffer += "</ul>\n"
     return buffer
 
@@ -441,32 +515,172 @@ def build_embedding_reference(control):
         buffer += "<div class=\"modal-help-header\">Embeddings:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
         keys = []
-        for e in control.embeddings:
-            embed = e['name']
-            cpy = embed
-            buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + cpy + "</li>\n"
+
+        # organize into subdirs
+        subdirs = []
+        for m in control.embeddings:
+            path = os.path.dirname(control.model_subdir(m['path']))
+            if path not in subdirs:
+                subdirs.append(path)
+        subdirs.sort()
+        if '' in subdirs:
+            # move base dir to end
+            subdirs.remove('')
+            subdirs.append('')
+
+        for subdir in subdirs:
+            subdir_display = subdir
+            if subdir_display == '':
+                subdir_display = '(root)'
+            buffer += "<details open>"
+            buffer += "<summary><li class=\"no-bullets-head\"\">" + subdir_display + "</li></summary>\n"
+
+            for m in control.embeddings:
+                path = os.path.dirname(control.model_subdir(m['path']))
+                if path == subdir:
+                    filename = os.path.basename(m['name'])
+                    filename_display = filename
+                    cpy = filename
+
+                    # civitai integration stuff
+                    civitai_link = '&nbsp;<img src=\"img/spacer.png\" height=\"20\" />'
+                    civitai_id = ''
+                    civitai_title = ''
+                    civitai_base_model = '&nbsp;'
+                    civitai_nsfw = '&nbsp;'
+                    civitai_triggers = ''
+                    if control.config['civitai_use']:
+                        if 'civitai_id' in m:
+                            civitai_id = m['civitai_id']
+                            c_path = 'https://civitai.com/models/' + str(civitai_id)
+                            civitai_link = '&nbsp;&nbsp;<a target=\"_blank\" href=\"' + c_path + '\"><img src=\"img/civitai_logo.png\" alt=\"view on civitai.com\"/></a>'
+                            civitai_title =  m['civitai_title']
+                            if civitai_title != '':
+                                filename_display = civitai_title
+                            if m['civitai_base_model'] != '':
+                                civitai_base_model = m['civitai_base_model']
+                            if 'sd' not in civitai_base_model.lower():
+                                civitai_base_model = '&nbsp;'
+                            if m['civitai_nsfw']:
+                                civitai_nsfw = 'nsfw'
+                            count = 0
+                            for t in m['civitai_triggers']:
+                                if count > 0:
+                                    civitai_triggers += ', '
+                                if t.lower() != cpy.lower():
+                                    civitai_triggers += t
+                                    count += 1
+
+                    civitai_triggers_display = civitai_triggers
+                    if len(civitai_triggers_display) > 83:
+                        civitai_triggers_display = civitai_triggers_display[0:83] + '..'
+
+                    if len(filename_display) > 83:
+                        filename_display = filename_display[0:83] + '..'
+
+                    buffer += '<div class=\"pose-row\">'
+                    buffer += '<div class=\"pose-column-short\">' + civitai_link + '</div>'
+                    buffer += "<div class=\"pose-column-very-long\"><li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + filename_display + "</li></div>"
+                    buffer += '<div class=\"pose-column-med\">' + civitai_base_model + '</div>'
+                    #buffer += '<div class=\"pose-column-short\">' + civitai_nsfw + '</div>'
+                    buffer += "<div class=\"pose-column-med-long\"><li class=\"no-bullets\" onclick=\"copyText('" + civitai_triggers + ' ' + cpy + "')\">" + civitai_triggers_display + "</li></div>"
+                    buffer += '</div>'
+
+            buffer += "</details>"
         buffer += "</ul>\n"
     return buffer
 
 
 def build_lora_reference(control):
+    buffer = ""
     if control.sdi_loras == None:
         buffer = "Reload this page after Dream Factory has finished initializing to see a list of your available LoRAs here."
     else:
         buffer = ""
         buffer += "<div class=\"modal-help-header-pre\"><p>These LoRA files may be included in your prompts (use &lt;lora:[LoRA name]:[weighting]&gt; or simply click an item to copy it to the clipboard in the proper format). Add additional files to your Automatic1111 \'\\models\\Lora\' folder and restart Dream Factory to have them appear here.</p>\n"
-        buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        if not control.config['civitai_use']:
+            buffer += "<p>Click on an item to copy it to the clipboard and close this reference.</p></div>\n"
+        else:
+            buffer += "<p>Click on an item to copy it to the clipboard and close this reference. If LoRA trigger(s) are available from civitai.com, click them to copy both the LoRA reference and trigger word(s) to the clipboard.</p></div>\n"
         buffer += "<div class=\"modal-help-header\">LoRA files:</div>\n"
         buffer += "<ul class=\"no-bullets\">\n"
-
         if len(control.sdi_loras) == 0:
             #buffer += "none"
             buffer = "none"
         else:
-            for e in control.sdi_loras:
-                lora = e['name']
-                cpy = '<lora:' + lora + ':1.0>'
-                buffer += "<li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + lora + "</li>\n"
+            # organize into subdirs
+            subdirs = []
+            for m in control.sdi_loras:
+                path = os.path.dirname(control.model_subdir(m['path']))
+                if path not in subdirs:
+                    subdirs.append(path)
+            subdirs.sort()
+            if '' in subdirs:
+                # move base dir to end
+                subdirs.remove('')
+                subdirs.append('')
+
+            for subdir in subdirs:
+                subdir_display = subdir
+                if subdir_display == '':
+                    subdir_display = '(root)'
+                buffer += "<details open>"
+                buffer += "<summary><li class=\"no-bullets-head\"\">" + subdir_display + "</li></summary>\n"
+                for m in control.sdi_loras:
+                    path = os.path.dirname(control.model_subdir(m['path']))
+                    if path == subdir:
+                        filename = os.path.basename(m['name'])
+                        filename_display = filename
+                        cpy = '<lora:' + filename + ':1.0>'
+
+                        # civitai integration stuff
+                        civitai_link = '&nbsp;<img src=\"img/spacer.png\" height=\"20\" />'
+                        civitai_id = ''
+                        civitai_title = ''
+                        civitai_base_model = '&nbsp;'
+                        civitai_nsfw = '&nbsp;'
+                        civitai_triggers = ''
+                        if control.config['civitai_use']:
+                            if 'civitai_id' in m:
+                                civitai_id = m['civitai_id']
+                                c_path = 'https://civitai.com/models/' + str(civitai_id)
+                                civitai_link = '&nbsp;&nbsp;<a target=\"_blank\" href=\"' + c_path + '\"><img src=\"img/civitai_logo.png\" alt=\"view on civitai.com\"/></a>'
+                                civitai_title =  m['civitai_title']
+                                if civitai_title != '':
+                                    filename_display = civitai_title
+                                if m['civitai_base_model'] != '':
+                                    civitai_base_model = m['civitai_base_model']
+                                if 'sd' not in civitai_base_model.lower():
+                                    civitai_base_model = '&nbsp;'
+                                if m['civitai_nsfw']:
+                                    civitai_nsfw = 'nsfw'
+                                count = 0
+                                for t in m['civitai_triggers']:
+                                    if count > 0:
+                                        civitai_triggers += ', '
+                                    civitai_triggers += t
+                                    count += 1
+
+                                if 'civitai_weight' in m:
+                                    if m['civitai_weight'] != '':
+                                        cpy = '<lora:' + filename + ':' + str(m['civitai_weight']) + '>'
+
+                        civitai_triggers_display = civitai_triggers
+                        if len(civitai_triggers_display) > 83:
+                            civitai_triggers_display = civitai_triggers_display[0:83] + '..'
+
+                        if len(filename_display) > 83:
+                            filename_display = filename_display[0:83] + '..'
+
+                        buffer += '<div class=\"pose-row\">'
+                        buffer += '<div class=\"pose-column-short\">' + civitai_link + '</div>'
+                        buffer += "<div class=\"pose-column-very-long\"><li class=\"no-bullets\" onclick=\"copyText('" + cpy + "')\">" + filename_display + "</li></div>"
+                        buffer += '<div class=\"pose-column-med\">' + civitai_base_model + '</div>'
+                        #buffer += '<div class=\"pose-column-short\">' + civitai_nsfw + '</div>'
+                        buffer += "<div class=\"pose-column-med-long\"><li class=\"no-bullets\" onclick=\"copyText('" + civitai_triggers + ' ' + cpy + "')\">" + civitai_triggers_display + "</li></div>"
+                        buffer += '</div>'
+
+                buffer += "</details>"
             buffer += "</ul>\n"
     return buffer
 
