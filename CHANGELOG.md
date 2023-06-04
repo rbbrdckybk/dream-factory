@@ -6,6 +6,17 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.06.04]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **b6af0a3809ea869fb180633f9affcae4b199ffcf**
+
+### Added
+- Added [civitai.com](https://civitai.com/) integration. Dream Factory will attempt to gather and cache information about your models, loras, embeddings, and hypernets from civitai.com in the background after every startup (e.g. friendly names, trigger words, base SD model). This info will be shown in the integrated editor reference. You may completely disable this functionality by adding **CIVITAI_INTEGRATION = no** to your Dream Factory config.txt file.
+- Added editor reference support for subdirectories in your lora, embedding, and hypernet folders.
+
+### Fixed
+- The default [ControlNet control mode](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_controlmode) has been set to 'balanced', which should resolve errors when not setting it yourself while using ControlNet.
+- Setting ControlNet's pre-processor to one of the reference modes (e.g.: **!CONTROLNET_PRE = reference_only**) should now allow ControlNet to activate without having to specify a ControlNet model.
+
 ## [2023.05.29]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **20ae71faa8ef035c31aa3a410b707d792c8203a3**
 
