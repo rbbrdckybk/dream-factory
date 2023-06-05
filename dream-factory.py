@@ -979,8 +979,9 @@ class Controller:
                 embeddings = []
                 embed_dir = os.path.join(self.config['sd_location'], 'embeddings')
                 for e in self.embeddings:
-                    filename = os.path.basename(e['path'])
-                    embeddings.append(os.path.join(embed_dir, filename))
+                    #filename = os.path.basename(e['path'])
+                    #embeddings.append(os.path.join(embed_dir, filename))
+                    embeddings.append(e['path'])
                 missing_embeddings = self.missing_models(embeddings, os.path.join(cache_dir, 'hashes-embedding.txt'))
 
                 # start a worker to calculate hashes for missing models and add to cache
