@@ -306,6 +306,8 @@ Sets the upscaling model to use.
 !UPSCALE_MODEL = esrgan
 ```
 Note that this will perform a substring match on any upscalers you have installed with Auto1111. In this case, **ESRGAN_4x*** should be selected (and is also the default).
+
+In **!MODE = PROCESS** .prompts files, you may additionally specify **!UPSCALE_MODEL = SD**. This is a special option that uses Stable Diffusion's img2img engine to upscale your images. This will take much longer than other methods and requires a lot of GPU VRAM to reach large image sizes (~12GB of VRAM is required to output 2048x2048 images), but will potentially produce higher quality results with the ability to add detail. *To use this option, you must first add MAX_OUTPUT_SIZE to your Dream Factory config.txt file (see config-default.txt for explanation).*
 #### !UPSCALE_AMOUNT
 The factor to upscale by. Setting !UPSCALE_AMOUNT = 2 will double the width and height of an image (resulting in quadruple the resolution). Has no effect unless !USE_UPSCALE = yes.
 ```
