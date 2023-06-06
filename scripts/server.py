@@ -812,8 +812,12 @@ def build_worker_panel(workers):
                     if worker["work_state"] == 'upscaling':
                         prompt_text += ' -> currently upscaling: \'' + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image')) + '\' ...'
 
-                        prompt_options_text = 'upscaler: ' + worker["job_prompt_info"].get('upscale_model')
-                        prompt_options_text += ' | factor: ' + str(worker["job_prompt_info"].get('upscale_amount')) + 'x'
+                        if worker["job_prompt_info"].get('upscale_model') != 'sd':
+                            prompt_options_text = 'upscaler: ' + worker["job_prompt_info"].get('upscale_model')
+                            prompt_options_text += ' | factor: ' + str(worker["job_prompt_info"].get('upscale_amount')) + 'x'
+                        else:
+                            prompt_options_text = 'upscaler: SD'
+                            prompt_options_text += ' | factor: auto'
                         if float(worker["job_prompt_info"].get('upscale_gfpgan_amount')) > 0:
                             prompt_options_text += ' | GFPGAN amount: ' + str(worker["job_prompt_info"].get('upscale_gfpgan_amount'))
                         else:

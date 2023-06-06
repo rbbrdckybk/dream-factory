@@ -71,6 +71,7 @@ class Worker(threading.Thread):
         original_filename = ''
         original_exif = {}
         original_iptc = {}
+        original_command = {}
         process_mode = False
         if not int(self.command.get('seed')) > 0:
             self.command['seed'] = -1
@@ -439,6 +440,18 @@ class Worker(threading.Thread):
             process_mode = True
             original_exif = metadata.read_exif(self.command.get('input_image'))
             original_iptc = metadata.read_iptc(self.command.get('input_image'))
+
+            if self.command['use_upscale'] == 'yes' and self.command['upscale_model'] == 'sd':
+                # get original image parameters if we're doing a SD upscale
+                original_details = ''
+                if original_exif != None:
+                    try:
+                        original_details = original_exif[0x9c9c].decode('utf16')
+                    except KeyError as e:
+                        pass
+                    else:
+                        original_command = utils.extract_params_from_command(original_details)
+
             original_filename = utils.filename_from_abspath(self.command.get('input_image')).lower().strip()
             # remove extension
             original_filename = original_filename[:-4]
@@ -537,23 +550,113 @@ class Worker(threading.Thread):
                                 encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
                             encodedString = str(encoded, encoding='utf-8')
                             img_payload = 'data:image/png;base64,' + encodedString
-                            payload = {
-                                #"resize_mode": 0,
-                                #"show_extras_results": true,
-                                "gfpgan_visibility": self.command['upscale_gfpgan_amount'],
-                                "codeformer_visibility": self.command['upscale_codeformer_amount'],
-                                #"codeformer_weight": 0,
-                                "upscaling_resize": self.command['upscale_amount'],
-                                #"upscaling_resize_w": 512,
-                                #"upscaling_resize_h": 512,
-                                #"upscaling_crop": true,
-                                "upscaler_1": self.command['upscale_model'],
-                                #"upscaler_2": "None",
-                                #"extras_upscaler_2_visibility": 0,
-                                #"upscale_first": false,
-                                "image": img_payload
-                            }
-                            self.worker['sdi_instance'].do_upscale(payload, samples_dir)
+                            if self.command['upscale_model'] != 'sd':
+                                # normal upscale
+                                payload = {
+                                    #"resize_mode": 0,
+                                    #"show_extras_results": true,
+                                    "gfpgan_visibility": self.command['upscale_gfpgan_amount'],
+                                    "codeformer_visibility": self.command['upscale_codeformer_amount'],
+                                    #"codeformer_weight": 0,
+                                    "upscaling_resize": self.command['upscale_amount'],
+                                    #"upscaling_resize_w": 512,
+                                    #"upscaling_resize_h": 512,
+                                    #"upscaling_crop": true,
+                                    "upscaler_1": self.command['upscale_model'],
+                                    #"upscaler_2": "None",
+                                    #"extras_upscaler_2_visibility": 0,
+                                    #"upscale_first": false,
+                                    "image": img_payload
+                                }
+                                self.worker['sdi_instance'].do_upscale(payload, samples_dir)
+                            else:
+                                # SD upscale uses img2img
+                                # use whatever params we can find in original image
+
+                                sd_sampler = str(self.command.get('sampler'))
+                                if "sampler" in original_command:
+                                    sd_sampler = original_command['sampler']
+
+                                sd_prompt = str(self.command.get('prompt'))
+                                if "prompt" in original_command:
+                                    sd_prompt = original_command['prompt']
+
+                                sd_neg_prompt = str(self.command.get('neg_prompt'))
+                                if "neg_prompt" in original_command:
+                                    sd_neg_prompt = original_command['neg_prompt']
+
+                                sd_seed = str(self.command.get('seed'))
+                                if "seed" in original_command:
+                                    try:
+                                        sd_seed = int(original_command['seed'])
+                                    except:
+                                        pass
+
+                                sd_steps = self.command.get('steps')
+                                if "steps" in original_command:
+                                    try:
+                                        sd_steps = int(original_command['steps'])
+                                    except:
+                                        pass
+
+                                sd_scale = self.command.get('scale')
+                                if "scale" in original_command:
+                                    try:
+                                        sd_scale = float(original_command['scale'])
+                                    except:
+                                        pass
+
+                                sd_tiling = self.command.get('tiling')
+                                if "tiling" in original_command:
+                                    if original_command['tiling'] == 'yes':
+                                        sd_tiling = True
+                                    else:
+                                        sd_tiling = False
+
+                                # calculate max output size
+                                orig_width = 0
+                                orig_height = 0
+                                with Image.open(self.command.get('input_image')) as img:
+                                    orig_width, orig_height = img.size
+
+                                sd_width = 512
+                                sd_height = 512
+                                new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], control.config.get('max_output_size'))
+
+                                if new_dimensions != []:
+                                    sd_width = new_dimensions[0]
+                                    sd_height = new_dimensions[1]
+                                else:
+                                    control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
+
+                                # check if a model change is needed before upscaling
+                                sd_model = str(self.command.get('ckpt_file'))
+                                if "ckpt_file" in original_command:
+                                    sd_model = original_command['ckpt_file']
+                                if sd_model != '' and (sd_model != self.worker['sdi_instance'].model_loaded):
+                                    self.worker['sdi_instance'].load_model(sd_model)
+                                    while self.worker['sdi_instance'].options_change_in_progress:
+                                        # wait for model change to complete
+                                        time.sleep(0.25)
+
+                                payload = {
+                                  "init_images": [img_payload],
+                                  "sampler_index": str(sd_sampler),
+                                  #"resize_mode": 0,
+                                  "denoising_strength": self.command.get('upscale_sd_strength'),
+                                  "prompt": str(sd_prompt),
+                                  "seed": str(sd_seed),
+                                  "batch_size": 1,
+                                  "n_iter": 1,
+                                  "steps": sd_steps,
+                                  "cfg_scale": sd_scale,
+                                  "width": sd_width,
+                                  "height": sd_height,
+                                  #"restore_faces": False,
+                                  "tiling": sd_tiling,
+                                  "negative_prompt": sd_neg_prompt
+                                }
+                                self.worker['sdi_instance'].do_img2img(payload, samples_dir)
                             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                                 time.sleep(0.25)
 
@@ -610,7 +713,10 @@ class Worker(threading.Thread):
                         upscale_text = ""
                         if self.command['use_upscale'] == 'yes':
                             upscale_text = " (upscaled "
-                            upscale_text += str(self.command['upscale_amount']) + "x via " + self.command['upscale_model'] + ")"
+                            if self.command['upscale_model'] != 'sd':
+                                upscale_text += str(self.command['upscale_amount']) + "x via " + self.command['upscale_model'] + ")"
+                            else:
+                                upscale_text += 'via SD upscale @ ' + str(self.command.get('upscale_sd_strength')) + ' strength)'
 
                         pngImage = PngImageFile(samples_dir + "/" + f)
                         im = pngImage.convert('RGB')
@@ -817,6 +923,7 @@ class Controller:
         self.sdi_img2img_scripts = None
         self.wildcards = None
         self.default_model_validated = False
+        self.max_output_size = 0
         self.civitai_startup_done = False
         self.civitai_new_stage = False
         self.civitai_startup_stage = 0
@@ -1417,6 +1524,7 @@ class Controller:
             'random_queue_size' : 50,
             'editor_max_styling_chars' : 80000,
             'jpg_quality' : 88,
+            'max_output_size' : 0,
 
             'auto_insert_model_trigger' : 'start',
             'neg_prompt' : '',
@@ -1432,6 +1540,7 @@ class Controller:
             'upscale_keep_org' : "no",
             'upscale_codeformer_amount' : 0.0,
             'upscale_gfpgan_amount' : 0.0,
+            'upscale_sd_strength' : 0.3,
             'upscale_model' : "ESRGAN_4x",
             'ckpt_file' : "",
             'filename' : "",
@@ -1592,6 +1701,19 @@ class Controller:
                             else:
                                 print("*** WARNING: specified 'JPG_QUALITY' value must be between 1-100!")
 
+                    elif command == 'max_output_size':
+                        value = value.replace(',', '').strip()
+                        if value != '':
+                            try:
+                                int(value)
+                            except:
+                                print("*** WARNING: specified 'MAX_OUTPUT_SIZE' is not a valid number; it will be ignored!")
+                            else:
+                                if int(value) > 262144:
+                                    self.config.update({'max_output_size' : int(value)})
+                                else:
+                                    print("*** WARNING: specified 'MAX_OUTPUT_SIZE' is very low; it will be ignored!")
+
                     elif command == 'debug_test_mode':
                         if value == 'yes' or value == 'no':
                             if value == 'yes':
@@ -1700,6 +1822,14 @@ class Controller:
                             print("*** WARNING: specified 'PF_UPSCALE_GFPGAN_AMOUNT' is not a valid number; it will be ignored!")
                         else:
                             self.config.update({'upscale_gfpgan_amount' : float(value)})
+
+                    elif command == 'pf_upscale_sd_strength':
+                        try:
+                            float(value)
+                        except:
+                            print("*** WARNING: specified 'PF_UPSCALE_SD_STRENGTH' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'upscale_sd_strength' : float(value)})
 
                     elif command == 'pf_upscale_keep_org':
                         if value == 'yes' or value == 'no':
@@ -2361,6 +2491,12 @@ class Controller:
                         # case-insensitive partial match; use the exact casing from the server
                         validated_model = m
                         break
+        elif model.lower() == 'sd':
+            # allow 'sd' for SD upscaling if the user has specified a max output size
+            if self.config['max_output_size'] > 0:
+                validated_model = 'sd'
+            else:
+                self.print("*** WARNING: You may not use !UPSCALE_MODEL = SD without setting MAX_OUTPUT_SIZE in your Dream Factory config.txt first! ***")
         return validated_model
 
 

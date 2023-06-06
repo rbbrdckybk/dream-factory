@@ -86,6 +86,15 @@ EDITOR_MAX_STYLING_CHARS = 80000
 # Higher values result in overall better image quality at the cost of larger file sizes.
 JPG_QUALITY = 88
 
+# Set the maximum output image size that your GPU is capable of producing, in total pixels
+# It's best to input a value about 10% less than your max txt2img images
+# for example, if you can generate a 1280x1280 image, then input 1470000 
+# (1280 x 1280 = 1,638,400 pixels, minus 10% is roughly 1,470,000)
+# You may need some trial and error here, keep lowering until you don't get errors
+# This is used when calculating the final size for automatic SD upscales
+# If you set this to a number that's too high, you'll get errors!
+MAX_OUTPUT_SIZE = 
+
 # You can set your own defaults for prompt file settings below.
 # Settings specified in individual prompt files will always override these.
 
@@ -101,6 +110,7 @@ PF_UPSCALE_MODEL = ESRGAN_4x		# default upscaler to use
 PF_UPSCALE_AMOUNT = 2.0				# upscaling factor (2 means you'll get an image with double the width and height of the original)
 PF_UPSCALE_CODEFORMER_AMOUNT = 0.0	# visibility of codeformer face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_GFPGAN_AMOUNT = 0.0		# visibility of gfpgan face enhancement (0 = off, 1 = full effect)
+PF_UPSCALE_SD_STRENGTH = 0.3		# denoising strength when using SD upscale
 PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?
 PF_NEG_PROMPT = 					# if you have a 'catch all' negative prompt you typically use, enter it here
 PF_FILENAME =						# set a default custom filename: https://github.com/rbbrdckybk/dream-factory#filename
@@ -116,7 +126,6 @@ PF_CKPT_FILE =
 # first_comma = after the first comma (or end if prompt contains no commas)
 # you must edit the model-triggers.txt file (auto-generated after first run) for these to work
 PF_AUTO_INSERT_MODEL_TRIGGER = start
-
 
 # Set the number of prompts to queue at once when using prompt files set to random mode.
 # The only real reason you'd want to change this is if you're specifying multiple models (with !CKPT_FILE = model1, model2, etc).

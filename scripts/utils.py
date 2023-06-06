@@ -14,6 +14,7 @@ import glob
 import os
 import itertools
 import copy
+import scripts.metadata as metadata
 from zipfile import ZipFile
 from os.path import exists, isdir, basename
 from datetime import datetime as dt
@@ -252,6 +253,7 @@ class PromptManager():
             'upscale_amount' : self.control.config['upscale_amount'],
             'upscale_codeformer_amount' : self.control.config['upscale_codeformer_amount'],
             'upscale_gfpgan_amount' : self.control.config['upscale_gfpgan_amount'],
+            'upscale_sd_strength' : self.control.config['upscale_sd_strength'],
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
             'upscale_model' : self.control.config['upscale_model'],
             'filename' : self.control.config['filename'],
@@ -471,6 +473,15 @@ class PromptManager():
                     self.control.print("*** WARNING: specified 'UPSCALE_GFPGAN_AMOUNT' is not a valid number; it will be ignored!")
                 else:
                     self.config.update({'upscale_gfpgan_amount' : value})
+
+        elif command == 'upscale_sd_strength':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    self.control.print("*** WARNING: specified 'UPSCALE_SD_STRENGTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'upscale_sd_strength' : value})
 
         elif command == 'upscale_keep_org':
             if value == 'yes' or value == 'no':
@@ -975,6 +986,35 @@ class PromptManager():
                     if os.path.isdir(work['input_image']):
                         # input image is a directory, add a work item for each file
                         files = get_images_in_dir(work['input_image'])
+
+                        # if these are going to be SD upscaled, then
+                        # sort files by model used to minimize loads
+                        if work['use_upscale'] == 'yes' and work['upscale_model'] == 'sd':
+                            sorted_files = []
+                            for x in files:
+                                fm = {}
+                                fm['file'] = x
+                                original_exif = metadata.read_exif(x)
+                                if original_exif != None:
+                                    original_details = ''
+                                    try:
+                                        original_details = original_exif[0x9c9c].decode('utf16')
+                                    except KeyError as e:
+                                        # no model metadata
+                                        fm['model'] = ''
+                                    else:
+                                        # grab model
+                                        original_command = extract_params_from_command(original_details)
+                                        fm['model'] = original_command['ckpt_file']
+                                else:
+                                    fm['model'] = ''
+                                sorted_files.append(fm)
+                            sorted_files = sorted(sorted_files, key=lambda d: d['model'].lower())
+                            files = []
+                            for fm in sorted_files:
+                                files.append(fm['file'])
+
+
                         if len(files) > 0:
                             subdir_processed = True
                             for f in files:
@@ -1584,6 +1624,64 @@ def resize_based_on_longest_dimension(new_long_dimension, original_dimensions):
         else:
             output_dimensions = [int(new_short_dimension), int(new_long_dimension)]
 
+    return output_dimensions
+
+
+# given original dimensions [width, height] and maximum pixel size of new image
+# return the largest possible dimensions under the max_pixels size
+# while preserving aspect ratio of original image
+def get_largest_possible_image_size(original_dimensions, max_pixels):
+    output_dimensions = []
+    orig_width = 0
+    orig_height = 0
+    try:
+        orig_width = original_dimensions[0]
+        orig_height = original_dimensions[1]
+    except:
+        pass
+    else:
+        orig_size = orig_width * orig_height
+        if orig_size < max_pixels:
+
+            width_larger = True
+            if orig_width >= orig_height:
+                smaller = orig_height
+                larger = orig_width
+            else:
+                width_larger = False
+                smaller = orig_width
+                larger = orig_height
+
+            current_larger = larger
+            current_smaller = smaller
+
+            # divide smaller by larger to get ratio (e.g. 768 / 1024 = 0.75)
+            ratio = smaller / larger
+
+            # increment the larger, then calculate the smaller based on aspect ratio
+            # continue until the total exceeds the max allowed
+            done = False
+            while not done:
+                current_total = current_larger * current_smaller
+                if current_total >= max_pixels:
+                    done = True
+                else:
+                    current_larger += 1
+                    current_smaller = current_larger * ratio
+
+            # ensure results are divisible by 64; round down to nearest 64 if not
+            current_larger = int(current_larger)
+            if current_larger % 64 != 0:
+                current_larger = (current_larger // 64) * 64
+            current_smaller = int(current_smaller)
+            if current_smaller % 64 != 0:
+                current_smaller = (current_smaller // 64) * 64
+
+            # return max dimensions
+            if width_larger:
+                output_dimensions = [current_larger, current_smaller]
+            else:
+                output_dimensions = [current_smaller, current_larger]
     return output_dimensions
 
 
