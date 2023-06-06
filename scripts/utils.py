@@ -1630,7 +1630,7 @@ def resize_based_on_longest_dimension(new_long_dimension, original_dimensions):
 # given original dimensions [width, height] and maximum pixel size of new image
 # return the largest possible dimensions under the max_pixels size
 # while preserving aspect ratio of original image
-def get_largest_possible_image_size(original_dimensions, max_pixels):
+def get_largest_possible_image_size(original_dimensions, max_pixels, round_down_to_64=True):
     output_dimensions = []
     orig_width = 0
     orig_height = 0
@@ -1671,11 +1671,12 @@ def get_largest_possible_image_size(original_dimensions, max_pixels):
 
             # ensure results are divisible by 64; round down to nearest 64 if not
             current_larger = int(current_larger)
-            if current_larger % 64 != 0:
-                current_larger = (current_larger // 64) * 64
             current_smaller = int(current_smaller)
-            if current_smaller % 64 != 0:
-                current_smaller = (current_smaller // 64) * 64
+            if round_down_to_64:
+                if current_larger % 64 != 0:
+                    current_larger = (current_larger // 64) * 64
+                if current_smaller % 64 != 0:
+                    current_smaller = (current_smaller // 64) * 64
 
             # return max dimensions
             if width_larger:

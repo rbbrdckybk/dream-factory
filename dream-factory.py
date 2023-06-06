@@ -621,7 +621,7 @@ class Worker(threading.Thread):
 
                                 sd_width = 512
                                 sd_height = 512
-                                new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], control.config.get('max_output_size'))
+                                new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], control.config.get('max_output_size'), True)
 
                                 if new_dimensions != []:
                                     sd_width = new_dimensions[0]
@@ -633,6 +633,7 @@ class Worker(threading.Thread):
                                 sd_model = str(self.command.get('ckpt_file'))
                                 if "ckpt_file" in original_command:
                                     sd_model = original_command['ckpt_file']
+                                    sd_model = control.validate_model(sd_model)
                                 if sd_model != '' and (sd_model != self.worker['sdi_instance'].model_loaded):
                                     self.worker['sdi_instance'].load_model(sd_model)
                                     while self.worker['sdi_instance'].options_change_in_progress:
