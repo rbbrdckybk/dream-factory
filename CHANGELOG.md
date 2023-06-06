@@ -6,6 +6,12 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.06.06]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **b6af0a3809ea869fb180633f9affcae4b199ffcf**
+
+### Added
+- Added the ability to use [SD upscale](https://github.com/rbbrdckybk/dream-factory#upscale_model) when running process mode (!MODE = process) .prompts files. You'll need to set the maximum image output size that your GPU is capable of producing in your Dream Factory config.txt file to enable this (see config-default.txt for example).
+
 ## [2023.06.04]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **b6af0a3809ea869fb180633f9affcae4b199ffcf**
 
