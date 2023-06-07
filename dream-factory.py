@@ -887,6 +887,7 @@ class Controller:
         self.input_manager = None
         self.output_buffer = deque([], maxlen=300)
         self.work_queue = deque()
+        self.upscale_work_queue = deque()           # higher-priority queue for upscales, never cleared
         self.workers = []
         self.work_done = False
         self.is_paused = False
@@ -2346,6 +2347,71 @@ class Controller:
         return response
 
 
+    # upscale a gallery image
+    def upscale_gallery_img(self, web_path):
+        # lazy copy paste from delete_gallery_img ...
+        web_path = web_path.replace('%20', ' ')
+        web_path = web_path.replace('/', os.path.sep)
+        web_path = web_path.replace('\\', os.path.sep)
+        response = ""
+        actual_path = ""
+        if (os.path.sep + 'user_gallery') in web_path:
+            div = os.path.sep + 'user_gallery' + os.path.sep
+            actual_path = web_path.split(div, 1)[1]
+            actual_path = os.path.join(self.config['gallery_user_folder'], actual_path)
+        else:
+            div = os.path.sep + 'output' + os.path.sep
+            actual_path = web_path.split(div, 1)[1]
+            actual_path = os.path.join(self.config['output_location'], actual_path)
+
+        if os.path.exists(actual_path):
+            actual_file = os.path.basename(actual_path)
+            if self.config['max_output_size'] > 0:
+                upscale_dir = os.path.join(self.config['output_location'], "upscaled")
+                if not os.path.exists(os.path.join(upscale_dir, actual_file)):
+                    # check if this file is already queued for upscaling
+                    found = False
+                    for w in self.upscale_work_queue:
+                        f = os.path.basename(w['input_image'])
+                        if f == actual_file:
+                            found = True
+                            break
+                    # check if a worker is already working on this
+                    for w in self.workers:
+                        if w["job_prompt_info"] != '':
+                            f = os.path.basename(str(w["job_prompt_info"].get('input_image')))
+                            if f == actual_file:
+                                if w["job_prompt_info"].get('prompt') == 'df_gallery_upscale':
+                                    found = True
+                                    break
+                    if not found:
+                        # queue the actual upscale
+                        prompt_manager = utils.PromptManager(self, False)
+                        work = prompt_manager.config.copy()
+                        work['prompt_file'] = ''
+                        work['mode'] = 'process'
+                        work['input_image'] = actual_path
+                        work['use_upscale'] = 'yes'
+                        work['upscale_model'] = 'sd'
+                        work['output_dir'] = upscale_dir
+                        work['filename'] = '<input-img>'
+                        work['prompt'] = 'df_gallery_upscale'
+                        self.upscale_work_queue.append(work.copy())
+                        response = actual_file + " queued for upscaling!"
+                        if self.is_paused:
+                            self.is_paused = False
+                    else:
+                        response = actual_file + " is already queued for upscaling!"
+                else:
+                    response = actual_file + " has already been upscaled!"
+            else:
+                response = "Upscale not enabled; set MAX_OUTPUT_SIZE in config.txt!"
+        else:
+            # shouldn't happen
+            response = "Error: " + actual_file + " not found!"
+        return response
+
+
     # checks for updated model strings from server
     # non-empty return value indicates the local txt file should be updated
     def hash_check(self, old_model, new_model):
@@ -2671,7 +2737,11 @@ if __name__ == '__main__':
                         control.print("ERROR: specified prompt file '" + opt.prompt_file + "' does not exist - load one from the control panel instead!")
                     opt.prompt_file = ""
 
-                if len(control.work_queue) > 0:
+                if len(control.upscale_work_queue) > 0:
+                    # check for gallery upscale jobs in the queue
+                    new_work = control.upscale_work_queue.popleft()
+                    control.do_work(worker, new_work)
+                elif len(control.work_queue) > 0:
                     # get a new prompt or setting directive from the queue
                     new_work = control.work_queue.popleft()
                     control.do_work(worker, new_work)
@@ -2702,10 +2772,14 @@ if __name__ == '__main__':
                                 # all work done and no follow-up prompt file specified
                                 control.is_paused = True
                                 # no more jobs, wait for all workers to finish
-                                control.print('No more work in queue; waiting for all workers to finish...')
+                                if control.jobs_done > 0:
+                                    control.print('No more work in queue; waiting for all workers to finish...')
                                 while control.num_workers_working() > 0:
                                     time.sleep(.05)
-                                control.print('All work done; pausing server - add some more work via the control panel!')
+                                if control.jobs_done > 0:
+                                    control.print('All work done; pausing server - add some more work via the control panel!')
+                                else:
+                                    control.print('Startup complete; GPU worker(s) ready - queue some work via the control panel!')
                         else:
                             # flag to repeat work enabled, re-load work queue
                             control.loops += 1

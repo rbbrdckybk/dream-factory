@@ -81,7 +81,7 @@ class InputManager():
 
 # for easy management of prompts
 class PromptManager():
-    def __init__(self, control_ref):
+    def __init__(self, control_ref, doinit=True):
         # reference to control obj, lazy but it'll do for now
         self.control = control_ref
 
@@ -94,8 +94,9 @@ class PromptManager():
         # list of PromptSection
         self.prompts = list()
 
-        self.__init_config(self.conf, "config")
-        self.__init_prompts(self.prompts, "prompts")
+        if doinit:
+            self.__init_config(self.conf, "config")
+            self.__init_prompts(self.prompts, "prompts")
 
         #self.debug_print()
 
@@ -1452,7 +1453,9 @@ def get_recent_images(dir, max_files):
     # first get a list of directories in most-recently-modified order
     for f in os.scandir(dir):
         if f.is_dir():
-            subdirs.append(f.path)
+            # 2023-06-07 don't include upscaled dir
+            if f.name != 'upscaled':
+                subdirs.append(f.path)
 
     # contains a list of subdirs in most-recently-modified order
     subdirs.sort(key=os.path.getmtime, reverse=True)

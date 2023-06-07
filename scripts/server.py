@@ -917,6 +917,10 @@ class ArtGeneratorWebService(object):
             response = self.control.delete_gallery_img(arg)
             return response
 
+        if type.lower().strip() == 'gallery_upscale':
+            response = self.control.upscale_gallery_img(arg)
+            return response
+
         if type.lower().strip() == 'prompt_file':
             self.control.new_prompt_file(arg)
 

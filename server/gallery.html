@@ -108,6 +108,13 @@
               </div>
               <div>
                   <div class="tooltip-bottom">
+                      <a id="upscale-img">
+                          <img src="/static/img/upscale-sm.png" class="edit-img">
+                      </a>
+                      <span class="tooltiptext-bottom">Upscale this image.&#xa;(hotkey: u)</span>
+                  </div>
+
+                  <div class="tooltip-bottom">
                       <a id="download-img" href="">
                           <img src="/static/img/download-sm.png" class="edit-img">
                       </a>
@@ -158,6 +165,7 @@
         </div>
 
     </div>
+    <div id="toast"></div>
     <div data-include="footer"></div>
 
     <script type="text/javascript">
@@ -190,12 +198,18 @@
         currentImage = img_id.split(/_(.*)/s)[1];
       }
 
+      function toast(msg) {
+        var x = document.getElementById("toast");
+        x.innerHTML = msg
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      }
+
       document.getElementById('delete-img').onclick = function() {
           //deleteImage();
           if (niceAlertQuick("Delete this image?", "Tip: if you accidentally delete an image, you may recover it in the 'server\\temp' folder BEFORE you shut the server down!", deleteImage) == true) {
               // deleteImage function will be called if user confirms
           }
-
       }
 
       function deleteImage() {
@@ -220,6 +234,25 @@
           }
       }
 
+      document.getElementById('upscale-img').onclick = function() {
+          upscaleImage();
+      }
+
+      function upscaleImage() {
+        if (currentImage != "") {
+            src = document.getElementById("img01").src;
+            // send server request
+            $.ajax({
+              type: "POST",
+              url: "/generator",
+              data: { "type": "gallery_upscale", "arg": src}
+            })
+            .done(function(string) {
+              toast(string);
+            });
+        }
+      }
+
       document.addEventListener('keydown', event => {
       	if(event.key === "Escape"){
       	   closeModal();
@@ -227,6 +260,10 @@
 
         if(event.key === "Delete"){
             deleteImage();
+        }
+
+        if(event.key === "u"){
+            upscaleImage();
         }
 
         if(event.key === "ArrowLeft"){
