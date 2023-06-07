@@ -6,6 +6,16 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.06.07]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **baf6946e06249c5af9851c60171692c44ef633e0**
+
+### Added
+- Added an icon to upscale an image directly from the integrated gallery (using SD img2img upscaling). To use, you'll need to add MAX_OUTPUT_SIZE to your Dream Factory config.txt file (see config-default.txt for explanation).
+
+### Changed
+- Modified some unclear startup messages.
+- Hid the image gallery modal vertical scrollbar whenever it isn't needed.
+
 ## [2023.06.06]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **b6af0a3809ea869fb180633f9affcae4b199ffcf**
 
