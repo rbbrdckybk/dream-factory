@@ -308,6 +308,8 @@ Sets the upscaling model to use.
 Note that this will perform a substring match on any upscalers you have installed with Auto1111. In this case, **ESRGAN_4x*** should be selected (and is also the default).
 
 In **!MODE = PROCESS** .prompts files, you may additionally specify **!UPSCALE_MODEL = SD**. This is a special option that uses Stable Diffusion's img2img engine to upscale your images. This will take much longer than other methods and requires a lot of GPU VRAM to reach large image sizes (~12GB of VRAM is required to output 2048x2048 images), but will potentially produce higher quality results with the ability to add detail. Use !UPSCALE_SD_STRENGTH = xxx (default is 0.3) to control denoising strength with !UPSCALE_MODEL = SD.
+
+This option works very similarly to how the highres fix in Auto1111 does. It allows you to take an image and use Stable Diffusion to create a larger version, changing the image slightly depending on the denoising strength used (the 0.3 default value should stay very close to the original in most cases).
 ```
 !UPSCALE_MODEL = sd
 !UPSCALE_SD_STRENGTH = 0.3
@@ -599,7 +601,7 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout b6af0a3809ea869fb180633f9affcae4b199ffcf
+git checkout baf6946e06249c5af9851c60171692c44ef633e0
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
