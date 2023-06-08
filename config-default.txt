@@ -93,6 +93,7 @@ JPG_QUALITY = 88
 # You may need some trial and error here, keep lowering until you don't get errors
 # This is used when calculating the final size for automatic SD upscales
 # If you set this to a number that's too high, you'll get errors!
+# Suggested values to try: 12GB VRAM: 4200000   8GB VRAM: 2600000
 MAX_OUTPUT_SIZE = 
 
 # You can set your own defaults for prompt file settings below.
