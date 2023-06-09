@@ -1116,28 +1116,38 @@ class Controller:
 
                 # check model-triggers.txt for hashes that Auto1111 has already calculated
                 if exists('model-triggers.txt'):
-                    cache_file = os.path.join(cache_dir, 'hashes-model.txt')
-                    lines = ""
-                    with open('model-triggers.txt', 'r', encoding="utf-8") as f:
-                        lines = f.readlines()
+                    # in case the user has no loras or embeddings but does have a model-triggers file
+                    skip = False
+                    if not os.path.exists('cache'):
+                        try:
+                            Path('cache').mkdir(parents=True, exist_ok=True)
+                        except:
+                            skip = True
 
-                    found_models = []
-                    for x in missing_models:
-                        filename = os.path.basename(x)
-                        found = False
-                        for line in lines:
-                            if filename in line:
-                                if '[' in line and ']' in line:
-                                    # retrieve hash and insert into cache
-                                    hash = line.split('[', 1)[1].strip()
-                                    hash = hash.split(']', 1)[0].strip()
+                    # proceed if there were no issues creating cache directory
+                    if not skip:
+                        cache_file = os.path.join(cache_dir, 'hashes-model.txt')
+                        lines = ""
+                        with open('model-triggers.txt', 'r', encoding="utf-8") as f:
+                            lines = f.readlines()
 
-                                    with open(cache_file, 'a') as f:
-                                        f.write(filename + ', ' + hash + '\n')
+                        found_models = []
+                        for x in missing_models:
+                            filename = os.path.basename(x)
+                            found = False
+                            for line in lines:
+                                if filename in line:
+                                    if '[' in line and ']' in line:
+                                        # retrieve hash and insert into cache
+                                        hash = line.split('[', 1)[1].strip()
+                                        hash = hash.split(']', 1)[0].strip()
 
-                                    # save so we can remove when we're done iterating
-                                    found_models.append(x)
-                                    break
+                                        with open(cache_file, 'a', encoding="utf-8") as f:
+                                            f.write(filename + ', ' + hash + '\n')
+
+                                        # save so we can remove when we're done iterating
+                                        found_models.append(x)
+                                        break
 
                     # remove founds from list of missing models
                     for m in found_models:
@@ -2436,7 +2446,7 @@ class Controller:
         self.sdi_models = models
         if exists(self.models_filename):
             # already exists, check the models we already have in the file
-            with open(self.models_filename, 'r') as f:
+            with open(self.models_filename, 'r', encoding="utf-8") as f:
                 lines = f.readlines()
 
             # scan to see if any on the server are missing from the file
@@ -2468,7 +2478,7 @@ class Controller:
                 except:
                     print('Error creating backup of model-triggers.txt!')
 
-                with open(self.models_filename, 'w') as f:
+                with open(self.models_filename, 'w', encoding="utf-8") as f:
                     for line in lines:
                         found = False
                         for update in updates:
@@ -2480,14 +2490,14 @@ class Controller:
                             f.write(line)
 
             # append missing models to file
-            with open(self.models_filename, 'a') as f:
+            with open(self.models_filename, 'a', encoding="utf-8") as f:
                 for new_m in missing:
                     pass
                     f.write(new_m + ', \n')
 
         else:
             # creating for the first time
-            with open(self.models_filename, 'w') as f:
+            with open(self.models_filename, 'w', encoding="utf-8") as f:
                 f.write('# Dream Factory model-trigger.txt file\n')
                 f.write('# This contains a list of all SD models available for use in Dream Factory.\n')
                 f.write('# Append the trigger word/phrase after the comma following each model to\n')
@@ -2497,7 +2507,7 @@ class Controller:
 
         # build trigger words dict
         self.model_trigger_words = {}
-        with open(self.models_filename, 'r') as f:
+        with open(self.models_filename, 'r', encoding="utf-8") as f:
             lines = f.readlines()
 
         for line in lines:
