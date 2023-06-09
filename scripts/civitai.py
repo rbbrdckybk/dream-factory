@@ -160,7 +160,7 @@ class HashCalc(threading.Thread):
                 short_file = os.path.basename(file)
                 hashes.append(short_file + ', ' + hash)
                 # write to cache file
-                with open(cache_file, 'a') as f:
+                with open(cache_file, 'a', encoding="utf-8") as f:
                     f.write(short_file + ', ' + hash + '\n')
                 self.hash_calc_count += 1
 
@@ -194,7 +194,7 @@ class HashCalc(threading.Thread):
         self.lora_cache_file = os.path.join(dir, 'hashes-lora.txt')
         if not exists(self.lora_cache_file):
             try:
-                with open(self.lora_cache_file, 'w') as f:
+                with open(self.lora_cache_file, 'w', encoding="utf-8") as f:
                     # create empty file
                     pass
             except:
@@ -204,7 +204,7 @@ class HashCalc(threading.Thread):
         self.embedding_cache_file = os.path.join(dir, 'hashes-embedding.txt')
         if not exists(self.embedding_cache_file):
             try:
-                with open(self.embedding_cache_file, 'w') as f:
+                with open(self.embedding_cache_file, 'w', encoding="utf-8") as f:
                     # create empty file
                     pass
             except:
@@ -214,7 +214,7 @@ class HashCalc(threading.Thread):
         self.model_cache_file = os.path.join(dir, 'hashes-model.txt')
         if not exists(self.model_cache_file):
             try:
-                with open(self.model_cache_file, 'w') as f:
+                with open(self.model_cache_file, 'w', encoding="utf-8") as f:
                     # create empty file
                     pass
             except:
@@ -224,7 +224,7 @@ class HashCalc(threading.Thread):
         self.hypernet_cache_file = os.path.join(dir, 'hashes-hypernet.txt')
         if not exists(self.hypernet_cache_file):
             try:
-                with open(self.hypernet_cache_file, 'w') as f:
+                with open(self.hypernet_cache_file, 'w', encoding="utf-8") as f:
                     # create empty file
                     pass
             except:
