@@ -6,7 +6,7 @@
 # them at least once to calculate the hash) and scrapes all associated prompts,
 # then saves them as a Dream Factory .prompts file (1 per model).
 
-# usage: python civitai.py --help
+# usage: python civitai-scraper.py --help
 
 # This requires Playwright, which can be installed with these commands:
 # pip3 install playwright
@@ -31,7 +31,7 @@ resize = 0
 max_steps = 0
 
 class Civitai:
-    def __init__(self):
+    def __init__(self, type='model', nsfw='exclude'):
         self.browser = playwright.chromium.launch(headless = True)
         self.use_auth = False
         self.url = ""
@@ -40,8 +40,21 @@ class Civitai:
         self.hashes = []
         self.hashmap = {}
 
+        type = type.lower()
+        if not (type == 'model' or type == 'lora' or type == 'hypernet' or type == 'embedding'):
+            print('Invalid --type specified, defaulting to model...')
+            type = 'model'
+
+        nsfw = nsfw.lower()
+        if not (nsfw == 'include' or nsfw == 'exclude' or nsfw == 'only'):
+            print('Invalid --nsfw specified, defaulting to exclude...')
+            nsfw = 'exclude'
+
+        self.type = type
+        self.nsfw = nsfw
+
         self.flush_metadata_buffer()
-        self.get_trigger_hashes()
+        self.get_trigger_hashes(self.type)
 
         if os.path.exists('civitai-auth.json'):
             self.use_auth = True
@@ -65,26 +78,21 @@ class Civitai:
                             self.auto1111_path = loc
                         break
 
-    def get_trigger_hashes(self):
+    def get_trigger_hashes(self, type='model'):
         self.get_auto1111_path()
-        triggers_filename = os.path.join('..', 'model-triggers.txt')
+        #triggers_filename = os.path.join('..', 'model-triggers.txt')
+        triggers_filename = os.path.join('..', 'cache')
+        triggers_filename = os.path.join(triggers_filename, 'hashes-' + type + '.txt')
         if os.path.exists(triggers_filename):
             with open(triggers_filename, 'r', encoding="utf-8") as f:
                 lines = f.readlines()
 
             for line in lines:
                 if not line.strip().startswith('#'):
-                    if '[' in line and ']' in line:
-                        hash = line.split('[', 1)[1]
-                        hash = hash.split(']', 1)[0].strip()
+                    if ',' in line:
+                        hash = line.split(',', 1)[1].strip()
                         if hash not in self.hashes:
-                            if self.auto1111_path != "":
-                                model_filename = line.split('[', 1)[0].strip()
-                                model_filename = os.path.join(self.auto1111_path, model_filename)
-                                if os.path.exists(model_filename):
-                                    self.hashes.append(hash)
-                            else:
-                                self.hashes.append(hash)
+                            self.hashes.append(hash)
 
     # returns a dict, key is civitai ID, value is list of image metadata
     def lookup_hash(self, hash):
@@ -111,6 +119,8 @@ class Civitai:
                 #print(image['url'])
                 meta = image['meta']
                 if not meta is None:
+                    if 'nsfw' in image:
+                        meta['nsfw'] = image['nsfw']
                     images.append(meta)
             data[model_id] = images
         else:
@@ -134,12 +144,28 @@ class Civitai:
                 break
         return hash
 
+    def get_filename_from_hash(self, hash):
+        filename = ''
+        triggers_filename = os.path.join('..', 'cache')
+        triggers_filename = os.path.join(triggers_filename, 'hashes-' + type + '.txt')
+        if os.path.exists(triggers_filename):
+            with open(triggers_filename, 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+
+            for line in lines:
+                if not line.strip().startswith('#'):
+                    if ',' in line and hash in line:
+                        filename = line.split(',', 1)[0].strip()
+                        break
+        return filename
+
     # scrapes the specified URL
     def scrape(self, playwright: Playwright, url = '') -> None:
         if url != '':
             self.url = url
         if self.url != "":
             tries = 0
+            delay = 5
             success = False
             page = None
 
@@ -152,14 +178,17 @@ class Civitai:
             page.on("response", self.handle_response)
             while not success:
                 try:
-                    page.goto(self.url, wait_until="networkidle")
-                except:
-                    print('Error connecting to ' + self.url + '; re-trying in 5 seconds...')
+                    # allow 2 mins for response
+                    page.goto(self.url, wait_until="networkidle", timeout=120000)
+                except Exception as e:
+                    print(e)
+                    print('Error connecting to ' + self.url + '; re-trying in ' + str(delay) + ' seconds...')
                     tries += 1
-                    time.sleep(5)
+                    time.sleep(delay)
+                    delay += 15
                 else:
                     success = True
-            page.keyboard.down('End')
+            #page.keyboard.down('End')
             page.context.close()
         else:
             print('Error: call to run with no URL set!')
@@ -178,6 +207,10 @@ class Civitai:
                     if post["images"]:
                         for image in post["images"]:
                             image_count += 1
+                            nsfw_tag = ''
+                            if "nsfw" in image:
+                                nsfw_tag = image["nsfw"].lower()
+
                             if "meta" in image and image["meta"] is not None:
                                 if "prompt" in image["meta"]:
                                     p = image["meta"]["prompt"]
@@ -188,7 +221,9 @@ class Civitai:
                                             break
                                     if not found:
                                         total_images += 1
+                                        image["meta"]["nsfw"] = nsfw_tag
                                         self.metadata.append(image["meta"])
+
                     #print('Post ID ' + str(post["postId"]) + ' -> number of images: ' + str(image_count))
             print('Found ' + str(count) + ' posts with ' + str(total_images) + ' images containing metadata...')
 
@@ -205,39 +240,73 @@ class Civitai:
                 resize_txt = '!AUTO_SIZE = resize_longest_dimension: ' + str(resize)
             f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n' + str(resize_txt) + '\n')
             f.write('!HIGHRES_FIX = yes\n!STRENGTH = 0.68\n!FILENAME = <model>-<date>-<time>\n')
-            f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n!CKPT_FILE = ' + hash)
+            f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n')
+            if self.type == 'model':
+                filename = self.get_filename_from_hash(hash)
+                if filename != '':
+                    f.write('# model hash: ' + hash + '\n')
+                    f.write('!CKPT_FILE = ' + filename)
+                else:
+                    f.write('!CKPT_FILE = ' + hash)
+            else:
+                f.write('!CKPT_FILE = # fill in your model(s) here')
+
             f.write('\n\n[prompts]\n')
 
             for image in metadata:
-                prompt = image["prompt"].replace('\n', '')
-                if prompt.startswith('['):
-                    prompt = 'image of ' + prompt
-                while prompt.endswith(','):
-                    prompt = prompt[:-1]
-                prompt = prompt.strip()
-                negPrompt = ""
-                sampler = ""
-                scale = -1
-                steps = 20
-                if "negativePrompt" in image:
-                    negPrompt = image["negativePrompt"].replace('\n', '').strip()
-                    f.write('\n!NEG_PROMPT = ' + negPrompt + '\n')
-                if "sampler" in image:
-                    sampler = image["sampler"]
-                    f.write('!SAMPLER = ' + sampler + '\n')
-                if "cfgScale" in image:
-                    scale = image["cfgScale"]
-                    f.write('!SCALE = ' + str(scale) + '\n')
-                if "steps" in image:
-                    steps = image["steps"]
-                    steps = check_steps(steps, max_steps)
-                    f.write('!STEPS = ' + str(steps) + '\n')
-                if "Size" in image:
-                    if "x" in image["Size"]:
-                        meta_size = image["Size"].split('x', 1)
-                        f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
-                        f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
-                f.write(prompt + '\n\n')
+                # handle nsfw filter option
+                include = True
+                image_nsfw = False
+                nsfw_tag = ''
+                if "nsfw" in image:
+                    nsfw_tag = image['nsfw'].lower()
+                    if nsfw_tag != '':
+                        if nsfw_tag != 'none':
+                            image_nsfw = True
+
+                    if self.nsfw == 'exclude' and image_nsfw:
+                        include = False
+                    if self.nsfw == 'only' and not image_nsfw:
+                        include = False
+
+                if include and "prompt" in image:
+                    prompt = image["prompt"].replace('\n', '')
+                    if prompt.startswith('['):
+                        prompt = 'image of ' + prompt
+                    while prompt.endswith(','):
+                        prompt = prompt[:-1]
+                    prompt = prompt.strip()
+                    negPrompt = ""
+                    sampler = ""
+                    scale = -1
+                    steps = 20
+                    if "negativePrompt" in image:
+                        negPrompt = image["negativePrompt"].replace('\n', '').strip()
+                        f.write('\n!NEG_PROMPT = ' + negPrompt + '\n')
+                    if "sampler" in image:
+                        sampler = image["sampler"]
+                        f.write('!SAMPLER = ' + sampler + '\n')
+                    if "cfgScale" in image:
+                        scale = image["cfgScale"]
+                        f.write('!SCALE = ' + str(scale) + '\n')
+                    if "steps" in image:
+                        steps = image["steps"]
+                        steps = check_steps(steps, max_steps)
+                        f.write('!STEPS = ' + str(steps) + '\n')
+                    if "Size" in image:
+                        if "x" in image["Size"]:
+                            meta_size = image["Size"].split('x', 1)
+                            f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
+                            f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
+                    if "Clip skip" in image:
+                        clip_skip = image["Clip skip"]
+                        f.write('!CLIP_SKIP = ' + str(clip_skip) + '\n')
+                    else:
+                        f.write('!CLIP_SKIP = 1\n')
+                    if "nsfw" in image:
+                        f.write('# ' + str(nsfw_tag) + '\n')
+                        pass
+                    f.write(prompt + '\n\n')
 
 
     def cleanup(self):
@@ -287,17 +356,29 @@ if __name__ == '__main__':
         default=0,
         help="auto-resize longest image dimension to this size (aspect ratio will be maintained); leave at zero to disable (default)"
     )
+    parser.add_argument(
+        "--type",
+        default='model',
+        help="type of resource to scrape: model (default), lora, hypernet, or embedding"
+    )
+    parser.add_argument(
+        "--nsfw",
+        default='exclude',
+        help="include/exclude nsfw images: exclude (default), include, or only"
+    )
 
     opt = parser.parse_args()
     resize = opt.resolution
     max_steps = opt.max_steps
+    type = opt.type.lower()
+    nsfw = opt.nsfw.lower()
 
     count = 0
     all_data = {}
 
     with sync_playwright() as playwright:
-        civitai = Civitai()
-        
+        civitai = Civitai(type, nsfw)
+
         for hash in civitai.hashes:
             print('\nLooking up hash ' + hash + '...')
             fulldata = civitai.lookup_hash(hash)
@@ -337,33 +418,43 @@ if __name__ == '__main__':
         f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n[prompts]\n')
 
         for key, metadata in all_data.items():
-            f.write('\n\n#########################\n!CKPT_FILE = ' + civitai.get_hash_from_civitai_id(key) + '\n#########################\n\n')
+            filename = civitai.get_filename_from_hash(civitai.get_hash_from_civitai_id(key))
+            if filename != '':
+                f.write('\n\n#########################\n!CKPT_FILE = ' + filename + '\n#########################\n\n')
+            else:
+                f.write('\n\n#########################\n!CKPT_FILE = ' + civitai.get_hash_from_civitai_id(key) + '\n#########################\n\n')
             for image in metadata:
-                prompt = image["prompt"].replace('\n', '')
-                if prompt.startswith('['):
-                    prompt = 'image of ' + prompt
-                if prompt.endswith(','):
-                    prompt = prompt[:-1]
-                negPrompt = ""
-                sampler = ""
-                scale = -1
-                steps = 20
-                if "negativePrompt" in image:
-                    negPrompt = image["negativePrompt"].replace('\n', '')
-                    f.write('\n!NEG_PROMPT = ' + negPrompt + '\n')
-                if "sampler" in image:
-                    sampler = image["sampler"]
-                    f.write('!SAMPLER = ' + sampler + '\n')
-                if "cfgScale" in image:
-                    scale = image["cfgScale"]
-                    f.write('!SCALE = ' + str(scale) + '\n')
-                if "steps" in image:
-                    steps = image["steps"]
-                    steps = check_steps(steps, max_steps)
-                    f.write('!STEPS = ' + str(steps) + '\n')
-                if "Size" in image:
-                    if "x" in image["Size"]:
-                        meta_size = image["Size"].split('x', 1)
-                        f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
-                        f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
-                f.write(prompt + '\n\n')
+                if 'prompt' in image:
+                    prompt = image["prompt"].replace('\n', '')
+                    if prompt.startswith('['):
+                        prompt = 'image of ' + prompt
+                    if prompt.endswith(','):
+                        prompt = prompt[:-1]
+                    negPrompt = ""
+                    sampler = ""
+                    scale = -1
+                    steps = 20
+                    if "negativePrompt" in image:
+                        negPrompt = image["negativePrompt"].replace('\n', '')
+                        f.write('\n!NEG_PROMPT = ' + negPrompt + '\n')
+                    if "sampler" in image:
+                        sampler = image["sampler"]
+                        f.write('!SAMPLER = ' + sampler + '\n')
+                    if "cfgScale" in image:
+                        scale = image["cfgScale"]
+                        f.write('!SCALE = ' + str(scale) + '\n')
+                    if "steps" in image:
+                        steps = image["steps"]
+                        steps = check_steps(steps, max_steps)
+                        f.write('!STEPS = ' + str(steps) + '\n')
+                    if "Size" in image:
+                        if "x" in image["Size"]:
+                            meta_size = image["Size"].split('x', 1)
+                            f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
+                            f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
+                    if "Clip skip" in image:
+                        clip_skip = image["Clip skip"]
+                        f.write('!CLIP_SKIP = ' + str(clip_skip) + '\n')
+                    else:
+                        f.write('!CLIP_SKIP = 1\n')
+                    f.write(prompt + '\n\n')

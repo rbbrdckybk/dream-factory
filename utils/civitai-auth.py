@@ -7,8 +7,10 @@
 # 2) click the "login link"
 # 3) enter your email address and click the button
 # 4) when you receive the email, do not click the link
-# 5) instead copy it (right click and select copy), & paste it below on line 27 (between the single quotes)
-# 6) after that, do not run this again unless your login expires (in which case follow all steps again)
+# 5) instead copy it (right click and select copy), & paste it below on line 29 (between the single quotes)
+# 6) run this with: python civitai-auth.py
+# 7) wait for the automated browser session to complete (it will auto-close when finished)
+# do not run this again unless your token expires, in which case repeat from step 1
 
 import time
 from playwright.sync_api import Playwright, sync_playwright
