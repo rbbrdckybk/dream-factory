@@ -39,6 +39,7 @@ class Civitai:
         self.metadata = None
         self.hashes = []
         self.hashmap = {}
+        self.current_hash = ''
 
         type = type.lower()
         if not (type == 'model' or type == 'lora' or type == 'hypernet' or type == 'embedding'):
@@ -159,11 +160,28 @@ class Civitai:
                         break
         return filename
 
+    def get_weight_from_hash(self, hash):
+        weight = '1'
+        triggers_filename = os.path.join('..', 'cache')
+        triggers_filename = os.path.join(triggers_filename, 'civitai-' + type + '.txt')
+        if os.path.exists(triggers_filename):
+            with open(triggers_filename, 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+
+            for line in lines:
+                if not line.strip().startswith('#'):
+                    if ';' in line and hash in line:
+                        weight = line.rsplit(';', 1)[1].strip()
+                        break
+        return weight
+
     # scrapes the specified URL
-    def scrape(self, playwright: Playwright, url = '') -> None:
+    def scrape(self, playwright: Playwright, url = '', hash = '') -> None:
         if url != '':
             self.url = url
         if self.url != "":
+            if hash != '':
+                self.current_hash = hash
             tries = 0
             delay = 5
             success = False
@@ -215,6 +233,17 @@ class Civitai:
                                 if "prompt" in image["meta"]:
                                     p = image["meta"]["prompt"]
                                     found = False
+
+                                    # ensure lora is in the prompt
+                                    if self.type == 'lora' or self.type == 'hypernet':
+                                        filename = self.get_filename_from_hash(self.current_hash)
+                                        if filename != '':
+                                            search = '<' + self.type + ':' + filename + ':'
+                                            if search not in p:
+                                                weight = self.get_weight_from_hash(self.current_hash)
+                                                p += ' <' + self.type + ':' + filename + ':' + weight + '>'
+                                                image["meta"]["prompt"] = p
+
                                     for i in self.metadata:
                                         if p == i['prompt']:
                                             found = True
@@ -304,7 +333,7 @@ class Civitai:
                     else:
                         f.write('!CLIP_SKIP = 1\n')
                     if "nsfw" in image:
-                        f.write('# ' + str(nsfw_tag) + '\n')
+                        #f.write('# ' + str(nsfw_tag) + '\n')
                         pass
                     f.write(prompt + '\n\n')
 
@@ -390,7 +419,7 @@ if __name__ == '__main__':
                 print('  -> Hash ' + hash + ' maps to civitai.com ID ' + str(c_id) + '...')
                 print('  -> Scraping ' + url + ' for user image metadata...')
                 civitai.flush_metadata_buffer()
-                civitai.scrape(playwright, url)
+                civitai.scrape(playwright, url, hash)
                 # deep copy because we're constantly purging main obj
                 user_images = copy.deepcopy(civitai.metadata)
                 all_data[c_id] = copy.deepcopy(data[c_id])
@@ -405,56 +434,3 @@ if __name__ == '__main__':
             time.sleep(2)
 
         civitai.cleanup()
-
-
-    # write all to a single file
-    filename = 'civitai-0-all.prompts'
-    with open(filename, 'w', encoding="utf-8") as f:
-        resize_txt = '!AUTO_SIZE = off'
-        if int(resize) > 0:
-            resize_txt = '!AUTO_SIZE = resize_longest_dimension: ' + str(resize)
-        f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n' + str(resize_txt) + '\n')
-        f.write('!HIGHRES_FIX = yes\n!STRENGTH = 0.68\n!FILENAME = <model>-<date>-<time>\n')
-        f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n[prompts]\n')
-
-        for key, metadata in all_data.items():
-            filename = civitai.get_filename_from_hash(civitai.get_hash_from_civitai_id(key))
-            if filename != '':
-                f.write('\n\n#########################\n!CKPT_FILE = ' + filename + '\n#########################\n\n')
-            else:
-                f.write('\n\n#########################\n!CKPT_FILE = ' + civitai.get_hash_from_civitai_id(key) + '\n#########################\n\n')
-            for image in metadata:
-                if 'prompt' in image:
-                    prompt = image["prompt"].replace('\n', '')
-                    if prompt.startswith('['):
-                        prompt = 'image of ' + prompt
-                    if prompt.endswith(','):
-                        prompt = prompt[:-1]
-                    negPrompt = ""
-                    sampler = ""
-                    scale = -1
-                    steps = 20
-                    if "negativePrompt" in image:
-                        negPrompt = image["negativePrompt"].replace('\n', '')
-                        f.write('\n!NEG_PROMPT = ' + negPrompt + '\n')
-                    if "sampler" in image:
-                        sampler = image["sampler"]
-                        f.write('!SAMPLER = ' + sampler + '\n')
-                    if "cfgScale" in image:
-                        scale = image["cfgScale"]
-                        f.write('!SCALE = ' + str(scale) + '\n')
-                    if "steps" in image:
-                        steps = image["steps"]
-                        steps = check_steps(steps, max_steps)
-                        f.write('!STEPS = ' + str(steps) + '\n')
-                    if "Size" in image:
-                        if "x" in image["Size"]:
-                            meta_size = image["Size"].split('x', 1)
-                            f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
-                            f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
-                    if "Clip skip" in image:
-                        clip_skip = image["Clip skip"]
-                        f.write('!CLIP_SKIP = ' + str(clip_skip) + '\n')
-                    else:
-                        f.write('!CLIP_SKIP = 1\n')
-                    f.write(prompt + '\n\n')
