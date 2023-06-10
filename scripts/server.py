@@ -430,7 +430,7 @@ def build_hypernetwork_reference(control):
                     if path == subdir:
                         filename = os.path.basename(m['name'])
                         filename_display = filename
-                        cpy = '<lora:' + filename + ':1.0>'
+                        cpy = '<hypernet:' + filename + ':1.0>'
 
                         # civitai integration stuff
                         civitai_link = '&nbsp;<img src=\"img/spacer.png\" height=\"20\" />'
@@ -462,7 +462,7 @@ def build_hypernetwork_reference(control):
 
                                 if 'civitai_weight' in m:
                                     if m['civitai_weight'] != '':
-                                        cpy = '<lora:' + filename + ':' + str(m['civitai_weight']) + '>'
+                                        cpy = '<hypernet:' + filename + ':' + str(m['civitai_weight']) + '>'
 
                         civitai_triggers_display = civitai_triggers
                         if len(civitai_triggers_display) > 83:
