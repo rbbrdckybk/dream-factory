@@ -100,6 +100,30 @@ This should start up the web interface with a simple example prompt file pre-loa
 
 Eventually you should see images appearing in your **\output** folder (or you can click on the "Gallery" link within the web UI and watch for them there). If you're getting images, everything is working properly and you can move on to the next section.
 
+## Setting up 1-click launcher on Windows (optional)
+
+If you'd like to create an easy option to start Dream Factory, rather than dealing with launching Anaconda and/or opening a command-line window every time, you can follow these steps:
+
+**[1]** Open Windows Explorer and browse to this location, where [username] is your Windows username:
+```
+C:\Users\[username]\anaconda3\Scripts
+```
+Make a copy of the ```activate.bat``` file you find there, and name it ```activate-dream-factory.bat```.
+
+**[2]** Edit the ```activate-dream-factory.bat``` file you just created, and add these lines to the end of the file:
+```
+@CALL echo Starting Dream Factory...
+@CALL conda.bat activate dream-factory
+@CALL cd "[full path to your Dream Factory folder]"
+@CALL python dream-factory.py
+@CALL pause
+```
+Replace [full path to your Dream Factory folder] with the path that you installed Dream Factory in (e.g.: C:\Users\[your Windows username]\dream-factory).
+
+Save the file and close it.
+
+**[3]** Place a shortcut to this file on your desktop (or wherever). Clicking it should launch Dream Factory.
+
 # Usage
 
 Instructions assume that you've completed [setup](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#setup) and verified that your installation works properly.
@@ -554,6 +578,8 @@ After each Dream Factory startup (after the first GPU is fully initialized), a *
 moDi-v1-pruned.ckpt [ccf3615f], modern disney style
 ```
 You can control the placement of the auto-inserted trigger word with [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_insert_model_trigger).
+
+Note that if you have Civitai integration enabled, entries in your model-triggers.txt file will take precedence over trigger words scraped from Civitai.
 
 ## Embeddings
 
