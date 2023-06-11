@@ -26,6 +26,7 @@ import copy
 import unicodedata
 import re
 import argparse
+from pathlib import Path
 
 resize = 0
 max_steps = 0
@@ -40,6 +41,7 @@ class Civitai:
         self.hashes = []
         self.hashmap = {}
         self.current_hash = ''
+        self.output_dir = 'civitai-scraper'
 
         type = type.lower()
         if not (type == 'model' or type == 'lora' or type == 'hypernet' or type == 'embedding'):
@@ -59,6 +61,14 @@ class Civitai:
 
         if os.path.exists('civitai-auth.json'):
             self.use_auth = True
+
+        # create output dir
+        if not os.path.exists(self.output_dir):
+            try:
+                Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+            except:
+                print('Error: output directory could not be created!')
+                self.output_dir = ''
 
     def flush_metadata_buffer(self):
         self.metadata = []
@@ -263,6 +273,7 @@ class Civitai:
             metadata = self.metadata
 
         filename = 'civitai-' + model_name + '.prompts'
+        filename = os.path.join(self.output_dir, filename)
         with open(filename, 'w', encoding="utf-8") as f:
             resize_txt = '!AUTO_SIZE = off'
             if int(resize) > 0:
