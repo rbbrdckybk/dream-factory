@@ -334,9 +334,9 @@ def build_model_reference(control):
                     trigger = None
                     if control.model_trigger_words != None:
                         trigger = control.model_trigger_words.get(m['name'])
-                    m['name'] = m['name'].split('[', 1)[0].strip()
-                    cpy = '!CKPT_FILE = ' + m['name'].replace("\\", "\\\\")
-                    filename = os.path.basename(m['name'])
+                    m_name = m['name'].split('[', 1)[0].strip()
+                    cpy = '!CKPT_FILE = ' + m_name.replace("\\", "\\\\")
+                    filename = os.path.basename(m_name)
                     filename_display = filename
 
                     # civitai integration stuff
