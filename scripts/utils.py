@@ -727,7 +727,9 @@ class PromptManager():
                 if value == 'all':
                     # we're queueing all the models; copy the validated model list
                     if self.control.sdi_models != None and len(self.control.sdi_models) > 0:
-                        self.control.models = self.control.sdi_models.copy()
+                        self.control.models = []
+                        for m in self.control.sdi_models:
+                            self.control.models.append(m['name'])
                         model = self.control.models[0]
                         # this is lazy but should always be incremented to zero on the first loop
                         self.control.model_index = -1
