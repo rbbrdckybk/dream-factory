@@ -85,10 +85,12 @@ def create_output(json):
 
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless = True)
+    # headless = True will result in being flagged as a bot
+    browser = playwright.chromium.launch(headless = False)
+    context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36')
 
     # Open new page
-    page = browser.new_page()
+    page = context.new_page()
     page.on("response", handle_response)
     page.goto(url, wait_until="networkidle")
     page.keyboard.down('End')
@@ -109,10 +111,14 @@ with sync_playwright() as playwright:
             #resp = json.dumps(response.json(), indent=2)
             #with open('midjourney.json', 'w') as f:
             #    f.write(resp)
-
-            searchFound = True
-            r = response.json()
-            create_output(r)
+            
+            if response.ok:
+                searchFound = True
+                r = response.json()
+                create_output(r)
+            else:
+                print('Error: midjourney.com returned a non-OK response (code: ' + str(response.status) + ') (possible bot detection)!')
+                #print(response.text())
 
 
     # we're scraping from midjourney.com
