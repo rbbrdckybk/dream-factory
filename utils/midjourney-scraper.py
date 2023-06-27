@@ -88,12 +88,25 @@ def run(playwright: Playwright) -> None:
     # headless = True will result in being flagged as a bot
     browser = playwright.chromium.launch(headless = False)
     context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36')
+    
+    s = """
+    navigator.webdriver = false
+    Object.defineProperty(navigator, 'webdriver', {
+    get: () => false
+    })
+    """
 
     # Open new page
     page = context.new_page()
+    page.add_init_script(s)
     page.on("response", handle_response)
-    page.goto(url, wait_until="networkidle")
-    page.keyboard.down('End')
+    try:
+        page.goto(url, wait_until="networkidle")
+        
+    except PlaywrightTimeoutError:
+        print('Exceeded 30 sec timeout waiting for partial page response, aborting...')
+    else:
+        page.keyboard.down('End')
     page.context.close()
     browser.close()
 
