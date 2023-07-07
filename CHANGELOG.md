@@ -6,6 +6,13 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.07.07]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **394ffa7b0a7fff3ec484bcd084e673a8b301ccc8**
+
+### Fixed
+- SD upscale jobs in !PROCESS mode .prompts files on images made with very early version of Dream Factory should no longer fail due to sampler errors.
+- A single !PROCESS mode SD upscale job failing should no longer cause all remaining jobs in the queue to also fail.
+
 ## [2023.06.07]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **baf6946e06249c5af9851c60171692c44ef633e0**
 
