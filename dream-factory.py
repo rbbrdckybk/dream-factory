@@ -514,7 +514,7 @@ class Worker(threading.Thread):
                     time.sleep(0.25)
 
         # upscale here if requested
-        if self.worker['sdi_instance'].last_job_success and self.worker['sdi_instance'].isRunning:
+        if (self.worker['sdi_instance'].last_job_success or process_mode) and self.worker['sdi_instance'].isRunning:
             # only if we're not shutting down
             if self.command['use_upscale'] == 'yes':
                 self.worker['work_state'] = 'upscaling'
@@ -576,6 +576,8 @@ class Worker(threading.Thread):
                                 sd_sampler = str(self.command.get('sampler'))
                                 if "sampler" in original_command:
                                     sd_sampler = original_command['sampler']
+                                    # validate sampler in case we're upscaling very old images
+                                    sd_sampler = control.prompt_manager.validate_sampler(sd_sampler, True)
 
                                 sd_prompt = str(self.command.get('prompt'))
                                 if "prompt" in original_command:

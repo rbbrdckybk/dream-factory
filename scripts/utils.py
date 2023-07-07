@@ -779,7 +779,7 @@ class PromptManager():
 
     # passing samplers is case-sensitive; use this to make sure user-supplied
     # sampler name is ok - otherwise use a default
-    def validate_sampler(self, sampler):
+    def validate_sampler(self, sampler, suppress_warning=False):
         validated_sampler = sampler
         validated = False
         if self.control.sdi_samplers != None:
@@ -794,7 +794,8 @@ class PromptManager():
                 # user-supplied sampler doesn't closely match anything on server list
                 # use default
                 validated_sampler = 'Euler'
-                self.control.print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
+                if not suppress_warning:
+                    self.control.print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
 
         return validated_sampler
 
