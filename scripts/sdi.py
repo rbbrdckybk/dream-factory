@@ -417,8 +417,11 @@ class SDI:
 
                         if not '--api' in line:
                             line += ' --api'
-                        if not '--nowebui' in line:
-                            line += ' --nowebui'
+                        # 2023-06-08 there is a bug in Auto1111 that prevents loras from activating when --nowebui is present
+                        # https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11016
+                        #if not '--nowebui' in line:
+                        #    line += ' --nowebui'
+                        
                         #if not '--lowram' in line:
                         #    line += ' --lowram'
                         line += ' --port ' + str(self.sd_port)
