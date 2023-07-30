@@ -13,6 +13,8 @@ from datetime import datetime
 import time
 import json
 import argparse
+import os
+from os.path import exists
 
 url = "https://www.midjourney.com/showcase/recent/"
 search = 'recent.json'
@@ -20,6 +22,9 @@ json_file = ''
 
 top = False
 searchFound = False
+outdir = ''
+header = ''
+footer = ''
 
 # entry point
 if __name__ == '__main__':
@@ -34,12 +39,34 @@ if __name__ == '__main__':
         default='',
         help="use this .json file instead of scraping midjourney.com"
     )
+    parser.add_argument(
+        "--outdir",
+        default='',
+        help="output folder location (must exist!)"
+    )
+    parser.add_argument(
+        "--header",
+        default='',
+        help=".txt file containing text to prepend output .prompts file with"
+    )
+    parser.add_argument(
+        "--footer",
+        default='',
+        help=".txt file containing text to append output .prompts file with"
+    )
     opt = parser.parse_args()
     top = opt.top
     json_file = opt.file
-    
-    
+    outdir = opt.outdir
+    header = opt.header
+    footer = opt.footer
+
+
 def create_output(json):
+    global outdir
+    global header
+    global footer
+
     r = json
     count = 0
     prompts = []
@@ -73,14 +100,39 @@ def create_output(json):
         filename = 'midjourney-' + date + '.prompts'
         if top:
             filename = 'midjourney-showcase-top.prompts'
+        if outdir != '':
+            if os.path.exists(outdir):
+                filename = os.path.join(outdir, filename)
+            else:
+                print('Output directory (' + outdir + ') does not exist; defaulting to execution location!')
+
         with open(filename, 'w', encoding="utf-8") as f:
-            f.write('[config]\n\n!MODE = standard\n!REPEAT = yes\n\n!WIDTH = 1024\n!HEIGHT = 1024\n')
-            f.write('!HIGHRES_FIX = yes\n!STRENGTH = 0.68\n!FILENAME = <model>-<date>-<time>\n')
-            f.write('!AUTO_INSERT_MODEL_TRIGGER = end\n\n!CKPT_FILE = # add model(s) here')
-            f.write('\n\n[prompts]\n\n')
+            # write header if necessary
+            if header != '':
+                if os.path.exists(header):
+                    lines = ''
+                    with open(header, 'r', encoding="utf-8") as h:
+                        lines = h.readlines()
+                    for line in lines:
+                        f.write(line)
+                else:
+                    print('Header file (' + header + ') does not exist; ignoring it!')
+
+            # write scraped prompts
             for prompt in prompts:
                 f.write(prompt + '\n\n')
-                
+
+            # write footer if necessary
+            if footer != '':
+                if os.path.exists(footer):
+                    lines = ''
+                    with open(footer, 'r', encoding="utf-8") as h:
+                        lines = h.readlines()
+                    for line in lines:
+                        f.write(line)
+                else:
+                    print('Footer file (' + footer + ') does not exist; ignoring it!')
+
         print('Done! Wrote ' + filename)
 
 
@@ -88,7 +140,7 @@ def run(playwright: Playwright) -> None:
     # headless = True will result in being flagged as a bot
     browser = playwright.chromium.launch(headless = False)
     context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36')
-    
+
     s = """
     navigator.webdriver = false
     Object.defineProperty(navigator, 'webdriver', {
@@ -102,9 +154,10 @@ def run(playwright: Playwright) -> None:
     page.on("response", handle_response)
     try:
         page.goto(url, wait_until="networkidle")
-        
-    except PlaywrightTimeoutError:
-        print('Exceeded 30 sec timeout waiting for partial page response, aborting...')
+    except Exception as e:
+        print('Encountered an error, aborting...')
+        print('Error details: ')
+        print(e)
     else:
         page.keyboard.down('End')
     page.context.close()
@@ -124,7 +177,7 @@ with sync_playwright() as playwright:
             #resp = json.dumps(response.json(), indent=2)
             #with open('midjourney.json', 'w') as f:
             #    f.write(resp)
-            
+
             if response.ok:
                 searchFound = True
                 r = response.json()
@@ -139,7 +192,7 @@ with sync_playwright() as playwright:
         run(playwright)
         if not searchFound:
             print('Error: no response with "' + search + '" in the URL!')
-      
+
     # we have a .json file
     else:
         lines = ''
