@@ -209,13 +209,18 @@ These directives are valid only in the [config] section of **standard** prompt f
  * [!REPEAT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat)
  * [!NEXT_PROMPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#next_prompt_file)
 
-Finally, these directives are valid only in the [config] section of **random** prompt files (!MODE = random):
+These directives are valid only in the [config] section of **random** prompt files (!MODE = random):
 
  * [!MIN_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#min_scale)
  * [!MAX_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#max_scale)
  * [!MIN_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#min_strength)
  * [!MAX_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#max_strength)
  * [!RANDOM_INPUT_IMAGE_DIR](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#random_input_image_dir)
+
+Finally, these special directives are valid only in **process** prompt files (!MODE = process):
+
+ * [!OVERRIDE_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_ckpt_file)
+ * [!OVERRIDE_MAX_OUTPUT_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_max_output_size)
 
 Command Help and Usage Examples:
 
@@ -549,6 +554,19 @@ When using random mode prompt files, sets a directory that random input images s
 !RANDOM_INPUT_IMAGE_DIR = C:\images                      # specifies the full path to a directory containing input images
 !RANDOM_INPUT_IMAGE_DIR = images                         # specifies a relative path to a directory containing input images
 !RANDOM_INPUT_IMAGE_DIR =                                # specifies no input images should be used
+```
+#### !OVERRIDE_CKPT_FILE
+Special directive valid only in ```!MODE = process``` .prompts files, and only when used with ```!UPSCALE_MODEL = sd```.
+This directive allows you to specify a different model to use (e.g. instead of the model used to create the original image) when performing an SD upscale.
+```
+!OVERRIDE_CKPT_FILE = juggernaut
+```
+Note: substring matches are valid here. In the example, "juggernaut" would match with the first valid model file that contains the string "juggernaut".
+#### !OVERRIDE_MAX_OUTPUT_SIZE
+Special directive valid only in ```!MODE = process``` .prompts files, and only has any effect when used with ```!UPSCALE_MODEL = sd```.
+This directive allows you to override the value set for MAX_OUTPUT_SIZE in your config.txt file (see config-default.txt for detailed explanation).
+```
+!OVERRIDE_MAX_OUTPUT_SIZE = 2,000,000
 ```
 
 ## Viewing your Images
