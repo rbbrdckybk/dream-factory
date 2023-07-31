@@ -178,6 +178,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!INPUT_IMAGE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#input_image)
  * [!STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#strength)
  * [!CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#ckpt_file)
+ * [!VAE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#vae)
  * [!NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#neg_prompt)
  * [!AUTO_INSERT_MODEL_TRIGGER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_insert_model_trigger)
  * [!SEED](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#seed)
@@ -304,6 +305,13 @@ You may also use the reserved word "all" here, and Dream Factory will rotate thr
 !CKPT_FILE =                                             # sets the default model specified in your config.txt
 ```
 Note: this uses a substring match on the valid server values available via the integrated reference, so for example if 'SD_1.5\dreamshaper_4BakedVae.safetensors [7f16bbcd80]' is what the reference reports, then setting **!CKPT_FILE = dreamshaper_4BakedVae.safetensors** will find it.
+#### !VAE
+Sets the VAE to use. Set this to nothing to revert to automatic VAE usage (or whatever your Auto1111 config setting specifies).
+```
+!VAE = vae-ft-mse-840000-ema-pruned.ckpt
+!VAE = 
+```
+Note: substring matches are valid here. Setting **!VAE = vae-ft-mse-840000** will find vae-ft-mse-840000-ema-pruned.ckpt, for example.
 #### !NEG_PROMPT
 Specifies a negative prompt to be used for all of the prompts that follow it (remember you can place most directives directly into [prompts] sections of standard prompt files!). If you have a 'catch-all' negative prompt that you tend to use, you can specify it in your config.txt file and it'll be populated as the default on new prompt files you create. Setting this to nothing will clear the negative prompt.
 ```
@@ -627,10 +635,10 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout 394ffa7b0a7fff3ec484bcd084e673a8b301ccc8
+git checkout 68f336bd994bed5442ad95bad6b6ad5564a5409a
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
 If/when you want to go back to the latest version, you can just run ```git checkout master```.
 
-(updated 2023-07-07, previous supported hash: baf6946e06249c5af9851c60171692c44ef633e0)
+(updated 2023-07-31, previous supported hash: 394ffa7b0a7fff3ec484bcd084e673a8b301ccc8)
