@@ -580,7 +580,9 @@ class Worker(threading.Thread):
                                 if "sampler" in original_command:
                                     sd_sampler = original_command['sampler']
                                     # validate sampler in case we're upscaling very old images
-                                    sd_sampler = control.prompt_manager.validate_sampler(sd_sampler, True)
+                                    if control.prompt_manager != None:
+                                        # TODO: should instantiate new prompt_manager if we don't have one yet
+                                        sd_sampler = control.prompt_manager.validate_sampler(sd_sampler, True)
 
                                 sd_prompt = str(self.command.get('prompt'))
                                 if "prompt" in original_command:
