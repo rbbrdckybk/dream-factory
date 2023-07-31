@@ -644,15 +644,23 @@ class Worker(threading.Thread):
                                     sd_model = original_command['ckpt_file']
                                     sd_model = control.validate_model(sd_model)
 
+                                    # check if we're overriding the model for upscaling
+                                    override_model = ''
+                                    if self.command.get('override_ckpt_file') != '':
+                                        override_model = control.validate_model(self.command.get('override_ckpt_file'))
+                                        if override_model != '':
+                                            sd_model = override_model
+
                                     # check if a refiner model is available if necessary
-                                    if control.config.get('auto_use_refiner'):
-                                        refiner_model = original_command['ckpt_file'].replace('.safetensors', '').replace('.ckpt', '')
-                                        if '[' in refiner_model:
-                                            refiner_model = refiner_model.split('[', 1)[0].strip()
-                                        refiner_model = refiner_model + '_refiner'
-                                        refiner_model = control.validate_model(refiner_model)
-                                        if refiner_model != '':
-                                            sd_model = refiner_model
+                                    if override_model == '':
+                                        if control.config.get('auto_use_refiner'):
+                                            refiner_model = original_command['ckpt_file'].replace('.safetensors', '').replace('.ckpt', '')
+                                            if '[' in refiner_model:
+                                                refiner_model = refiner_model.split('[', 1)[0].strip()
+                                            refiner_model = refiner_model + '_refiner'
+                                            refiner_model = control.validate_model(refiner_model)
+                                            if refiner_model != '':
+                                                sd_model = refiner_model
 
                                 if sd_model != '' and (sd_model != self.worker['sdi_instance'].model_loaded):
                                     self.worker['sdi_instance'].load_model(sd_model)
@@ -677,6 +685,18 @@ class Worker(threading.Thread):
                                   "tiling": sd_tiling,
                                   "negative_prompt": sd_neg_prompt
                                 }
+
+                                override_settings = {}
+                                if self.command.get('clip_skip') != '':
+                                    override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
+
+                                if override_model == '':
+                                    if self.command.get('vae') != '':
+                                        override_settings["sd_vae"] = self.command.get('vae')
+
+                                if override_settings != {}:
+                                    payload["override_settings"] = override_settings
+
                                 self.worker['sdi_instance'].do_img2img(payload, samples_dir)
                             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                                 time.sleep(0.25)

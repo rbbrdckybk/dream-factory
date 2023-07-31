@@ -246,6 +246,7 @@ class PromptManager():
             'clip_skip' : "",
             'vae' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
+            'override_ckpt_file' : '',
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
             'neg_prompt' : self.control.config['neg_prompt'],
@@ -787,6 +788,16 @@ class PromptManager():
                         self.control.models = []
                         self.control.model_index = 0
             self.config.update({'ckpt_file' : model})
+
+        elif command == 'override_ckpt_file':
+            if value != '':
+                model = self.control.validate_model(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command OVERRIDE_CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                else:
+                    self.config.update({'override_ckpt_file' : model})
+            else:
+                self.config.update({'override_ckpt_file' : ''})
 
         elif command == 'sampler':
             sampler = self.validate_sampler(value)
