@@ -427,10 +427,13 @@ class Worker(threading.Thread):
                 }
                 payload["alwayson_scripts"] = cn_payload
 
-            # handle override settings here: clip_skip, etc
+            # handle override settings here: clip_skip, vae, etc
             override_settings = {}
             if self.command.get('clip_skip') != '':
                 override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
+
+            if self.command.get('vae') != '':
+                override_settings["sd_vae"] = self.command.get('vae')
 
             if override_settings != {}:
                 payload["override_settings"] = override_settings
@@ -623,7 +626,11 @@ class Worker(threading.Thread):
 
                                 sd_width = 512
                                 sd_height = 512
-                                new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], control.config.get('max_output_size'), True)
+                                set_max_output_size = control.config.get('max_output_size')
+                                # check for override in process mode directive
+                                if self.command.get('override_max_output_size') != 0:
+                                    set_max_output_size = int(self.command.get('override_max_output_size'))
+                                new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], set_max_output_size, True)
 
                                 if new_dimensions != []:
                                     sd_width = new_dimensions[0]
@@ -636,6 +643,17 @@ class Worker(threading.Thread):
                                 if "ckpt_file" in original_command:
                                     sd_model = original_command['ckpt_file']
                                     sd_model = control.validate_model(sd_model)
+
+                                    # check if a refiner model is available if necessary
+                                    if control.config.get('auto_use_refiner'):
+                                        refiner_model = original_command['ckpt_file'].replace('.safetensors', '').replace('.ckpt', '')
+                                        if '[' in refiner_model:
+                                            refiner_model = refiner_model.split('[', 1)[0].strip()
+                                        refiner_model = refiner_model + '_refiner'
+                                        refiner_model = control.validate_model(refiner_model)
+                                        if refiner_model != '':
+                                            sd_model = refiner_model
+
                                 if sd_model != '' and (sd_model != self.worker['sdi_instance'].model_loaded):
                                     self.worker['sdi_instance'].load_model(sd_model)
                                     while self.worker['sdi_instance'].options_change_in_progress:
@@ -913,6 +931,8 @@ class Controller:
         self.sdi_hypernetworks = None               # 2023-05-30 changed to list of dicts
         self.sdi_lora_request_made = False
         self.sdi_loras = None                       # replaced self.loras with this, list of dicts
+        self.sdi_VAE_request_made = False
+        self.sdi_VAEs = None                        # list of dicts
         self.embeddings = []                        # 2023-05-30 changed to list of dicts
         self.poses = []                             # [ path, [filename, str(WxH img dimensions), str(preview ext: '', 'jpg', 'png')] ]
         self.sdi_upscaler_request_made = False
@@ -1539,6 +1559,7 @@ class Controller:
             'editor_max_styling_chars' : 80000,
             'jpg_quality' : 88,
             'max_output_size' : 0,
+            'auto_use_refiner' : True,
 
             'auto_insert_model_trigger' : 'start',
             'neg_prompt' : '',
@@ -1726,7 +1747,14 @@ class Controller:
                                 if int(value) > 262144:
                                     self.config.update({'max_output_size' : int(value)})
                                 else:
-                                    print("*** WARNING: specified 'MAX_OUTPUT_SIZE' is very low; it will be ignored!")
+                                    print("*** WARNING: specified 'MAX_OUTPUT_SIZE' is too low; it will be ignored!")
+
+                    elif command == 'auto_use_refiner':
+                        if value == 'yes' or value == 'no':
+                            if value == 'yes':
+                                self.config.update({'auto_use_refiner' : True})
+                            else:
+                                self.config.update({'auto_use_refiner' : False})
 
                     elif command == 'debug_test_mode':
                         if value == 'yes' or value == 'no':
@@ -2559,6 +2587,20 @@ class Controller:
         return validated_model
 
 
+    # passing VAEs must be exactly what SD expects; use this to make sure
+    # user-supplied model is ok - otherwise revert to default
+    def validate_VAE(self, model):
+        validated_model = ''
+        if len(model) > 3:
+            if self.sdi_VAEs != None:
+                for m in self.sdi_VAEs:
+                    if model.lower() in m['name'].lower():
+                        # case-insensitive partial match; use the exact casing from the server
+                        validated_model = m['name']
+                        break
+        return validated_model
+
+
     # passing models must be exactly what SD expects; use this to make sure
     # user-supplied model is ok - otherwise revert to default
     def validate_upscale_model(self, model):
@@ -2711,8 +2753,15 @@ if __name__ == '__main__':
                 control.sdi_lora_request_made = True
                 skip = True
 
+            if not control.sdi_VAE_request_made:
+                # get available VAEs from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_VAEs()
+                control.sdi_VAE_request_made = True
+                skip = True
+
             if not control.sdi_script_request_made:
-                # get available hypernetworks from the server
+                # get available scripts from the server
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_scripts()
                 control.sdi_script_request_made = True

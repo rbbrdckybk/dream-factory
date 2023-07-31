@@ -94,7 +94,13 @@ JPG_QUALITY = 88
 # This is used when calculating the final size for automatic SD upscales
 # If you set this to a number that's too high, you'll get errors!
 # Suggested values to try: 12GB VRAM: 4200000   8GB VRAM: 2600000
+# Once set, may be overridden in PROCESS mode files with !OVERRIDE_MAX_OUTPUT_SIZE
 MAX_OUTPUT_SIZE = 
+
+# Automatically use refiner models if found during !PROCESS_MODEL upscaling jobs?
+# Refiner models should be named with a "_refiner" suffix to be automatically found.
+# (e.g. "sd_xl_base_1.0.safetensors" and "sd_xl_base_1.0_refiner.safetensors")
+AUTO_USE_REFINER = yes
 
 # You can set your own defaults for prompt file settings below.
 # Settings specified in individual prompt files will always override these.

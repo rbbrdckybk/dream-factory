@@ -144,6 +144,11 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += 'CLIP skip: ' + str(params['clip_skip'])
 
+            if params['vae'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'VAE: ' + str(params['vae'])
+
             if params['seed'] != '':
                 if param_string != '':
                     param_string += '  |  '

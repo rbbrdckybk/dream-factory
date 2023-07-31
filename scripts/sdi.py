@@ -122,6 +122,18 @@ class GetHyperNetworksRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching VAEs
+class GetVAEsRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/sd-vae')
+        self.callback(response)
+
+
 # for fetching loras
 class GetLorasRequest(threading.Thread):
     def __init__(self, sdi_ref, callback=lambda: None, *args):
@@ -421,7 +433,7 @@ class SDI:
                         # https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11016
                         #if not '--nowebui' in line:
                         #    line += ' --nowebui'
-                        
+
                         #if not '--lowram' in line:
                         #    line += ' --lowram'
                         line += ' --port ' + str(self.sd_port)
@@ -594,6 +606,14 @@ class SDI:
         query.start()
 
 
+    # gets valid VAEs from server
+    def get_server_VAEs(self):
+        self.busy = True
+        self.log('querying SD for available VAEs...', True)
+        query = GetVAEsRequest(self, self.VAE_response)
+        query.start()
+
+
     # gets valid loras from server
     def get_server_loras(self):
         self.busy = True
@@ -641,6 +661,24 @@ class SDI:
         self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
         networks = sorted(networks, key=lambda d: d['name'].lower())
         self.control_ref.sdi_hypernetworks = networks
+        self.busy = False
+
+
+    # handle server VAE response
+    def VAE_response(self, response):
+        r = response.json()
+        vaes = []
+        for i in r:
+            if 'model_name' in i:
+                vae = {}
+                vae['name'] = i['model_name']
+                if 'filename' in i:
+                    vae['path'] = i['filename']
+                vaes.append(vae)
+
+        self.log('received VAE query response: SD indicates ' + str(len(vaes)) + ' VAEs available for use...', True)
+        vaes = sorted(vaes, key=lambda d: d['name'].lower())
+        self.control_ref.sdi_VAEs = vaes
         self.busy = False
 
 

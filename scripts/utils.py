@@ -244,6 +244,7 @@ class PromptManager():
             'iptc_copyright' : "",
             'iptc_append' : False,
             'clip_skip' : "",
+            'vae' : "",
             'ckpt_file' : self.control.config['ckpt_file'],
             'sampler' : self.control.config['sampler'],
             'neg_prompt' : "",
@@ -257,6 +258,7 @@ class PromptManager():
             'upscale_sd_strength' : self.control.config['upscale_sd_strength'],
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
             'upscale_model' : self.control.config['upscale_model'],
+            'override_max_output_size' : 0,
             'filename' : self.control.config['filename'],
             'output_dir' : '',
             'outdir' : self.control.config['output_location']
@@ -498,6 +500,19 @@ class PromptManager():
             else:
                 self.config.update({'upscale_model' : 'ESRGAN_4x'})
 
+        elif command == 'override_max_output_size':
+            value = value.replace(',', '')
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'OVERRIDE_MAX_OUTPUT_SIZE' is not a valid number; it will be ignored!")
+                else:
+                    if int(value) >= 262144:
+                        self.config.update({'override_max_output_size' : value})
+                    else:
+                        self.control.print("*** WARNING: specified 'OVERRIDE_MAX_OUTPUT_SIZE' is too low; it will be ignored!")
+
         elif command == 'mode':
             if value == 'random' or value == 'standard' or value == 'process':
                 self.config.update({'mode' : value})
@@ -720,6 +735,17 @@ class PromptManager():
                     self.config.update({'clip_skip' : value})
             else:
                 self.config.update({'clip_skip' : ''})
+
+        elif command == 'vae':
+            if value != '':
+                model = self.control.validate_VAE(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command VAE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                    self.config.update({'vae' : ''})
+                else:
+                    self.config.update({'vae' : model})
+            else:
+                self.config.update({'vae' : ''})
 
         elif command == 'ckpt_file':
             model = ''
@@ -1209,6 +1235,9 @@ def create_command(command, output_dir_ext, gpu_id):
     if command.get('clip_skip') != "":
         py_command += " --clip-skip " + str(command.get('clip_skip'))
 
+    if command.get('vae') != "":
+        py_command += " --vae " + str(command.get('vae'))
+
     if command.get('tiling') == True:
         py_command += " --tiles"
 
@@ -1254,6 +1283,7 @@ def extract_params_from_command(command):
         'controlnet_controlmode' : "",
         'controlnet_pixelperfect' : "",
         'clip_skip' : "",
+        'vae' : "",
         'tiling' : ""
     }
 
@@ -1329,6 +1359,12 @@ def extract_params_from_command(command):
             if '--' in temp:
                 temp = temp.split('--', 1)[0]
             params.update({'clip_skip' : temp.strip()})
+
+        if '--vae' in command:
+            temp = command.split('--vae', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'vae' : temp.strip()})
 
         if '--init-img' in command:
             temp = command.split('--init-img', 1)[1]
