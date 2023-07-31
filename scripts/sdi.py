@@ -320,6 +320,30 @@ class SDI:
             self.target_command = 'df-start-gpu-' + str(gpu_id) + '.sh'
 
 
+    def wait_for_server(self, url, api_endpoint, timeout=300):
+        start_time = time.time()
+
+        while True:
+            try:
+                response = requests.get(url + api_endpoint)
+                response.raise_for_status()  # Raises stored HTTPError, if one occurred.
+
+                data = response.json()
+                if 'detail' in data and data['detail'] == 'Not Found':
+                    # If we get 'detail': 'Not Found', the API is not ready.
+                    pass
+                else:
+                    # If we don't get 'detail': 'Not Found', the API is ready.
+                    break
+
+            except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError, KeyError):
+                pass
+
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f'Server at {url} not responding after {timeout} seconds')
+
+            time.sleep(5)  # Wait before trying again
+ 
     # starts up a new SD instance
     def initialize(self):
         self.init = True
@@ -345,6 +369,9 @@ class SDI:
         # start monitoring the SD subprocess's piped output
         self.monitor = Monitor(self, self.monitor_done_callback)
         self.monitor.start()
+
+        # Wait for server to be ready
+        self.wait_for_server(self.url, "/sdapi/v1/samplers")  # Changed this line
 
 
     # creates a suitable startup .bat/.sh for this gpu
