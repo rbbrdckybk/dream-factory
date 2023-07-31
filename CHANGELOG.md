@@ -13,13 +13,17 @@ Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk
 - Added a .prompts file directive to [specify a VAE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#vae).
 - Added a config.txt option **AUTO_USE_REFINER** that attempts to automatically find and use a refiner model when upscaling images created with SDXL models during !MODE=process .prompts file jobs, if enabled. See config-default.txt for usage explanation. My understanding is that this is not the intended way to use refiner models, but until Auto1111 adds proper support for them, this will allow you to upscale your SDXL images using the corresponding refiner model instead of the base model.
 - Added a .prompts file directive **!OVERRIDE_MAX_OUTPUT_SIZE** that allows you to override your config.txt MAX_OUTPUT_SIZE setting within a !MODE=process .prompts file. Necessary for now since SDXL models seem to have much higher VRAM memory requirements (and thus lower max output size) than SD 1.5 models.
+- Added a .prompts file directive **!OVERRIDE_CKPT_FILE** that allows you to override the model used for upscaling within a !MODE=process .prompts file (e.g. instead of using the same model that was used to generate the original image). Note that this may also be used to manually specify refiner models instead of the **AUTO_USE_REFINER** method above.
+
+### Fixed
+- SD upscale jobs in ```!MODE = process``` .prompts files will now properly use the same !CLIP_SKIP value as the original image.
 
 ## [2023.07.07]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **394ffa7b0a7fff3ec484bcd084e673a8b301ccc8**
 
 ### Fixed
-- SD upscale jobs in !PROCESS mode .prompts files on images made with very early version of Dream Factory should no longer fail due to sampler errors.
-- A single !PROCESS mode SD upscale job failing should no longer cause all remaining jobs in the queue to also fail.
+- SD upscale jobs in ```!MODE = process``` .prompts files on images made with very early version of Dream Factory should no longer fail due to sampler errors.
+- A single ```!MODE = process``` SD upscale job failing should no longer cause all remaining jobs in the queue to also fail.
 
 ## [2023.06.07]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **baf6946e06249c5af9851c60171692c44ef633e0**
