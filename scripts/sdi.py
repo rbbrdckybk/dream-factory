@@ -319,7 +319,7 @@ class SDI:
             self.command = 'webui-user.sh'
             self.target_command = 'df-start-gpu-' + str(gpu_id) + '.sh'
 
-
+    #waits for SD APIs to be ready and returning expected information
     def wait_for_server(self, url, api_endpoint, timeout=300):
         start_time = time.time()
 
@@ -371,7 +371,7 @@ class SDI:
         self.monitor.start()
 
         # Wait for server to be ready
-        self.wait_for_server(self.url, "/sdapi/v1/samplers")  # Changed this line
+        self.wait_for_server(self.url, "/sdapi/v1/samplers")
 
 
     # creates a suitable startup .bat/.sh for this gpu
