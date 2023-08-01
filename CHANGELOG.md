@@ -6,6 +6,15 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.08.01]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **68f336bd994bed5442ad95bad6b6ad5564a5409a**
+
+### Added
+- Added support for Automatic1111 styles in Dream Factory .prompts files via a new **!STYLES** directive ([see docs](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#styles)).
+
+### Fixed
+- When specifying a specific seed and using a queue of multiple models, the seed value will now only increment each time the entire model queue finishes (instead of after each model).
+
 ## [2023.07.31]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **68f336bd994bed5442ad95bad6b6ad5564a5409a**
 
