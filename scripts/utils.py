@@ -245,6 +245,7 @@ class PromptManager():
             'iptc_append' : False,
             'clip_skip' : "",
             'vae' : "",
+            'styles' : [],
             'ckpt_file' : self.control.config['ckpt_file'],
             'override_ckpt_file' : '',
             'sampler' : self.control.config['sampler'],
@@ -748,6 +749,45 @@ class PromptManager():
             else:
                 self.config.update({'vae' : ''})
 
+        elif command == 'styles':
+            if value != '':
+                if value.strip().lower().startswith('random'):
+                    # user wants random style(s)
+                    # make sure format is 'random x' where x is # of styles
+                    temp = value.strip().lower().split(' ')
+                    final = 'random'
+                    if temp[0] == 'random':
+                        if len(temp) > 1:
+                            num = temp[1]
+                            try:
+                                int(num)
+                            except:
+                                self.control.print("*** WARNING: prompt file command STYLES value (" + value + ") not understood; assuming 1 random style! ***")
+                                final += ' 1'
+                            else:
+                                if int(num) > 0:
+                                    final += ' ' + str(num)
+                                else:
+                                    self.control.print("*** WARNING: prompt file command STYLES value (" + value + ") not understood; assuming 1 random style! ***")
+                                    final += ' 1'
+                    else:
+                        self.control.print("*** WARNING: prompt file command STYLES value (" + value + ") not understood; assuming 1 random style! ***")
+                        final += ' 1'
+                    self.config.update({'styles' : [final]})
+                else:
+                    # validate user-supplied styles
+                    styles = []
+                    values = value.split(',')
+                    for s in values:
+                        style = self.control.validate_style(s.strip())
+                        if style == '':
+                            self.control.print("*** WARNING: prompt file command STYLES value (" + s + ") doesn't match any server values; ignoring it! ***")
+                        else:
+                            styles.append(style)
+                    self.config.update({'styles' : styles})
+            else:
+                self.config.update({'styles' : []})
+
         elif command == 'ckpt_file':
             model = ''
             if value != '':
@@ -1249,6 +1289,16 @@ def create_command(command, output_dir_ext, gpu_id):
     if command.get('vae') != "":
         py_command += " --vae " + str(command.get('vae'))
 
+    if command.get('styles') != None and len(command.get('styles')) > 0:
+        py_command += " --styles \""
+        count = 0
+        for s in command.get('styles'):
+            if count > 0:
+                py_command += ', '
+            py_command += s
+            count += 1
+        py_command += "\""
+
     if command.get('tiling') == True:
         py_command += " --tiles"
 
@@ -1295,6 +1345,7 @@ def extract_params_from_command(command):
         'controlnet_pixelperfect' : "",
         'clip_skip' : "",
         'vae' : "",
+        'styles' : "",
         'tiling' : ""
     }
 
@@ -1376,6 +1427,13 @@ def extract_params_from_command(command):
             if '--' in temp:
                 temp = temp.split('--', 1)[0]
             params.update({'vae' : temp.strip()})
+
+        if '--styles' in command:
+            temp = command.split('--styles', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('"', '')
+            params.update({'styles' : temp.strip()})
 
         if '--init-img' in command:
             temp = command.split('--init-img', 1)[1]

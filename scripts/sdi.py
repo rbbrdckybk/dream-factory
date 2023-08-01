@@ -122,6 +122,18 @@ class GetHyperNetworksRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching styles
+class GetStylesRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/prompt-styles')
+        self.callback(response)
+
+
 # for fetching VAEs
 class GetVAEsRequest(threading.Thread):
     def __init__(self, sdi_ref, callback=lambda: None, *args):
@@ -606,6 +618,14 @@ class SDI:
         query.start()
 
 
+    # gets valid styles from server
+    def get_server_styles(self):
+        self.busy = True
+        self.log('querying SD for available styles...', True)
+        query = GetStylesRequest(self, self.style_response)
+        query.start()
+
+
     # gets valid VAEs from server
     def get_server_VAEs(self):
         self.busy = True
@@ -661,6 +681,26 @@ class SDI:
         self.log('received hypernetwork query response: SD indicates ' + str(len(networks)) + ' hypernetworks available for use...', True)
         networks = sorted(networks, key=lambda d: d['name'].lower())
         self.control_ref.sdi_hypernetworks = networks
+        self.busy = False
+
+
+    # handle server style response
+    def style_response(self, response):
+        r = response.json()
+        styles = []
+        for i in r:
+            if 'name' in i:
+                style = {}
+                style['name'] = i['name']
+                if 'prompt' in i:
+                    style['prompt'] = i['prompt']
+                if 'negative_prompt' in i:
+                    style['negative_prompt'] = i['negative_prompt']
+                styles.append(style)
+
+        self.log('received style query response: SD indicates ' + str(len(styles)) + ' styles available for use...', True)
+        styles = sorted(styles, key=lambda d: d['name'].lower())
+        self.control_ref.sdi_styles = styles
         self.busy = False
 
 

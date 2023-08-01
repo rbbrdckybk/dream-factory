@@ -149,6 +149,11 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += 'VAE: ' + str(params['vae'])
 
+            if params['styles'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'Style(s): ' + str(params['styles'])
+
             if params['seed'] != '':
                 if param_string != '':
                     param_string += '  |  '

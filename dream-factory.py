@@ -18,6 +18,8 @@ import argparse
 import shutil
 import base64
 import json
+import copy
+import math
 from PIL import Image
 from io import BytesIO
 import scripts.utils as utils
@@ -76,9 +78,15 @@ class Worker(threading.Thread):
         if not int(self.command.get('seed')) > 0:
             self.command['seed'] = -1
         else:
-            # increment seed if we've finished one or more loops
-            seed = int(self.command.get('seed')) + control.loops
-            self.command['seed'] = seed
+            # increment seed if we've finished one or more complete loops
+            if control.models != []:
+                # multiple models in queue, only increment for each time we use all of them
+                complete = math.floor(control.loops / len(control.models))
+                seed = int(self.command.get('seed')) + complete
+                self.command['seed'] = seed
+            else:
+                seed = int(self.command.get('seed')) + control.loops
+                self.command['seed'] = seed
 
         # if this is a process-mode prompt, skip past image generation stuff
         if self.command.get('mode') != 'process':
@@ -145,6 +153,30 @@ class Worker(threading.Thread):
                             self.command['steps'] = random.randint(second, first)
                 except:
                     pass
+
+            # settle of random styles if necessary
+            if len(self.command['styles']) > 0:
+                if self.command['styles'][0].startswith('random'):
+                    num = 1
+                    styles = []
+                    temp = self.command['styles'][0].split(' ')
+                    if len(temp) > 1:
+                        num = int(temp[1])
+                    # pick random styles
+                    if control.sdi_styles != None and control.sdi_styles != []:
+                        if len(control.sdi_styles) > num:
+                            work = copy.deepcopy(control.sdi_styles)
+                            while num > 0:
+                                pick = random.randint(0, len(work)-1)
+                                styles.append(work[pick]['name'])
+                                work.pop(pick)
+                                num = num - 1
+                        else:
+                            # user asked for more random styles than exist; use all of them
+                            for s in control.sdi_styles:
+                                styles.append(s)
+                    # update command with random styles
+                    self.command['styles'] = styles
 
             # check if a model change is needed
             if self.command.get('ckpt_file') != '' and (self.command.get('ckpt_file') != self.worker['sdi_instance'].model_loaded):
@@ -401,6 +433,10 @@ class Worker(threading.Thread):
                   "negative_prompt": str(self.command.get('neg_prompt'))
                 }
 
+            # add styles to payload if present
+            if self.command.get('styles') != None and len(self.command.get('styles')) > 0:
+                payload["styles"] = self.command.get('styles')
+
             # add CN params to existing payload if ControlNet is enabled
             # https://github.com/Mikubill/sd-webui-controlnet/wiki/API
             if use_controlnet:
@@ -620,6 +656,14 @@ class Worker(threading.Thread):
                                     else:
                                         sd_tiling = False
 
+                                # grab styles from original command and put into list
+                                styles = []
+                                if "styles" in original_command:
+                                    if original_command['styles'] != '':
+                                        temp = original_command['styles'].split(',')
+                                        for t in temp:
+                                            styles.append(t.strip())
+
                                 # calculate max output size
                                 orig_width = 0
                                 orig_height = 0
@@ -687,6 +731,10 @@ class Worker(threading.Thread):
                                   "tiling": sd_tiling,
                                   "negative_prompt": sd_neg_prompt
                                 }
+
+                                # add styles to payload if present
+                                if styles != []:
+                                    payload["styles"] = styles
 
                                 override_settings = {}
                                 if self.command.get('clip_skip') != '':
@@ -955,6 +1003,8 @@ class Controller:
         self.sdi_loras = None                       # replaced self.loras with this, list of dicts
         self.sdi_VAE_request_made = False
         self.sdi_VAEs = None                        # list of dicts
+        self.sdi_style_request_made = False
+        self.sdi_styles = None                      # list of dicts
         self.embeddings = []                        # 2023-05-30 changed to list of dicts
         self.poses = []                             # [ path, [filename, str(WxH img dimensions), str(preview ext: '', 'jpg', 'png')] ]
         self.sdi_upscaler_request_made = False
@@ -2623,6 +2673,20 @@ class Controller:
         return validated_model
 
 
+    # passing styles must be exactly what SD expects; use this to make sure
+    # user-supplied style is ok - otherwise revert to default
+    def validate_style(self, style):
+        validated_style = ''
+        if len(style) > 1:
+            if self.sdi_styles != None:
+                for s in self.sdi_styles:
+                    if style.lower() in s['name'].lower():
+                        # case-insensitive partial match; use the exact casing from the server
+                        validated_style = s['name']
+                        break
+        return validated_style
+
+
     # passing models must be exactly what SD expects; use this to make sure
     # user-supplied model is ok - otherwise revert to default
     def validate_upscale_model(self, model):
@@ -2780,6 +2844,13 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_VAEs()
                 control.sdi_VAE_request_made = True
+                skip = True
+
+            if not control.sdi_style_request_made:
+                # get available styles from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_styles()
+                control.sdi_style_request_made = True
                 skip = True
 
             if not control.sdi_script_request_made:
