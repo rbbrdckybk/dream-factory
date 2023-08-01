@@ -203,6 +203,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!IPTC_DESCRIPTION](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_description)
  * [!IPTC_KEYWORDS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_keywords)
  * [!IPTC_COPYRIGHT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_copyright)
+ * [!STYLES](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#styles)
  
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
@@ -568,6 +569,17 @@ This directive allows you to override the value set for MAX_OUTPUT_SIZE in your 
 ```
 !OVERRIDE_MAX_OUTPUT_SIZE = 2,000,000
 ```
+#### !STYLES
+Allows for use of Automatic1111 styles in your Dream Factory prompts. Use a comma-separated list for multiple styles. You may also set !STYLES to **random x** to have Dream Factory choose **x** styles randomly each time a prompt is executed (```!STYLES = random``` implies a single random style).
+Set !STYLES to nothing to clear it.
+```
+!STYLES = pop art
+!STYLES = pop art, victorian, neopunk
+!STYLES = random
+!STYLES = random 4
+!STYLES =
+```
+Note: Substrings are ok (e.g.: ```!STYLES = pop``` will match with a "pop art" style if it exists in your Auto1111 style catalog).
 
 ## Viewing your Images
 
