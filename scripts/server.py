@@ -152,7 +152,7 @@ def build_gallery(control):
             if params['styles'] != '':
                 if param_string != '':
                     param_string += '  |  '
-                param_string += 'Style(s): ' + str(params['styles'])
+                param_string += 'style(s): ' + str(params['styles'].replace('Style: ', ''))
 
             if params['seed'] != '':
                 if param_string != '':
