@@ -696,7 +696,8 @@ class SDI:
                     style['prompt'] = i['prompt']
                 if 'negative_prompt' in i:
                     style['negative_prompt'] = i['negative_prompt']
-                styles.append(style)
+                if style['name'] != None and style['prompt'] != None and style['negative_prompt'] != None:
+                    styles.append(style)
 
         self.log('received style query response: SD indicates ' + str(len(styles)) + ' styles available for use...', True)
         styles = sorted(styles, key=lambda d: d['name'].lower())
