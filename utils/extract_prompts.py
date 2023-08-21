@@ -232,6 +232,11 @@ if __name__ == '__main__':
         action='store_true',
         help="include original model(s) in the output"
     )
+    parser.add_argument(
+        "--remove_loras",
+        action='store_true',
+        help="remove all lora/hypernet references from prompts"
+    )
     opt = parser.parse_args()
 
     prompts = {}
@@ -304,6 +309,25 @@ if __name__ == '__main__':
                                 if '\nSteps' in params['prompt']:
                                     params['prompt'] = params['prompt'].split('\nSteps', 1)[0]
                                 params['prompt'] = params['prompt'].replace('\n', '')
+
+                            # remove loras/hypernets if necessary
+                            if opt.remove_loras:
+                                while '<lora:' in params['prompt'] and '>' in params['prompt']:
+                                    p = params['prompt']
+                                    before = p.split('<lora:', 1)[0]
+                                    after = p.split('<lora:', 1)[1]
+                                    after = after.split('>', 1)[1]
+                                    params['prompt'] = (before + after).strip()
+
+                                while '<hypernet:' in params['prompt'] and '>' in params['prompt']:
+                                    p = params['prompt']
+                                    before = p.split('<hypernet:', 1)[0]
+                                    after = p.split('<hypernet:', 1)[1]
+                                    after = after.split('>', 1)[1]
+                                    params['prompt'] = (before + after).strip()
+
+                                if params['prompt'].endswith(','):
+                                    params['prompt'] = params['prompt'][:-1].strip()
 
                             # check for filter words
                             found_fw = False
