@@ -6,6 +6,15 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.09.22]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **5ef669de080814067961f28357256e8fe27544f4**
+
+### Added
+- Expanded [Hires Fix](https://github.com/rbbrdckybk/dream-factory#highres_fix) support. Dream Factory now supports the newer Auto1111 method of specifying your intial highres fix image size along with a scaling factor, and continues to support the old legacy method (of simply specifying your desired final output size). The old method is currently the default, check out **HIRES_FIX_MODE** in ```config-default.txt``` for documentation on how to switch.
+- Added support for specifying hires fix [upscalers](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_upscaler), [models](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_ckpt_file), [samplers](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_sampler), [steps](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_steps), [prompts](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_prompt), and [negative prompts](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_neg_prompt). This opens up lots of creative potential, including the ability to start image generation with an SDXL model and finish the hires fix step with an SD 1.5 model (all in a single request!). Note that you may use all of these features regardless of whether you switch to the new hires fix method or stick with the old way.
+- Added support for [refiners](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#refiner_ckpt_file).
+- All of the new hires/refiner .prompts directive metadata are visible within the integrated Dream Factory image gallery.
+
 ## [2023.08.01]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **68f336bd994bed5442ad95bad6b6ad5564a5409a**
 
