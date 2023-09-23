@@ -204,6 +204,15 @@ These directives are valid in both the [config] section of both standard and ran
  * [!IPTC_KEYWORDS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_keywords)
  * [!IPTC_COPYRIGHT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#iptc_copyright)
  * [!STYLES](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#styles)
+ * [!HIGHRES_SCALE_FACTOR](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_scale_factor)
+ * [!HIGHRES_UPSCALER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_upscaler)
+ * [!HIGHRES_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_ckpt_file)
+ * [!HIGHRES_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_sampler)
+ * [!HIGHRES_STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_steps)
+ * [!HIGHRES_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_prompt)
+ * [!HIGHRES_NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_neg_prompt)
+ * [!REFINER_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#refiner_ckpt_file)
+ * [!REFINER_SWITCH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#refiner_switch)
  
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
@@ -251,6 +260,9 @@ Enables or disables the Auto1111 [highres fix](https://github.com/AUTOMATIC1111/
 ```
 !HIGHRES_FIX = no
 ```
+As of 2023-09-22, there is a **HIRES_FIX_MODE** option in your Dream Factory config.txt file that allows you to specify **simple** (default) or **advanced**. If you set ```HIRES_FIX_MODE = advanced```, you'll enable the ability to specify your initial image generation size, as well as a scaling factor that determines final size (see [**!HIGHRES_SCALE_FACTOR**](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_scale_factor) below).
+
+In the default **simple** mode, you simply set !WIDTH and !HEIGHT in .prompts files to your desired final output image size and intermediate steps are handled for you automatically.
 #### !STEPS
 The number of denoising steps (default = 20). More steps will generally improve image quality to a point, at the cost of processing time.
 ```
@@ -580,6 +592,69 @@ Set !STYLES to nothing to clear it.
 !STYLES =
 ```
 Note: Substrings are ok (e.g.: ```!STYLES = pop``` will match with a "pop art" style if it exists in your Auto1111 style catalog).
+#### !HIGHRES_SCALE_FACTOR
+Allows you to specify a scaling factor to apply to your initial images in order to determine the final output size. For example, if your !WIDTH and !HEIGHT are both set to 1024, and you set **!HIGHRES_SCALE_FACTOR = 1.5**, then the final output image size will be 1536x1536.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file, **and** you've set ```HIRES_FIX_MODE = advanced``` in your Dream Factory config.txt file.
+```
+!HIGHRES_SCALE_FACTOR = 1.25
+```
+Set to nothing to clear it (the default of 2.0 will be used if you set **HIGHRES_FIX = yes** in advanced mode without specifying your own HIGHRES_SCALE_FACTOR).
+#### !HIGHRES_UPSCALER
+Allows you to specify an upscaler to use for during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_UPSCALER = ESRGAN_4x
+```
+Set to nothing to clear it (**Latent** will be used as a default if you don't set anything here and use **HIGHRES_FIX = yes**).
+#### !HIGHRES_CKPT_FILE
+Allows you to specify a different model to use during the highres fix portion of image generation. Note that you can mix and match SDXL and SD 1.5 models here (e.g. do your initial generation with SDXL and then use a SD 1.5 model for the highres fix)!
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_CKPT_FILE = epicrealism
+```
+Substring matches on model filenames are ok (hashes will work, too).
+Set to nothing to clear it (**Latent** will be used as a default if you don't set anything here and use **HIGHRES_FIX = yes**).
+#### !HIGHRES_SAMPLER
+Allows you to specify a different model to use during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_SAMPLER = Euler a
+```
+Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the sampler that was used during the initial generation will be used).
+#### !HIGHRES_STEPS
+Allows you to specify a different number of steps during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_STEPS = 20
+```
+Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the step count that was used during the initial generation will be used).
+#### !HIGHRES_PROMPT
+Allows you to specify a different prompt during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_PROMPT = highly detailed
+```
+Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the prompt that was used during the initial generation will be used).
+#### !HIGHRES_NEG_PROMPT
+Allows you to specify a different negative prompt during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_NEG_PROMPT = ugly
+```
+Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the negative prompt that was used during the initial generation will be used).
+#### !REFINER_CKPT_FILE
+Allows you to specify a refiner model to use.
+```
+!REFINER_CKPT_FILE = sd_xl_base_1.0_refiner
+```
+Substring matches on model filenames are ok (hashes will work, too).
+Set to nothing to clear it.
+#### !REFINER_SWITCH
+Allows you to specify when the refiner model should be switched to during image generation (0 - 1). For example, setting 0.50 here will perform the switch exactly halfway into generation.
+```
+!REFINER_SWITCH = 0.75
+```
+Set to nothing to clear it (if you don't set anything here but use **!REFINER_CKPT_FILE**, then 0.8 will be used as a default).
 
 ## Viewing your Images
 
@@ -665,10 +740,10 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout 68f336bd994bed5442ad95bad6b6ad5564a5409a
+git checkout 5ef669de080814067961f28357256e8fe27544f4
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
 If/when you want to go back to the latest version, you can just run ```git checkout master```.
 
-(updated 2023-07-31, previous supported hash: 394ffa7b0a7fff3ec484bcd084e673a8b301ccc8)
+(updated 2023-09-22, previous supported hash: 68f336bd994bed5442ad95bad6b6ad5564a5409a)
