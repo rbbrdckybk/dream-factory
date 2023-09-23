@@ -40,7 +40,7 @@ Some UI screenshots:
 
 # Features
 
- * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release).
+ * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with support for SD 1.4, SD 1.5, SD 2.0, SD 2.1, and SDXL (with ControlNet support).
  * Dream Factory acts as a powerful automation and management tool for the popular [Automatic1111 SD repo](https://github.com/AUTOMATIC1111/stable-diffusion-webui#features). Integration with Automatic1111's repo means Dream Factory has access to one of the most full-featured Stable Diffusion packages available.
  * Multi-threaded engine capable of simultaneous, fast management of multiple GPUs. As far as I'm aware, Dream Factory is currently one of the only Stable Diffusion options for true multi-GPU support.
  * Powerful custom prompt file format that allows you to easily define compound prompt templates. Want to quickly create thousands of prompts from a template like "_photo of a **[adjective(s)] [animal]** as a **[profession]**, art by **[artist(s)]**, **[keyword(s)]**_" where each bracketed section needs to be filled in with dozens (or hundreds) of different items? No problem. Maybe you want your GPUs to create every possible combination, or maybe you want combinations to be picked randomly? Your choice. Maybe you want some items to be handled with different settings? Totally doable. Prompt files can be as complex or simple as you want — you can simply paste in a list of stand-alone prompts and go, too!
