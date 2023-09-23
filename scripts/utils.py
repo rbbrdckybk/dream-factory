@@ -249,9 +249,18 @@ class PromptManager():
             'ckpt_file' : self.control.config['ckpt_file'],
             'override_ckpt_file' : '',
             'sampler' : self.control.config['sampler'],
-            'neg_prompt' : "",
+            'prompt' : "",                                              # BK 2023-09-22
             'neg_prompt' : self.control.config['neg_prompt'],
             'highres_fix' : self.control.config['highres_fix'],
+            'highres_scale_factor' : '',
+            'highres_upscaler' : '',
+            'highres_ckpt_file' : '',
+            'highres_sampler' : '',
+            'highres_steps' : '',
+            'highres_prompt' : '',
+            'highres_neg_prompt' : '',
+            'refiner_ckpt_file' : '',
+            'refiner_switch' : '',
             'auto_insert_model_trigger' : self.control.config['auto_insert_model_trigger'],
             'use_upscale' : self.control.config['use_upscale'],
             'upscale_amount' : self.control.config['upscale_amount'],
@@ -363,6 +372,89 @@ class PromptManager():
         elif command == 'highres_fix':
             if value == 'yes' or value == 'no':
                 self.config.update({'highres_fix' : value})
+
+        elif command == 'highres_scale_factor':
+            if self.control.config['hires_fix_mode'] == 'advanced':
+                if value != '':
+                    try:
+                        float(value)
+                    except:
+                        self.control.print("*** WARNING: specified 'HIGHRES_SCALE_FACTOR' is not a valid number; it will be ignored!")
+                    else:
+                        self.config.update({'highres_scale_factor' : value})
+                else:
+                    self.config.update({'highres_scale_factor' : ''})
+            else:
+                self.control.print("*** WARNING: specified 'HIGHRES_SCALE_FACTOR' but config.txt specifies simple highres_fix mode; it will be ignored!")
+
+        elif command == 'highres_upscaler':
+            if value != '':
+                if value.lower().strip() == 'latent':
+                    self.config.update({'highres_upscaler' : 'Latent'})
+                elif value.lower().strip() == 'none':
+                    self.config.update({'highres_upscaler' : 'None'})
+                else:
+                    upscale_model = self.control.validate_upscale_model(value.strip())
+                    if upscale_model != '':
+                        self.config.update({'highres_upscaler' : upscale_model})
+                    else:
+                        self.control.print("*** WARNING: HIGHRES_UPSCALER value (" + value.strip() + ") doesn't match any server values; ignoring it! ***")
+            else:
+                self.config.update({'highres_upscaler' : ''})
+
+        elif command == 'highres_ckpt_file':
+            model = ''
+            if value != '':
+                model = self.control.validate_model(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command HIGHRES_CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+            self.config.update({'highres_ckpt_file' : model})
+
+        elif command == 'highres_sampler':
+            if value != '':
+                sampler = self.validate_sampler(value)
+                self.config.update({'highres_sampler' : sampler})
+            else:
+                self.config.update({'highres_sampler' : ''})
+
+        elif command == 'highres_steps':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'HIGHRES_STEPS' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'highres_steps' : value})
+            else:
+                self.config.update({'highres_steps' : ''})
+
+        elif command == 'highres_prompt':
+            self.config.update({'highres_prompt' : value})
+
+        elif command == 'highres_neg_prompt':
+            self.config.update({'highres_neg_prompt' : value})
+
+        elif command == 'refiner_ckpt_file':
+            model = ''
+            if value != '':
+                model = self.control.validate_model(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command REFINER_CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+            self.config.update({'refiner_ckpt_file' : model})
+
+        elif command == 'refiner_switch':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    self.control.print("*** WARNING: specified 'REFINER_SWITCH' is not a valid number; it will be ignored!")
+                else:
+                    if float(value) >= 0 and float(value) <= 1:
+                        self.config.update({'refiner_switch' : value})
+                    else:
+                        self.control.print("*** WARNING: 'REFINER_SWITCH' value must be between 0-1; it will be ignored!")
+            else:
+                self.config.update({'refiner_switch' : ''})
 
         elif command == 'seed':
             if value != '':
@@ -1281,13 +1373,44 @@ def create_command(command, output_dir_ext, gpu_id):
 
     if command.get('input_image') != "":
         #py_command += " --init-img \"../" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
-        py_command += " --init-img \"" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
+        #py_command += " --init-img \"" + str(command.get('input_image')) + "\"" + " --strength " + str(command.get('strength'))
+        py_command += " --init-img \"" + str(command.get('input_image')) + "\""
+
+    if command.get('strength') != "":
+        py_command += " --strength " + str(command.get('strength'))
 
     if command.get('clip_skip') != "":
         py_command += " --clip-skip " + str(command.get('clip_skip'))
 
     if command.get('vae') != "":
         py_command += " --vae " + str(command.get('vae'))
+
+    if command.get('highres_scale_factor') != "":
+        py_command += " --hr_scale_factor " + str(command.get('highres_scale_factor'))
+
+    if command.get('highres_upscaler') != "":
+        py_command += " --hr_upscaler " + str(command.get('highres_upscaler'))
+
+    if command.get('highres_ckpt_file') != "":
+        py_command += " --hr_ckpt \"" + str(command.get('highres_ckpt_file')) + "\""
+
+    if command.get('highres_sampler') != "":
+        py_command += " --hr_sampler " + str(command.get('highres_sampler'))
+
+    if command.get('highres_steps') != "":
+        py_command += " --hr_steps " + str(command.get('highres_steps'))
+
+    if command.get('highres_prompt') != "":
+        py_command += " --hr_prompt \"" + str(command.get('highres_prompt')) + "\""
+
+    if command.get('highres_neg_prompt') != "":
+        py_command += " --hr_neg_prompt \"" + str(command.get('highres_neg_prompt')) + "\""
+
+    if command.get('refiner_ckpt_file') != "":
+        py_command += " --refiner_ckpt \"" + str(command.get('refiner_ckpt_file')) + "\""
+
+    if command.get('refiner_switch') != "":
+        py_command += " --refiner_switch " + str(command.get('refiner_switch'))
 
     if command.get('styles') != None and len(command.get('styles')) > 0:
         py_command += " --styles \""
@@ -1346,7 +1469,16 @@ def extract_params_from_command(command):
         'clip_skip' : "",
         'vae' : "",
         'styles' : "",
-        'tiling' : ""
+        'tiling' : "",
+        'highres_scale_factor' : "",
+        'highres_upscaler' : "",
+        'highres_ckpt_file' : "",
+        'highres_sampler' : "",
+        'highres_steps' : "",
+        'highres_prompt' : "",
+        'highres_neg_prompt' : "",
+        'refiner_ckpt_file' : "",
+        'refiner_switch' : ""
     }
 
     if command != "":
@@ -1434,6 +1566,64 @@ def extract_params_from_command(command):
                 temp = temp.split('--', 1)[0]
             temp = temp.replace('"', '')
             params.update({'styles' : temp.strip()})
+
+        if '--hr_scale_factor' in command:
+            temp = command.split('--hr_scale_factor', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'highres_scale_factor' : temp.strip()})
+
+        if '--hr_upscaler' in command:
+            temp = command.split('--hr_upscaler', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'highres_upscaler' : temp.strip()})
+
+        if '--hr_ckpt' in command:
+            temp = command.split('--hr_ckpt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('\"', '')
+            temp = filename_from_abspath(temp)
+            params.update({'highres_ckpt_file' : temp.strip()})
+
+        if '--hr_sampler' in command:
+            temp = command.split('--hr_sampler', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'highres_sampler' : temp.strip()})
+
+        if '--hr_steps' in command:
+            temp = command.split('--hr_steps', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'highres_steps' : temp.strip()})
+
+        if '--hr_prompt' in command:
+            temp = command.split('--hr_prompt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'highres_prompt' : temp.strip().strip('"')})
+
+        if '--hr_neg_prompt' in command:
+            temp = command.split('--hr_neg_prompt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'highres_neg_prompt' : temp.strip().strip('"')})
+
+        if '--refiner_ckpt' in command:
+            temp = command.split('--refiner_ckpt', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('\"', '')
+            temp = filename_from_abspath(temp)
+            params.update({'refiner_ckpt_file' : temp.strip()})
+
+        if '--refiner_switch' in command:
+            temp = command.split('--refiner_switch', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'refiner_switch' : temp.strip()})
 
         if '--init-img' in command:
             temp = command.split('--init-img', 1)[1]

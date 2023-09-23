@@ -916,13 +916,18 @@ class SDI:
         model_req.start()
 
 
-    # tells the SD instance to use the legacy highres_fix behavior
-    def set_initial_options(self):
+    # tells the SD instance to use the legacy highres_fix behavior or current new method
+    def set_initial_options(self, hires_fix_mode):
         self.options_change_in_progress = True
         self.log("passing initial setup options to SD instance...", True)
-        payload = {
-            "use_old_hires_fix_width_height": True
-        }
+        if hires_fix_mode == 'advanced':
+            payload = {
+                "use_old_hires_fix_width_height": False
+            }
+        else:
+            payload = {
+                "use_old_hires_fix_width_height": True
+            }
         model_req = SetOptionsRequest(self, payload, self.handle_options_response)
         model_req.start()
 

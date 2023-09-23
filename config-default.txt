@@ -103,11 +103,20 @@ MAX_OUTPUT_SIZE =
 # (e.g. "sd_xl_base_1.0.safetensors" and "sd_xl_base_1.0_refiner.safetensors")
 AUTO_USE_REFINER = yes
 
+
+# Auto1111 Hires Fix mode to use: simple (default) or advanced
+# simple = equivalent to enabling Auto1111 Settings -> Compatibility -> "For hires fix, use width/height sliders to set final resolution..."
+# when using simple, your !WIDTH and !HEIGHT are the final output image size, the intermediate image size will be auto-calculated
+# advanced = current Auto1111 method; requires setting both initial resolution and a scaling factor that each dimension will be multiplied by
+# when using advanced, your !WIDTH and !HEIGHT are the initial generation size; you must also set !HIGHRES_SCALE_FACTOR (default = 2) to determine final size!
+HIRES_FIX_MODE = simple
+
+
 # You can set your own defaults for prompt file settings below.
 # Settings specified in individual prompt files will always override these.
 
-PF_WIDTH = 512             			# output image width, default is 512
-PF_HEIGHT = 512            			# output image height, default is 512
+PF_WIDTH = 512             			# output image final width, default is 512
+PF_HEIGHT = 512            			# output image final height, default is 512
 PF_HIGHRES_FIX = no					# helps a lot when generating images significantly larger than 512x512 at the cost of speed
 PF_SAMPLER = DPM++ 2M Karras		# sampler to use (create a new prompt file using the web UI to see a full list of options)
 PF_STEPS = 20              			# number of steps, default = 50

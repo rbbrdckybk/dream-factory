@@ -433,9 +433,44 @@ class Worker(threading.Thread):
                   "negative_prompt": str(self.command.get('neg_prompt'))
                 }
 
+                if self.command['highres_fix'] == 'yes':
+                    if self.command.get('highres_upscaler') != '':
+                        payload["hr_upscaler"] = str(self.command.get('highres_upscaler'))
+                    if self.command.get('highres_ckpt_file') != '':
+                        payload["hr_checkpoint_name"] = str(self.command.get('highres_ckpt_file'))
+                    if self.command.get('highres_sampler') != '':
+                        payload["hr_sampler_name"] = str(self.command.get('highres_sampler'))
+                    if self.command.get('highres_prompt') != '':
+                        payload["hr_prompt"] = str(self.command.get('highres_prompt'))
+                    if self.command.get('highres_neg_prompt') != '':
+                        payload["hr_negative_prompt"] = str(self.command.get('highres_neg_prompt'))
+                    if self.command.get('highres_steps') != '':
+                        payload["hr_second_pass_steps"] = self.command.get('highres_steps')
+                    # add upscaling factor if necessary
+                    if control.config.get('hires_fix_mode') == 'advanced':
+                        if self.command.get('highres_scale_factor') == '':
+                            # set default so we'll have it in metadata
+                            self.command['highres_scale_factor'] = 2.0
+                        payload["hr_scale"] = self.command.get('highres_scale_factor')
+                else:
+                    # remove these so they don't go into metadata when HR fix is disabled
+                    self.command['highres_scale_factor'] = ''
+                    self.command['highres_upscaler'] = ''
+                    self.command['highres_ckpt_file'] = ''
+                    self.command['highres_sampler'] = ''
+                    self.command['highres_steps'] = ''
+                    self.command['highres_prompt'] = ''
+                    self.command['highres_neg_prompt'] = ''
+
             # add styles to payload if present
             if self.command.get('styles') != None and len(self.command.get('styles')) > 0:
                 payload["styles"] = self.command.get('styles')
+
+            # add refiner to payload if present
+            if self.command.get('refiner_ckpt_file') != '':
+                payload["refiner_checkpoint"] = str(self.command.get('refiner_ckpt_file'))
+                if self.command.get('refiner_switch') != '':
+                    payload["refiner_switch_at"] = self.command.get('refiner_switch')
 
             # add CN params to existing payload if ControlNet is enabled
             # https://github.com/Mikubill/sd-webui-controlnet/wiki/API
@@ -1632,6 +1667,7 @@ class Controller:
             'jpg_quality' : 88,
             'max_output_size' : 0,
             'auto_use_refiner' : True,
+            'hires_fix_mode' : 'simple',
 
             'auto_insert_model_trigger' : 'start',
             'neg_prompt' : '',
@@ -1807,6 +1843,14 @@ class Controller:
                                 self.config.update({'jpg_quality' : int(value)})
                             else:
                                 print("*** WARNING: specified 'JPG_QUALITY' value must be between 1-100!")
+
+                    elif command == 'hires_fix_mode':
+                        value = value.lower()
+                        if value == 'simple' or value == 'advanced':
+                            self.config.update({'hires_fix_mode' : value})
+                        else:
+                            print("*** WARNING: specified 'HIRES_FIX_MODE' value not recognized; defaulting to simple!")
+                            self.config.update({'hires_fix_mode' : 'simple'})
 
                     elif command == 'max_output_size':
                         value = value.replace(',', '').strip()
@@ -2806,7 +2850,7 @@ if __name__ == '__main__':
             #if not control.sdi_setup_request_made:
             if not worker['sdi_setup_request_made']:
                 # sets initial config options necessary for Dream Factory to operate
-                worker['sdi_instance'].set_initial_options()
+                worker['sdi_instance'].set_initial_options(control.config.get('hires_fix_mode'))
                 worker['sdi_setup_request_made'] = True
                 skip = True
 

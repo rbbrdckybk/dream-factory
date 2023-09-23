@@ -89,8 +89,14 @@ def build_gallery(control):
                 prompt = '(no prompt)'
             else:
                 prompt = params['prompt'].replace('<', '&lt;').replace('>', '&gt;')
+
             if params['width'] != '':
-                param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
+                if 'highres_scale_factor' in params and params['highres_scale_factor'] != '':
+                    calc_width = round(float(params['highres_scale_factor']) * float(params['width']))
+                    calc_height = round(float(params['highres_scale_factor']) * float(params['height']))
+                    param_string += 'size: ' + str(calc_width) + 'x' + str(calc_height)
+                else:
+                    param_string += 'size: ' + str(params['width']) + 'x' + str(params['height'])
 
             if params['input_image'] != "":
                 if param_string != '':
@@ -149,10 +155,56 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += 'VAE: ' + str(params['vae'])
 
+            if 'refiner_ckpt_file' in params and params['refiner_ckpt_file'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                model = str(params['refiner_ckpt_file'])
+                model = model.split('[', 1)[0].strip()
+                param_string += 'refiner: ' + model
+                if 'refiner_switch' in params and params['refiner_switch'] != '':
+                    param_string += ' (switch at ' + str(params['refiner_switch']) + ')'
+
             if params['styles'] != '':
                 if param_string != '':
                     param_string += '  |  '
                 param_string += 'style(s): ' + str(params['styles'].replace('Style: ', ''))
+
+            show_denoise = False
+            if 'highres_scale_factor' in params and params['highres_scale_factor'] != '' and params['width'] != '':
+                show_denoise = True
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'highres fix applied: ' + str(params['highres_scale_factor']) + 'x scaling on ' + str(params['width']) + 'x' + str(params['height'])
+
+            if 'highres_ckpt_file' in params and params['highres_ckpt_file'] != '':
+                show_denoise = True
+                if param_string != '':
+                    param_string += '  |  '
+                model = str(params['highres_ckpt_file'])
+                model = model.split('[', 1)[0].strip()
+                param_string += 'HR fix model: ' + model
+
+            if 'highres_upscaler' in params and params['highres_upscaler'] != '':
+                show_denoise = True
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'HR fix upscaler: ' + str(params['highres_upscaler'])
+
+            if 'highres_sampler' in params and params['highres_sampler'] != '':
+                show_denoise = True
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'HR fix sampler: ' + str(params['highres_sampler'])
+
+            if 'highres_steps' in params and params['highres_steps'] != '':
+                show_denoise = True
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += 'HR fix steps: ' + str(params['highres_steps'])
+
+            if show_denoise and params['strength'] != '':
+                param_string += '  |  '
+                param_string += 'HR fix denoising: ' + str(params['strength'])
 
             if params['seed'] != '':
                 if param_string != '':
