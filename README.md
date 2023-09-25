@@ -231,6 +231,8 @@ Finally, these special directives are valid only in **process** prompt files (!M
 
  * [!OVERRIDE_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_ckpt_file)
  * [!OVERRIDE_MAX_OUTPUT_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_max_output_size)
+ * [!OVERRIDE_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_sampler)
+ * [!OVERRIDE_STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_steps)
 
 Command Help and Usage Examples:
 
