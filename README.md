@@ -230,6 +230,7 @@ These directives are valid only in the [config] section of **random** prompt fil
 Finally, these special directives are valid only in **process** prompt files (!MODE = process):
 
  * [!OVERRIDE_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_ckpt_file)
+ * [!OVERRIDE_VAE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_vae)
  * [!OVERRIDE_MAX_OUTPUT_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_max_output_size)
  * [!OVERRIDE_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_sampler)
  * [!OVERRIDE_STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_steps)
@@ -577,6 +578,13 @@ This directive allows you to specify a different model to use (e.g. instead of t
 !OVERRIDE_CKPT_FILE = juggernaut
 ```
 Note: substring matches are valid here. In the example, "juggernaut" would match with the first valid model file that contains the string "juggernaut".
+#### !OVERRIDE_VAE
+Special directive valid only in ```!MODE = process``` .prompts files, and only when used with ```!UPSCALE_MODEL = sd```.
+This directive allows you to specify a different VAE to use (e.g. instead of the VAE used to create the original image) when performing an SD upscale.
+```
+!OVERRIDE_VAE = vae-ft-mse-840000-ema-pruned
+```
+Note: substring matches are valid here. In the example, "vae-ft-mse-840000-ema-pruned" would match with the first valid VAE file that contains the string "vae-ft-mse-840000-ema-pruned".
 #### !OVERRIDE_MAX_OUTPUT_SIZE
 Special directive valid only in ```!MODE = process``` .prompts files, and only has any effect when used with ```!UPSCALE_MODEL = sd```.
 This directive allows you to override the value set for MAX_OUTPUT_SIZE in your config.txt file (see config-default.txt for detailed explanation).
