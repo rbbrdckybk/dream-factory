@@ -595,6 +595,7 @@ This directive allows you to specify a different number of steps (e.g. instead o
 ```
 !OVERRIDE_STEPS = 40
 ```
+Note that you're overriding the number of steps used to create the **original** image, not setting the number of steps to use for the actual upscaling (which is determined by a combination of the step value and the !UPSCALE_SD_STRENGTH). So for example, if the original image was created with 120 steps, and you set ```!OVERRIDE_STEPS = 40``` in a !PROCESS_MODE SD upscale job that uses ```!UPSCALE_SD_STRENGTH = 0.30```, then the final output image will have ~13 steps (40 * 0.3) instead of 40 steps (120 * 0.3).
 #### !STYLES
 Allows for use of Automatic1111 styles in your Dream Factory prompts. Use a comma-separated list for multiple styles. You may also set !STYLES to **random x** to have Dream Factory choose **x** styles randomly each time a prompt is executed (```!STYLES = random``` implies a single random style).
 Set !STYLES to nothing to clear it.
