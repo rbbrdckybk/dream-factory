@@ -106,7 +106,8 @@ def extract_params_from_command(command):
         'strength' : "",
         'neg_prompt' : "",
         'model' : "",
-        'sampler' : ""
+        'sampler' : "",
+        'styles' : ""
     }
 
     if command != "":
@@ -195,6 +196,12 @@ def extract_params_from_command(command):
             if '--' in temp:
                 temp = temp.split('--', 1)[0]
             params.update({'strength' : temp.strip()})
+
+        if '--styles' in command:
+            temp = command.split('--styles', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            params.update({'styles' : temp.strip()})
 
     return params
 
@@ -368,6 +375,10 @@ if __name__ == '__main__':
 
                                 if params['prompt'].strip() != '':
                                     temp = params['prompt']
+                                    if params['styles'] != '':
+                                        temp = '!STYLES = ' + params['styles'].strip('\"') + '\n' + temp
+                                    else:
+                                        temp = '!STYLES = # no styles\n'  + temp
                                     if opt.extract_neg_prompts:
                                         if params['neg_prompt'] == '':
                                             params['neg_prompt'] = ' # no negative prompt'
