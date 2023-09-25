@@ -655,6 +655,10 @@ class Worker(threading.Thread):
                                         # TODO: should instantiate new prompt_manager if we don't have one yet
                                         sd_sampler = control.prompt_manager.validate_sampler(sd_sampler, True)
 
+                                sd_vae = str(self.command.get('vae'))
+                                if "vae" in original_command:
+                                    sd_vae = original_command['vae']
+
                                 sd_prompt = str(self.command.get('prompt'))
                                 if "prompt" in original_command:
                                     sd_prompt = original_command['prompt']
@@ -782,9 +786,12 @@ class Worker(threading.Thread):
                                 if self.command.get('clip_skip') != '':
                                     override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
 
-                                if override_model == '':
-                                    if self.command.get('vae') != '':
-                                        override_settings["sd_vae"] = self.command.get('vae')
+                                if self.command.get('override_vae') != '':
+                                    override_settings["sd_vae"] = self.command.get('override_vae')
+                                else:
+                                    if override_model == '':
+                                        if sd_vae != '':
+                                            override_settings["sd_vae"] = sd_vae
 
                                 if override_settings != {}:
                                     payload["override_settings"] = override_settings
