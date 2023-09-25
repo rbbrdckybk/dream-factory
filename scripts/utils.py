@@ -270,6 +270,8 @@ class PromptManager():
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
             'upscale_model' : self.control.config['upscale_model'],
             'override_max_output_size' : 0,
+            'override_sampler' : '',
+            'override_steps' : 0,
             'filename' : self.control.config['filename'],
             'output_dir' : '',
             'outdir' : self.control.config['output_location']
@@ -606,6 +608,22 @@ class PromptManager():
                         self.config.update({'override_max_output_size' : value})
                     else:
                         self.control.print("*** WARNING: specified 'OVERRIDE_MAX_OUTPUT_SIZE' is too low; it will be ignored!")
+            else:
+                self.config.update({'override_max_output_size' : 0})
+
+        elif command == 'override_steps':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'OVERRIDE_STEPS' is not a valid number; it will be ignored!")
+                else:
+                    if int(value) > 0:
+                        self.config.update({'override_steps' : value})
+                    else:
+                        self.control.print("*** WARNING: specified 'OVERRIDE_STEPS' is too low; it will be ignored!")
+            else:
+                self.config.update({'override_steps' : 0})
 
         elif command == 'mode':
             if value == 'random' or value == 'standard' or value == 'process':
@@ -934,6 +952,13 @@ class PromptManager():
         elif command == 'sampler':
             sampler = self.validate_sampler(value)
             self.config.update({'sampler' : sampler})
+
+        elif command == 'override_sampler':
+            if value != '':
+                sampler = self.validate_sampler(value)
+                self.config.update({'override_sampler' : sampler})
+            else:
+                self.config.update({'override_sampler' : ''})
 
         elif command == 'neg_prompt':
             self.config.update({'neg_prompt' : value})

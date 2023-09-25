@@ -708,7 +708,8 @@ class Worker(threading.Thread):
                                 sd_width = 512
                                 sd_height = 512
                                 set_max_output_size = control.config.get('max_output_size')
-                                # check for override in process mode directive
+
+                                # check for overrides in process mode directives
                                 if self.command.get('override_max_output_size') != 0:
                                     set_max_output_size = int(self.command.get('override_max_output_size'))
                                 new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], set_max_output_size, True)
@@ -718,6 +719,12 @@ class Worker(threading.Thread):
                                     sd_height = new_dimensions[1]
                                 else:
                                     control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
+
+                                if self.command.get('override_steps') != 0:
+                                    sd_steps = self.command.get('override_steps')
+
+                                if self.command.get('override_sampler') != '':
+                                    sd_sampler = self.command.get('override_sampler')
 
                                 # check if a model change is needed before upscaling
                                 sd_model = str(self.command.get('ckpt_file'))
