@@ -581,6 +581,18 @@ This directive allows you to override the value set for MAX_OUTPUT_SIZE in your 
 ```
 !OVERRIDE_MAX_OUTPUT_SIZE = 2,000,000
 ```
+#### !OVERRIDE_SAMPLER
+Special directive valid only in ```!MODE = process``` .prompts files, and only has any effect when used with ```!UPSCALE_MODEL = sd```.
+This directive allows you to specify a different sampler to use (e.g. instead of the sampler used to create the original image) when performing an SD upscale.
+```
+!OVERRIDE_SAMPLER = DPM++ 2M Karras
+```
+#### !OVERRIDE_STEPS
+Special directive valid only in ```!MODE = process``` .prompts files, and only has any effect when used with ```!UPSCALE_MODEL = sd```.
+This directive allows you to specify a different number of steps (e.g. instead of the step value used to create the original image) when performing an SD upscale.
+```
+!OVERRIDE_STEPS = 40
+```
 #### !STYLES
 Allows for use of Automatic1111 styles in your Dream Factory prompts. Use a comma-separated list for multiple styles. You may also set !STYLES to **random x** to have Dream Factory choose **x** styles randomly each time a prompt is executed (```!STYLES = random``` implies a single random style).
 Set !STYLES to nothing to clear it.
