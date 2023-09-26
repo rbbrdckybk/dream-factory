@@ -207,6 +207,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!HIGHRES_SCALE_FACTOR](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_scale_factor)
  * [!HIGHRES_UPSCALER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_upscaler)
  * [!HIGHRES_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_ckpt_file)
+ * [!HIGHRES_VAE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_vae)
  * [!HIGHRES_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_sampler)
  * [!HIGHRES_STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_steps)
  * [!HIGHRES_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_prompt)
@@ -637,6 +638,14 @@ This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts 
 ```
 Substring matches on model filenames are ok (hashes will work, too).
 Set to nothing to clear it (**Latent** will be used as a default if you don't set anything here and use **HIGHRES_FIX = yes**).
+#### !HIGHRES_VAE
+Allows you to specify a different VAE to use during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_VAE = vae-ft-mse-840000-ema-pruned
+```
+Substring matches on VAE filenames are ok.
+Set to nothing to clear it.
 #### !HIGHRES_SAMPLER
 Allows you to specify a different model to use during the highres fix portion of image generation.
 This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
