@@ -255,6 +255,7 @@ class PromptManager():
             'highres_scale_factor' : '',
             'highres_upscaler' : '',
             'highres_ckpt_file' : '',
+            'highres_vae' : '',
             'highres_sampler' : '',
             'highres_steps' : '',
             'highres_prompt' : '',
@@ -272,6 +273,7 @@ class PromptManager():
             'override_max_output_size' : 0,
             'override_sampler' : '',
             'override_steps' : 0,
+            'override_vae' : '',
             'filename' : self.control.config['filename'],
             'output_dir' : '',
             'outdir' : self.control.config['output_location']
@@ -411,6 +413,17 @@ class PromptManager():
                 if model == '':
                     self.control.print("*** WARNING: prompt file command HIGHRES_CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
             self.config.update({'highres_ckpt_file' : model})
+
+        elif command == 'highres_vae':
+            if value != '':
+                model = self.control.validate_VAE(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command HIGHRES_VAE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                    self.config.update({'highres_vae' : ''})
+                else:
+                    self.config.update({'highres_vae' : model})
+            else:
+                self.config.update({'highres_vae' : ''})
 
         elif command == 'highres_sampler':
             if value != '':
@@ -858,6 +871,17 @@ class PromptManager():
                     self.config.update({'vae' : model})
             else:
                 self.config.update({'vae' : ''})
+
+        elif command == 'override_vae':
+            if value != '':
+                model = self.control.validate_VAE(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command OVERRIDE_VAE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                    self.config.update({'override_vae' : ''})
+                else:
+                    self.config.update({'override_vae' : model})
+            else:
+                self.config.update({'override_vae' : ''})
 
         elif command == 'styles':
             if value != '':
@@ -1419,6 +1443,9 @@ def create_command(command, output_dir_ext, gpu_id):
     if command.get('highres_ckpt_file') != "":
         py_command += " --hr_ckpt \"" + str(command.get('highres_ckpt_file')) + "\""
 
+    if command.get('highres_vae') != "":
+        py_command += " --hr_vae \"" + str(command.get('highres_vae')) + "\""
+
     if command.get('highres_sampler') != "":
         py_command += " --hr_sampler " + str(command.get('highres_sampler'))
 
@@ -1498,6 +1525,7 @@ def extract_params_from_command(command):
         'highres_scale_factor' : "",
         'highres_upscaler' : "",
         'highres_ckpt_file' : "",
+        'highres_vae' : "",
         'highres_sampler' : "",
         'highres_steps' : "",
         'highres_prompt' : "",
@@ -1611,6 +1639,14 @@ def extract_params_from_command(command):
             temp = temp.replace('\"', '')
             temp = filename_from_abspath(temp)
             params.update({'highres_ckpt_file' : temp.strip()})
+
+        if '--hr_vae' in command:
+            temp = command.split('--hr_vae', 1)[1]
+            if '--' in temp:
+                temp = temp.split('--', 1)[0]
+            temp = temp.replace('\"', '')
+            temp = filename_from_abspath(temp)
+            params.update({'highres_vae' : temp.strip()})
 
         if '--hr_sampler' in command:
             temp = command.split('--hr_sampler', 1)[1]

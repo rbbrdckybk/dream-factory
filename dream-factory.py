@@ -503,9 +503,13 @@ class Worker(threading.Thread):
             if self.command.get('clip_skip') != '':
                 override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
 
-            if self.command.get('vae') != '':
-                override_settings["sd_vae"] = self.command.get('vae')
-
+            if self.command.get('input_image') == '' and self.command['highres_fix'] == 'yes' and self.command.get('highres_vae') != '':
+                override_settings["sd_vae"] = str(self.command.get('highres_vae'))
+            else:
+                if self.command.get('vae') != '':
+                    override_settings["sd_vae"] = self.command.get('vae')
+                self.command['highres_vae'] = ''
+                
             if override_settings != {}:
                 payload["override_settings"] = override_settings
 
