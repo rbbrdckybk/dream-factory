@@ -504,12 +504,14 @@ class Worker(threading.Thread):
                 override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
 
             if self.command.get('input_image') == '' and self.command['highres_fix'] == 'yes' and self.command.get('highres_vae') != '':
-                override_settings["sd_vae"] = str(self.command.get('highres_vae'))
+                # BK 2023-09-26 revert, no separate Auto1111 VAE API setting
+                #override_settings["sd_vae"] = str(self.command.get('highres_vae'))
+                pass
             else:
                 if self.command.get('vae') != '':
                     override_settings["sd_vae"] = self.command.get('vae')
                 self.command['highres_vae'] = ''
-                
+
             if override_settings != {}:
                 payload["override_settings"] = override_settings
 
