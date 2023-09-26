@@ -639,6 +639,7 @@ This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts 
 Substring matches on model filenames are ok (hashes will work, too).
 Set to nothing to clear it (**Latent** will be used as a default if you don't set anything here and use **HIGHRES_FIX = yes**).
 #### !HIGHRES_VAE
+**Not currently working; Auto1111 doesn't have an API setting for this yet!**
 Allows you to specify a different VAE to use during the highres fix portion of image generation.
 This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
 ```
