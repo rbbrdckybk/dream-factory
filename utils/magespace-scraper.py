@@ -6,7 +6,9 @@
 # examples:
 # python magespace-scraper.py --search johnslegers
 # python magespace-scraper.py --explore --search landscape
+# python magespace-scraper.py --query --search "a pixel sunrise"
 # python magespace-scraper.py --remove_loras --no-neg --explore --search cyberpunk
+
 # or for help/options: python magespace-scraper.py --help
 
 # This requires Playwright, which can be installed with these commands:
@@ -19,6 +21,7 @@ import time
 import json
 import argparse
 import os
+import re
 from os.path import exists
 
 url = "https://www.mage.space/"
@@ -33,6 +36,7 @@ user = ''
 profile_mode = True
 neg_prompts = True
 remove_loras = False
+query_mode = False
 
 # entry point
 if __name__ == '__main__':
@@ -55,7 +59,12 @@ if __name__ == '__main__':
     parser.add_argument(
         "--explore",
         action='store_true',
-        help="use an explore URL (e.g: 'pop' for 'https://www.mage.space/explore?t=pop' instead of a user profile name)"
+        help="use a category explore URL (e.g: 'pop' for 'https://www.mage.space/explore?t=pop' instead of a user profile name)"
+    )
+    parser.add_argument(
+        "--query",
+        action='store_true',
+        help="use a custom query URL (e.g: 'a pixel sunrise' for 'https://www.mage.space/explore?q=a+pixel+sunrise' instead of a user profile name)"
     )
     parser.add_argument(
         "--outdir",
@@ -89,12 +98,18 @@ if __name__ == '__main__':
         remove_loras = True
 
     if user != '':
+        url = "https://www.mage.space/u/" + user
+
         if opt.explore == True:
             profile_mode = False
             url = "https://www.mage.space/explore?t=" + user
             search = user + '?'
-        else:
-            url = "https://www.mage.space/u/" + user
+
+        if opt.query == True:
+            query_mode = True
+            profile_mode = False
+            url = "https://www.mage.space/explore?q=" + user
+            search = 'search?'
     else:
         print('Error: you must specify a page to scrape with the --search argument!')
         exit(-1)
@@ -107,6 +122,7 @@ def create_output(json):
     global user
     global profile_mode
     global remove_loras
+    global query_mode
 
     r = json
     count = 0
@@ -161,16 +177,15 @@ def create_output(json):
         prompts.sort()
 
         date = datetime.today().strftime('%Y-%m-%d')
+        clean = re.sub(r"[/\\?%*:|\"<>\x7F\x00-\x1F]", "-", user)
+        clean = clean.replace(' ','_')
         if profile_mode == True:
-            filename = 'magespace-' + user + '-' + date + '.prompts'
+            filename = 'magespace-profile-' + clean + '-' + date + '.prompts'
         else:
-            explore = 'explore'
-            if '?t=' in user:
-                temp = user.split('?t=', 1)[1]
-                explore += '-' + temp
+            if query_mode:
+                filename = 'magespace-' + clean[:100] + '-' + date + '.prompts'
             else:
-                explore = 'explore-' + user
-            filename = 'magespace-' + explore + '-' + date + '.prompts'
+                filename = 'magespace-explore-' + clean + '-' + date + '.prompts'
         if outdir != '':
             if os.path.exists(outdir):
                 filename = os.path.join(outdir, filename)
@@ -195,7 +210,10 @@ def create_output(json):
             if profile_mode:
                 f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/u/' + user + '\n')
             else:
-                f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/explore?t=' + user + '\n')
+                if query_mode:
+                    f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/explore?q=' + user + '\n')
+                else:
+                    f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/explore?t=' + user + '\n')
             f.write('#######################################################################################################\n\n')
             for prompt in prompts:
                 f.write(prompt + '\n\n')
