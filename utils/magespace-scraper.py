@@ -6,6 +6,7 @@
 # examples:
 # python magespace-scraper.py --search johnslegers
 # python magespace-scraper.py --explore --search landscape
+# python magespace-scraper.py --remove_loras --no-neg --explore --search cyberpunk
 # or for help/options: python magespace-scraper.py --help
 
 # This requires Playwright, which can be installed with these commands:
@@ -31,6 +32,7 @@ footer = ''
 user = ''
 profile_mode = True
 neg_prompts = True
+remove_loras = False
 
 # entry point
 if __name__ == '__main__':
@@ -70,6 +72,11 @@ if __name__ == '__main__':
         default='',
         help=".txt file containing text to append output .prompts file with"
     )
+    parser.add_argument(
+        "--remove_loras",
+        action='store_true',
+        help="remove all lora/hypernet references from prompts"
+    )
     opt = parser.parse_args()
     json_file = opt.file
     outdir = opt.outdir
@@ -78,6 +85,8 @@ if __name__ == '__main__':
     user = opt.search
     if opt.no_neg == True:
         neg_prompts = False
+    if opt.remove_loras == True:
+        remove_loras = True
 
     if user != '':
         if opt.explore == True:
@@ -97,6 +106,7 @@ def create_output(json):
     global neg_prompts
     global user
     global profile_mode
+    global remove_loras
 
     r = json
     count = 0
@@ -115,6 +125,23 @@ def create_output(json):
                     prompt = prompt[:-1]
                 while prompt.startswith('*'):
                     prompt = prompt[1:]
+
+                # remove loras/hypernets if necessary
+                if opt.remove_loras:
+                    while '<lora:' in prompt and '>' in prompt:
+                        p = prompt
+                        before = p.split('<lora:', 1)[0]
+                        after = p.split('<lora:', 1)[1]
+                        after = after.split('>', 1)[1]
+                        prompt = (before + after).strip()
+
+                    while '<hypernet:' in prompt and '>' in prompt:
+                        p = prompt
+                        before = p.split('<hypernet:', 1)[0]
+                        after = p.split('<hypernet:', 1)[1]
+                        after = after.split('>', 1)[1]
+                        prompt = (before + after).strip()
+
                 while '  ' in prompt:
                     prompt = prompt.replace('  ', ' ')
                 prompt = prompt.strip()
