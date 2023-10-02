@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 # simple mage.space user gallery prompt scraper utility
-# usage: python magespace-scraper.py --user [username to scrape]
+# usage: python magespace-scraper.py --search [username to scrape]
+# examples:
+# python magespace-scraper.py --search johnslegers
+# python magespace-scraper.py --explore --search landscape
 # or for help/options: python magespace-scraper.py --help
 
 # This requires Playwright, which can be installed with these commands:
@@ -17,7 +20,7 @@ import argparse
 import os
 from os.path import exists
 
-url = "https://www.mage.space/u/"
+url = "https://www.mage.space/"
 search = 'creations'
 json_file = ''
 
@@ -26,6 +29,7 @@ outdir = ''
 header = ''
 footer = ''
 user = ''
+profile_mode = True
 neg_prompts = True
 
 # entry point
@@ -37,14 +41,19 @@ if __name__ == '__main__':
         help="use this .json file instead of scraping mage.space"
     )
     parser.add_argument(
-        "--user",
+        "--search",
         default='',
-        help="scrape this user's page (e.g. 'user' for 'https://www.mage.space/u/user')"
+        help="scrape this page (e.g. 'user' for 'https://www.mage.space/u/user')"
     )
     parser.add_argument(
         "--no_neg",
         action='store_true',
         help="do not include negative prompts"
+    )
+    parser.add_argument(
+        "--explore",
+        action='store_true',
+        help="use an explore URL (e.g: 'pop' for 'https://www.mage.space/explore?t=pop' instead of a user profile name)"
     )
     parser.add_argument(
         "--outdir",
@@ -66,14 +75,19 @@ if __name__ == '__main__':
     outdir = opt.outdir
     header = opt.header
     footer = opt.footer
-    user = opt.user
+    user = opt.search
     if opt.no_neg == True:
         neg_prompts = False
 
     if user != '':
-        url = "https://www.mage.space/u/" + user
+        if opt.explore == True:
+            profile_mode = False
+            url = "https://www.mage.space/explore?t=" + user
+            search = user + '?'
+        else:
+            url = "https://www.mage.space/u/" + user
     else:
-        print('Error: you must specify a user to scrape with the --user argument!')
+        print('Error: you must specify a page to scrape with the --search argument!')
         exit(-1)
 
 def create_output(json):
@@ -82,6 +96,7 @@ def create_output(json):
     global footer
     global neg_prompts
     global user
+    global profile_mode
 
     r = json
     count = 0
@@ -119,7 +134,16 @@ def create_output(json):
         prompts.sort()
 
         date = datetime.today().strftime('%Y-%m-%d')
-        filename = 'magespace-' + user + '-' + date + '.prompts'
+        if profile_mode == True:
+            filename = 'magespace-' + user + '-' + date + '.prompts'
+        else:
+            explore = 'explore'
+            if '?t=' in user:
+                temp = user.split('?t=', 1)[1]
+                explore += '-' + temp
+            else:
+                explore = 'explore-' + user
+            filename = 'magespace-' + explore + '-' + date + '.prompts'
         if outdir != '':
             if os.path.exists(outdir):
                 filename = os.path.join(outdir, filename)
@@ -141,7 +165,10 @@ def create_output(json):
             # write scraped prompts
             f.write('\n#######################################################################################################\n')
             f.write('# Created with utils\magespace-scraper.py\n')
-            f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/u/' + user + '\n')
+            if profile_mode:
+                f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/u/' + user + '\n')
+            else:
+                f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/explore?t=' + user + '\n')
             f.write('#######################################################################################################\n\n')
             for prompt in prompts:
                 f.write(prompt + '\n\n')
