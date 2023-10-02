@@ -158,6 +158,13 @@ def create_output(json):
                         after = after.split('>', 1)[1]
                         prompt = (before + after).strip()
 
+                    while '<ti:' in prompt and '>' in prompt:
+                        p = prompt
+                        before = p.split('<ti:', 1)[0]
+                        after = p.split('<ti:', 1)[1]
+                        after = after.split('>', 1)[1]
+                        prompt = (before + after).strip()
+
                 while '  ' in prompt:
                     prompt = prompt.replace('  ', ' ')
                 prompt = prompt.strip()
