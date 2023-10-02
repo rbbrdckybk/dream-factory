@@ -25,6 +25,7 @@ searchFound = False
 outdir = ''
 header = ''
 footer = ''
+user = ''
 neg_prompts = True
 
 # entry point
@@ -80,6 +81,7 @@ def create_output(json):
     global header
     global footer
     global neg_prompts
+    global user
 
     r = json
     count = 0
@@ -117,7 +119,7 @@ def create_output(json):
         prompts.sort()
 
         date = datetime.today().strftime('%Y-%m-%d')
-        filename = 'magespace-' + date + '.prompts'
+        filename = 'magespace-' + user + '-' + date + '.prompts'
         if outdir != '':
             if os.path.exists(outdir):
                 filename = os.path.join(outdir, filename)
@@ -137,6 +139,10 @@ def create_output(json):
                     print('Header file (' + header + ') does not exist; ignoring it!')
 
             # write scraped prompts
+            f.write('\n#######################################################################################################\n')
+            f.write('# Created with utils\magespace-scraper.py\n')
+            f.write('# ' + str(len(prompts)) + ' unique prompts from https://www.mage.space/u/' + user + '\n')
+            f.write('#######################################################################################################\n\n')
             for prompt in prompts:
                 f.write(prompt + '\n\n')
 
