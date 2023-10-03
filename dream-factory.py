@@ -907,11 +907,31 @@ class Worker(threading.Thread):
                                 input_img = self.command.get('input_image')
                                 input_img = utils.filename_from_abspath(input_img)[:-4]
 
+                            hr_model = ''
+                            if self.command.get('highres_ckpt_file') != '':
+                                hr_model = self.command.get('highres_ckpt_file')
+                                hr_model = hr_model.split('[', 1)[0].strip()
+                                if '\\' in hr_model:
+                                    hr_model = hr_model.rsplit('\\', 1)[1].strip()
+                                if '/' in hr_model:
+                                    hr_model = hr_model.rsplit('/', 1)[1].strip()
+                                if '.' in hr_model:
+                                    hr_model = hr_model.rsplit('.', 1)[0].strip()
+
+                            styles = ''
+                            style_count = 0
+                            if len(self.command.get('styles')) > 0:
+                                for style in self.command.get('styles'):
+                                    if style_count > 0:
+                                        styles += '_'
+                                    styles += style.replace('Style: ', '').strip()
+                                    style_count += 1
+
                             newfilename = self.command['filename']
                             if not process_mode:
                                 try:
                                     newfilename = re.sub('<prompt>', self.command.get('prompt'), newfilename, flags=re.IGNORECASE)
-                                    newfilename = re.sub('<neg_prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
+                                    newfilename = re.sub('<neg-prompt>', self.command.get('neg_prompt'), newfilename, flags=re.IGNORECASE)
                                 except:
                                     pass
                                 newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
@@ -923,6 +943,8 @@ class Worker(threading.Thread):
                                 newfilename = re.sub('<model>', model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<hr-model>', hr_model, newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<styles>', styles, newfilename, flags=re.IGNORECASE)
 
                             newfilename = re.sub('<date>', dt.now().strftime('%Y%m%d'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<time>', dt.now().strftime('%H%M%S'), newfilename, flags=re.IGNORECASE)
@@ -937,6 +959,9 @@ class Worker(threading.Thread):
                             #closing_braces = '>'
                             #non_greedy_wildcard = '.*?'
                             #re.sub(f'[{opening_braces}]{non_greedy_wildcard}[{closing_braces}]', '', newfilename)
+
+                            # limit filename length
+                            newfilename = newfilename[:200]
 
                             # make the final name filesystem-safe
                             newfilename = utils.slugify(newfilename)
