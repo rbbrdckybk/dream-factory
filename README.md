@@ -391,23 +391,25 @@ When upscaling, keep the original (non-upscaled) image as well? Valid options ar
 ```
 #### !FILENAME
 Allows you to specify a custom output filename. You may use the following variables; they will be filled in when the image is created:
+* ```<cn-img>```
+* ```<cn-model>```
 * ```<date>```
 * ```<date-year>```
 * ```<date-month>```
 * ```<date-day>```
 * ```<height>```
+* ```<hr-model>```
 * ```<input-img>```
 * ```<model>```
-* ```<neg_prompt>```
+* ```<neg-prompt>```
 * ```<prompt>```
 * ```<sampler>```
 * ```<scale>```
 * ```<seed>```
 * ```<steps>```
+* ```<styles>```
 * ```<time>```
 * ```<width>```
-* ```<cn-img>```
-* ```<cn-model>```
 * ```<upscale-model>```
 
 The file extension (.jpg) will be added automatically.
