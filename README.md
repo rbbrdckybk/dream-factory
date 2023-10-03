@@ -419,6 +419,8 @@ The file extension (.jpg) will be added automatically.
 The above example might produce an output filename of **20230209-deliberate_v11-768x1280-a-photo-of-a-cute-cat.jpg**, for example.
 
 Note that ```<input-img>``` and ```<cn-img>``` (ControlNet input image) will be the base filename only (no subdirectories or file extension).
+
+Custom filenames will be truncated at 200 characters (not including file extension and any necessary numeric padding to make the file unique).
 #### !CLIP_SKIP
 Sets the [CLIP skip](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#clip-skip) value. The default is 1, and most models work best with it set there. However some models may give optimal results with other values.
 ```
