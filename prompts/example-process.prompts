@@ -78,4 +78,27 @@ go
 go
 
 
-# Any non-directive prompts other than 'go' will be ignored in PROCESS .prompts files!
+# ********************************************************************************************
+# Advanced upscaling with sd_ultimate_upscale example:
+# requires Ultimate SD Upscale extension for AUTOMATIC1111:
+# https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
+# ********************************************************************************************
+
+# Here we're setting up a 3rd upscale operation, this time using the ultimate upscale extension script
+# You will receive an error if you try to use 'ultimate' here and don't have the extension installed!
+!UPSCALE_MODEL = ultimate
+
+# Below we're setting up the parameters we want to use with the ultimate upscale extension.
+# In this case, 0.28 for denoising strength, ESRGAN_4x as our upscaler, and 2.25 as the upscale amount
+!UPSCALE_SD_STRENGTH = 0.28
+!UPSCALE_ULT_MODEL = ESRGAN_4x
+!UPSCALE_AMOUNT = 2.25
+
+# Finally, set up a third output folder to keep things organized:
+!OUTPUT_DIR = C:\images\space-cats\upscaled-ultimate
+
+# And here's our final 'go' trigger, which will use the latest values for everything set to this point:
+go
+
+
+# Note that any non-directive prompts other than 'go' will be ignored in PROCESS .prompts files!
