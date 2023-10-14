@@ -235,6 +235,8 @@ Finally, these special directives are valid only in **process** prompt files (!M
  * [!OVERRIDE_MAX_OUTPUT_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_max_output_size)
  * [!OVERRIDE_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_sampler)
  * [!OVERRIDE_STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#override_steps)
+ * [!UPSCALE_SD_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_sd_strength)
+ * [!UPSCALE_ULT_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#upscale_ult_model)
 
 Command Help and Usage Examples:
 
@@ -361,14 +363,29 @@ Sets the upscaling model to use.
 ```
 Note that this will perform a substring match on any upscalers you have installed with Auto1111. In this case, **ESRGAN_4x*** should be selected (and is also the default).
 
-In **!MODE = PROCESS** .prompts files, you may additionally specify **!UPSCALE_MODEL = SD**. This is a special option that uses Stable Diffusion's img2img engine to upscale your images. This will take much longer than other methods and requires a lot of GPU VRAM to reach large image sizes (~12GB of VRAM is required to output 2048x2048 images), but will potentially produce higher quality results with the ability to add detail. Use !UPSCALE_SD_STRENGTH = xxx (default is 0.3) to control denoising strength with !UPSCALE_MODEL = SD.
+In **!MODE = PROCESS** .prompts files, you may additionally specify **!UPSCALE_MODEL = SD** or **!UPSCALE_MODEL = ULTIMATE**. 
+
+**SD** is a special option that uses Stable Diffusion's img2img engine to upscale your images. This will take much longer than other methods and requires a lot of GPU VRAM to reach large image sizes (~12GB of VRAM is required to output 2048x2048 images), but will potentially produce higher quality results with the ability to add detail. Use !UPSCALE_SD_STRENGTH = xxx (default is 0.3) to control denoising strength with !UPSCALE_MODEL = SD.
 
 This option works very similarly to how the highres fix in Auto1111 does. It allows you to take an image and use Stable Diffusion to create a larger version, changing the image slightly depending on the denoising strength used (the 0.3 default value should stay very close to the original in most cases).
 ```
 !UPSCALE_MODEL = sd
 !UPSCALE_SD_STRENGTH = 0.3
 ```
-*To use !UPSCALE_MODEL = SD, you must first add MAX_OUTPUT_SIZE to your Dream Factory config.txt file (see config-default.txt for explanation).*
+*To use !UPSCALE_MODEL = sd, you must first add MAX_OUTPUT_SIZE to your Dream Factory config.txt file (see config-default.txt for explanation).*
+
+**ULTIMATE** is a special option that requires the [Ultimate SD Upscale extension](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) to be added in your AUTOMATIC1111 installation.
+
+Once installed, you can control the settings of the extension with the following directives (in the below example, we set denoising strength to 0.28, use ESRGAN_4x as our upscaler, and upscale the original image by a factor of 2.5x).
+```
+!UPSCALE_MODEL = ultimate
+!UPSCALE_SD_STRENGTH = 0.28
+!UPSCALE_ULT_MODEL = esrgan
+!UPSCALE_AMOUNT = 2.5
+```
+See the bottom of the example-process.prompts file in your Dream Factory /prompts directory for more information.
+
+*To use !UPSCALE_MODEL = ultimate, you must first install the [Ultimate SD Upscale extension](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) to Auto1111.*
 #### !UPSCALE_AMOUNT
 The factor to upscale by. Setting !UPSCALE_AMOUNT = 2 will double the width and height of an image (resulting in quadruple the resolution). Has no effect unless !USE_UPSCALE = yes.
 ```
@@ -609,6 +626,17 @@ This directive allows you to specify a different number of steps (e.g. instead o
 !OVERRIDE_STEPS = 40
 ```
 Note that you're overriding the number of steps used to create the **original** image, not setting the number of steps to use for the actual upscaling (which is determined by a combination of the step value and the !UPSCALE_SD_STRENGTH). So for example, if the original image was created with 120 steps, and you set ```!OVERRIDE_STEPS = 40``` in a !PROCESS_MODE SD upscale job that uses ```!UPSCALE_SD_STRENGTH = 0.30```, then the final output image will have ~13 steps (40 * 0.3) instead of 40 steps (120 * 0.3).
+#### !UPSCALE_SD_STRENGTH
+Allows you to set the denoising strength when using either of the special **!MODE = process** upscaling methods (**!UPSCALE_MODEL = ultimate** or **!UPSCALE_MODEL = sd**).
+```
+!UPSCALE_SD_STRENGTH = 0.28
+```
+#### !UPSCALE_ULT_MODEL
+Allows you to set the upscale model to use when controlling the [Ultimate SD Upscale extension](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) via **!UPSCALE_MODEL = ultimate** in a **!MODE = process** .prompts file.
+```
+!UPSCALE_ULT_MODEL = remacri
+```
+Note that substring matches are allowed. In this example, the first valid Auto1111 upscaler that contains the string 'remacri' (case insensitive) will be used.
 #### !STYLES
 Allows for use of Automatic1111 styles in your Dream Factory prompts. Use a comma-separated list for multiple styles. You may also set !STYLES to **random x** to have Dream Factory choose **x** styles randomly each time a prompt is executed (```!STYLES = random``` implies a single random style).
 Set !STYLES to nothing to clear it.
