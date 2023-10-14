@@ -521,7 +521,7 @@ class Worker(threading.Thread):
             original_exif = metadata.read_exif(self.command.get('input_image'))
             original_iptc = metadata.read_iptc(self.command.get('input_image'))
 
-            if self.command['use_upscale'] == 'yes' and self.command['upscale_model'] == 'sd':
+            if self.command['use_upscale'] == 'yes' and (self.command['upscale_model'] == 'sd' or self.command['upscale_model'] == 'ultimate'):
                 # get original image parameters if we're doing a SD upscale
                 original_details = ''
                 if original_exif != None:
@@ -630,7 +630,7 @@ class Worker(threading.Thread):
                                 encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
                             encodedString = str(encoded, encoding='utf-8')
                             img_payload = 'data:image/png;base64,' + encodedString
-                            if self.command['upscale_model'] != 'sd':
+                            if self.command['upscale_model'] != 'sd' and self.command['upscale_model'] != 'ultimate':
                                 # normal upscale
                                 payload = {
                                     #"resize_mode": 0,
@@ -709,26 +709,27 @@ class Worker(threading.Thread):
                                         for t in temp:
                                             styles.append(t.strip())
 
-                                # calculate max output size
+                                # calculate max output size for sd_upscale
                                 orig_width = 0
                                 orig_height = 0
-                                with Image.open(self.command.get('input_image')) as img:
-                                    orig_width, orig_height = img.size
-
                                 sd_width = 512
                                 sd_height = 512
-                                set_max_output_size = control.config.get('max_output_size')
+                                if self.command['upscale_model'] == 'sd':
+                                    with Image.open(self.command.get('input_image')) as img:
+                                        orig_width, orig_height = img.size
 
-                                # check for overrides in process mode directives
-                                if self.command.get('override_max_output_size') != 0:
-                                    set_max_output_size = int(self.command.get('override_max_output_size'))
-                                new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], set_max_output_size, True)
+                                    set_max_output_size = control.config.get('max_output_size')
 
-                                if new_dimensions != []:
-                                    sd_width = new_dimensions[0]
-                                    sd_height = new_dimensions[1]
-                                else:
-                                    control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
+                                    # check for overrides in process mode directives
+                                    if self.command.get('override_max_output_size') != 0:
+                                        set_max_output_size = int(self.command.get('override_max_output_size'))
+                                    new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], set_max_output_size, True)
+
+                                    if new_dimensions != []:
+                                        sd_width = new_dimensions[0]
+                                        sd_height = new_dimensions[1]
+                                    else:
+                                        control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
 
                                 if self.command.get('override_steps') != 0:
                                     sd_steps = self.command.get('override_steps')
@@ -802,6 +803,42 @@ class Worker(threading.Thread):
                                 if override_settings != {}:
                                     payload["override_settings"] = override_settings
 
+                                # add additional sd_ultimate_upscale params if necessary
+                                if self.command['upscale_model'] == 'ultimate':
+                                    up_index = control.get_upscale_model_index(self.command['upscale_ult_model'])
+                                    if up_index == -1:
+                                        up_index = control.get_upscale_model_index('ESRGAN_4x')
+                                        if up_index == -1:
+                                            up_index = 0
+
+                                    custom_scale = 2.0
+                                    if 'upscale_amount' in self.command and float(self.command['upscale_amount']) > 1.0:
+                                        custom_scale = self.command['upscale_amount']
+                                    custom_scale = float(custom_scale)
+
+                                    # docs: https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
+                                    payload["script_name"] = "ultimate sd upscale"
+                                    payload["script_args"] = [
+                                    	"",            # (not used)
+                                    	512,           # tile_width
+                                    	512,           # tile_height
+                                    	8,             # mask_blur
+                                    	32,            # padding
+                                    	64,            # seams_fix_width
+                                    	0.35,          # seams_fix_denoise
+                                    	32,            # seams_fix_padding
+                                    	up_index,      # upscaler_index
+                                    	True,          # save_upscaled_image a.k.a Upscaled
+                                    	0,             # redraw_mode
+                                    	False,         # save_seams_fix_image a.k.a Seams fix
+                                    	8,             # seams_fix_mask_blur
+                                    	0,             # seams_fix_type
+                                    	2,             # target_size_type (0 = From img2img2 settings, 1 = Custom size, 2 = Scale from image size)
+                                    	2048,          # custom_width
+                                    	2048,          # custom_height
+                                    	custom_scale   # custom_scale
+                                    ]
+
                                 self.worker['sdi_instance'].do_img2img(payload, samples_dir)
                             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                                 time.sleep(0.25)
@@ -859,10 +896,12 @@ class Worker(threading.Thread):
                         upscale_text = ""
                         if self.command['use_upscale'] == 'yes':
                             upscale_text = " (upscaled "
-                            if self.command['upscale_model'] != 'sd':
-                                upscale_text += str(self.command['upscale_amount']) + "x via " + self.command['upscale_model'] + ")"
-                            else:
+                            if self.command['upscale_model'] == 'sd':
                                 upscale_text += 'via SD upscale @ ' + str(self.command.get('upscale_sd_strength')) + ' strength)'
+                            elif self.command['upscale_model'] == 'ultimate':
+                                upscale_text += 'via SD ultimate upscale: ' + str(self.command.get('upscale_amount')) + 'x using ' + self.command['upscale_ult_model'] + ' @ ' + str(self.command.get('upscale_sd_strength')) + ' strength)'
+                            else:
+                                upscale_text += str(self.command['upscale_amount']) + "x via " + self.command['upscale_model'] + ")"
 
                         pngImage = PngImageFile(samples_dir + "/" + f)
                         im = pngImage.convert('RGB')
@@ -1097,6 +1136,7 @@ class Controller:
         self.sdi_script_request_made = False
         self.sdi_txt2img_scripts = None
         self.sdi_img2img_scripts = None
+        self.sdi_ultimate_upscale_available = False
         self.wildcards = None
         self.default_model_validated = False
         self.max_output_size = 0
@@ -2781,7 +2821,12 @@ class Controller:
     def validate_upscale_model(self, model):
         validated_model = ''
         if len(model) >= 3:
-            if self.sdi_upscalers != None:
+            if model.lower() == 'ultimate':
+                if self.sdi_ultimate_upscale_available:
+                    validated_model = 'ultimate'
+                else:
+                    self.print("*** WARNING: You may not use !UPSCALE_MODEL = ULTIMATE unless the sd_ultimate_upscale extension is installed in Auto1111! ***")
+            elif self.sdi_upscalers != None:
                 for m in self.sdi_upscalers:
                     if model.lower() in m.lower():
                         # case-insensitive partial match; use the exact casing from the server
@@ -2794,6 +2839,31 @@ class Controller:
             else:
                 self.print("*** WARNING: You may not use !UPSCALE_MODEL = SD without setting MAX_OUTPUT_SIZE in your Dream Factory config.txt first! ***")
         return validated_model
+
+
+    # same as above, only validates actual server values - for sd_ultimate_upscale
+    def validate_ultimate_upscale_model(self, model):
+        validated_model = ''
+        if len(model) >= 3:
+            if self.sdi_upscalers != None:
+                for m in self.sdi_upscalers:
+                    if model.lower() in m.lower():
+                        # case-insensitive partial match; use the exact casing from the server
+                        validated_model = m
+                        break
+        return validated_model
+
+
+    # gets the server index of a given upscaler - for sd_ultimate_upscale
+    # should only be passing previously validated model names here
+    def get_upscale_model_index(self, model):
+        index = -1
+        if self.sdi_upscalers != None:
+            try:
+                index = self.sdi_upscalers.index(model)
+            except:
+                index = -1
+        return index
 
 
     # for debugging; prints a report of current worker status

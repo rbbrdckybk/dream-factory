@@ -759,6 +759,7 @@ class SDI:
         for i in r['img2img']:
             img2img_scripts.append(i)
             if i == 'ultimate sd upscale':
+                self.control_ref.sdi_ultimate_upscale_available = True
                 rtxt = 'is'
 
         self.log('received script query response: SD indicates \'Ultimate SD Upscale script\' ' + rtxt + ' available for use...', True)

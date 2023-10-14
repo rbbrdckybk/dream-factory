@@ -270,6 +270,7 @@ class PromptManager():
             'upscale_sd_strength' : self.control.config['upscale_sd_strength'],
             'upscale_keep_org' : self.control.config['upscale_keep_org'],
             'upscale_model' : self.control.config['upscale_model'],
+            'upscale_ult_model' : '',
             'override_max_output_size' : 0,
             'override_sampler' : '',
             'override_steps' : 0,
@@ -608,6 +609,19 @@ class PromptManager():
                     self.control.print("*** WARNING: !UPSCALE_MODEL value (" + value.strip() + ") doesn't match any server values; ignoring it! ***")
             else:
                 self.config.update({'upscale_model' : 'ESRGAN_4x'})
+
+        elif command == 'upscale_ult_model':
+            if value != '':
+                if self.control.sdi_ultimate_upscale_available:
+                    upscale_model = self.control.validate_ultimate_upscale_model(value.strip())
+                    if upscale_model != '':
+                        self.config.update({'upscale_ult_model' : upscale_model})
+                    else:
+                        self.control.print("*** WARNING: !UPSCALE_ULT_MODEL value (" + value.strip() + ") doesn't match any server values; ignoring it! ***")
+                else:
+                    self.control.print("*** WARNING: !UPSCALE_ULT_MODEL isn't usuable without Auto1111 sd_ultimate_upscale extension installed; ignoring it! ***")
+            else:
+                self.config.update({'upscale_ult_model' : ''})
 
         elif command == 'override_max_output_size':
             value = value.replace(',', '')
