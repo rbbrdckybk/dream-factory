@@ -6,6 +6,12 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.10.14]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **5ef669de080814067961f28357256e8fe27544f4**
+
+### Added
+- Added support for [Ultimate SD Upscale extension](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111#ultimate-sd-upscale-extension-for-automatic1111-stable-diffusion-web-ui) in **!MODE = process** .prompts files. See the bottom of [/prompts/example-process.prompts](https://github.com/rbbrdckybk/dream-factory/blob/main/prompts/example-process.prompts) for a usage example.
+
 ## [2023.09.22]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **5ef669de080814067961f28357256e8fe27544f4**
 
