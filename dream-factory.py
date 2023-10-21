@@ -441,7 +441,27 @@ class Worker(threading.Thread):
                     if self.command.get('highres_sampler') != '':
                         payload["hr_sampler_name"] = str(self.command.get('highres_sampler'))
                     if self.command.get('highres_prompt') != '':
-                        payload["hr_prompt"] = str(self.command.get('highres_prompt'))
+                        if self.command.get('highres_prompt').lower().strip() == '<remove loras>':
+                            # use the main prompt with loras/hypernets stripped out
+                            mp = str(self.command.get('prompt'))
+                            
+                            while '<lora:' in mp and '>' in mp:
+                                p = mp
+                                before = p.split('<lora:', 1)[0]
+                                after = p.split('<lora:', 1)[1]
+                                after = after.split('>', 1)[1]
+                                mp = (before + after).strip()
+
+                            while '<hypernet:' in mp and '>' in mp:
+                                p = mp
+                                before = p.split('<hypernet:', 1)[0]
+                                after = p.split('<hypernet:', 1)[1]
+                                after = after.split('>', 1)[1]
+                                mp = (before + after).strip()
+
+                            payload["hr_prompt"] = str(mp)
+                        else:
+                            payload["hr_prompt"] = str(self.command.get('highres_prompt'))
                     if self.command.get('highres_neg_prompt') != '':
                         payload["hr_negative_prompt"] = str(self.command.get('highres_neg_prompt'))
                     if self.command.get('highres_steps') != '':
