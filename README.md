@@ -699,6 +699,10 @@ This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts 
 ```
 !HIGHRES_PROMPT = highly detailed
 ```
+You may also set this to ```<remove loras>```, which will use the main prompt with all LoRA/hypernet references removed. This is useful if you're using a SDXL main model & LoRA(s) and want to use a SD 1.5 model for your high-res fix (in which case the SDXL LoRAs wouldn't be compatible with the SD 1.5 model), for example.
+```
+!HIGHRES_PROMPT = <remove loras>
+```
 Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the prompt that was used during the initial generation will be used).
 #### !HIGHRES_NEG_PROMPT
 Allows you to specify a different negative prompt during the highres fix portion of image generation.
