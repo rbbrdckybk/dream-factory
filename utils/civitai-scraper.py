@@ -30,6 +30,8 @@ from pathlib import Path
 
 resize = 0
 max_steps = 0
+sizes = 'include'
+
 
 class Civitai:
     def __init__(self, type='model', nsfw='exclude'):
@@ -269,6 +271,7 @@ class Civitai:
     # writes output .prompts file from given list of image metadata
     def write(self, hash, model_name, metadata = []):
         global resize
+        global sizes
         if metadata == []:
             metadata = self.metadata
 
@@ -333,11 +336,13 @@ class Civitai:
                         steps = image["steps"]
                         steps = check_steps(steps, max_steps)
                         f.write('!STEPS = ' + str(steps) + '\n')
-                    if "Size" in image:
-                        if "x" in image["Size"]:
-                            meta_size = image["Size"].split('x', 1)
-                            f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
-                            f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
+
+                    if sizes != 'exclude':
+                        if "Size" in image:
+                            if "x" in image["Size"]:
+                                meta_size = image["Size"].split('x', 1)
+                                f.write('!WIDTH = ' + str(meta_size[0]) + '\n')
+                                f.write('!HEIGHT = ' + str(meta_size[1]) + '\n')
                     if "Clip skip" in image:
                         clip_skip = image["Clip skip"]
                         f.write('!CLIP_SKIP = ' + str(clip_skip) + '\n')
@@ -406,12 +411,18 @@ if __name__ == '__main__':
         default='exclude',
         help="include/exclude nsfw images: exclude (default), include, or only"
     )
+    parser.add_argument(
+        "--sizes",
+        default='include',
+        help="include/exclude image size info: include (default), or exclude"
+    )
 
     opt = parser.parse_args()
     resize = opt.resolution
     max_steps = opt.max_steps
     type = opt.type.lower()
     nsfw = opt.nsfw.lower()
+    sizes = opt.sizes.lower()
 
     count = 0
     all_data = {}
