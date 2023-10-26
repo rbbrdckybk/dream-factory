@@ -444,7 +444,7 @@ class Worker(threading.Thread):
                         if self.command.get('highres_prompt').lower().strip() == '<remove loras>':
                             # use the main prompt with loras/hypernets stripped out
                             mp = str(self.command.get('prompt'))
-                            
+
                             while '<lora:' in mp and '>' in mp:
                                 p = mp
                                 before = p.split('<lora:', 1)[0]
@@ -994,6 +994,7 @@ class Worker(threading.Thread):
                                 except:
                                     pass
                                 newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<strength>', str(self.command.get('strength')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
@@ -1005,13 +1006,18 @@ class Worker(threading.Thread):
                                 newfilename = re.sub('<hr-model>', hr_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<styles>', styles, newfilename, flags=re.IGNORECASE)
 
+                            else:
+                                # these are only applicable to upscale process jobs
+                                newfilename = re.sub('<upscale-model>', self.command.get('upscale_model'), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<upscale-sd-strength>', str(self.command.get('upscale_sd_strength')), newfilename, flags=re.IGNORECASE)
+
                             newfilename = re.sub('<date>', dt.now().strftime('%Y%m%d'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<time>', dt.now().strftime('%H%M%S'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-year>', dt.now().strftime('%Y'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-month>', dt.now().strftime('%m'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<input-img>', input_img, newfilename, flags=re.IGNORECASE)
-                            newfilename = re.sub('<upscale-model>', self.command.get('upscale_model'), newfilename, flags=re.IGNORECASE)
+
 
                             # remove all unrecognized variables
                             #opening_braces = '<'
