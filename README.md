@@ -424,10 +424,14 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<scale>```
 * ```<seed>```
 * ```<steps>```
+* ```<strength>```
 * ```<styles>```
 * ```<time>```
 * ```<width>```
+
+In **process** mode files, the following are available:
 * ```<upscale-model>```
+* ```<upscale-sd-strength>```
 
 The file extension (.jpg) will be added automatically.
 ```
