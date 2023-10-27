@@ -88,83 +88,97 @@ def slugify(value, allow_unicode=False):
     return value[0:160]
 
 
-# write the output file - data is the scraped json and opt are the command-line args
-def write_output(data, opt):
+# creates a dictionary of unique prompts, given the scraped json data
+def create_prompt_list(data, opt):
     count = 0
-    if data["props"]["pageProps"]["data"]:
-        date = datetime.today().strftime('%Y-%m-%d')
-        desc = opt.mode.lower().strip()
-        if desc == 'category':
-            desc = 'cat-' + slugify(opt.param.lower().strip())
-        if desc == 'search':
-            desc = 'search-' + slugify(opt.param.lower().strip())
-        output_file = 'playgroundai-' + desc + '-' + str(date) + '.prompts'
-        if opt.outdir != '':
-            if os.path.exists(opt.outdir):
-                output_file = os.path.join(opt.outdir, output_file)
+    prompts = {}
+
+    for job in data["props"]["pageProps"]["data"]:
+        if "prompt" in job and job['prompt'] != None and job['prompt'] != '':
+            key = ''
+            prompt = ''
+            if "id" in job and job['id'] != None and job['id'] != '':
+                #key = '# https://playgroundai.com/post/' + job['id'] + '\n'
+                key = job['id']
+            if not opt.no_size:
+                if "width" in job:
+                    prompt += '!WIDTH = ' + str(job['width']) + '\n'
+                if "width" in job:
+                    prompt += '!HEIGHT = ' + str(job['height']) + '\n'
+
+            if not opt.no_scale:
+                if "cfg_scale" in job:
+                    prompt += '!SCALE = ' + str(job['cfg_scale']) + '\n'
+
+            if not opt.no_neg:
+                if "negative_prompt" in job and job['negative_prompt'] != None:
+                    if job['negative_prompt'] != '':
+                        np = job['negative_prompt'].replace('\n', '').strip()
+                        np = sanitize_prompt(np)
+                        prompt += '!NEG_PROMPT = ' + np + '\n'
+
+            p = job['prompt'].replace('\n', '').strip()
+            if p.startswith('['):
+                p = 'image of ' + p
+            p = sanitize_prompt(p)
+            prompt += '\n' + p + '\n\n'
+            if prompt not in prompts.values():
+                prompts[key] = prompt
+        count += 1
+
+    print('Found ' + str(count) + ' prompts in JSON data...')
+    print('After removing dupes, there are ' + str(len(prompts)) + ' unique prompts...')
+    return prompts
+
+
+# write the output file - data is the prompt dictionary and opt are the command-line args
+def write_output(data, opt):
+    date = datetime.today().strftime('%Y-%m-%d')
+    desc = opt.mode.lower().strip()
+    if desc == 'category':
+        desc = 'cat-' + slugify(opt.param.lower().strip())
+    if desc == 'search':
+        desc = 'search-' + slugify(opt.param.lower().strip())
+    output_file = 'playgroundai-' + desc + '-' + str(date) + '.prompts'
+    if opt.outdir != '':
+        if os.path.exists(opt.outdir):
+            output_file = os.path.join(opt.outdir, output_file)
+        else:
+            print('Warning: specified --outdir does not exist; ignoring it!')
+
+    print('Writing output file "' + output_file + '"...')
+    with open(output_file, 'w', encoding='utf-8') as f:
+        # write header if necessary
+        if opt.header != '':
+            if os.path.exists(opt.header):
+                lines = ''
+                with open(opt.header, 'r', encoding="utf-8") as h:
+                    lines = h.readlines()
+                for line in lines:
+                    f.write(line)
             else:
-                print('Warning: specified --outdir does not exist; ignoring it!')
+                print('Warning: --header file "' + opt.header + '" does not exist; ignoring it!')
+        f.write('[prompts]\n\n')
+        f.write('#####################################################################################################################################\n')
+        f.write('### Dream Factory standard .prompts file\n')
+        f.write('### Created with playground-scraper.py on ' + str(date) + '\n')
+        f.write('### ' + str(len(data)) + ' unqiue prompts scraped from: ' + url.replace(' ', '+') + '\n')
+        f.write('#####################################################################################################################################\n\n')
+        for key, value in data.items():
+            if key != '':
+                f.write('# https://playgroundai.com/post/' + key + '\n')
+            f.write(value)
 
-        print('Writing output file "' + output_file + '"...')
-        with open(output_file, 'w', encoding='utf-8') as f:
-            # write header if necessary
-            if opt.header != '':
-                if os.path.exists(opt.header):
-                    lines = ''
-                    with open(opt.header, 'r', encoding="utf-8") as h:
-                        lines = h.readlines()
-                    for line in lines:
-                        f.write(line)
-                else:
-                    print('Warning: --header file "' + opt.header + '" does not exist; ignoring it!')
-            f.write('[prompts]\n\n')
-            f.write('#####################################################################################################################################\n')
-            f.write('### Dream Factory standard .prompts file\n')
-            f.write('### Created with playground-scraper.py on ' + str(date) + '\n')
-            f.write('### Prompts scraped from: ' + url.replace(' ', '+') + '\n')
-            f.write('#####################################################################################################################################\n\n')
-            for job in data["props"]["pageProps"]["data"]:
-                if "prompt" in job and job['prompt'] != None and job['prompt'] != '':
-                    #if "url_jpeg" in job and job['url_jpeg'] != None and job['url_jpeg'] != '':
-                    #    f.write('# ' + job['url_jpeg'] + '\n')
-                    if "id" in job and job['id'] != None and job['id'] != '':
-                        f.write('# https://playgroundai.com/post/' + job['id'] + '\n')
-                    if not opt.no_size:
-                        if "width" in job:
-                            f.write('!WIDTH = ' + str(job['width']) + '\n')
-                        if "width" in job:
-                            f.write('!HEIGHT = ' + str(job['height']) + '\n')
-
-                    if not opt.no_scale:
-                        if "cfg_scale" in job:
-                            f.write('!SCALE = ' + str(job['cfg_scale']) + '\n')
-
-                    if not opt.no_neg:
-                        if "negative_prompt" in job and job['negative_prompt'] != None:
-                            if job['negative_prompt'] != '':
-                                np = job['negative_prompt'].replace('\n', '').strip()
-                                np = sanitize_prompt(np)
-                                f.write('!NEG_PROMPT = ' + np + '\n')
-
-                    p = job['prompt'].replace('\n', '').strip()
-                    if p.startswith('['):
-                        p = 'image of ' + p
-                    p = sanitize_prompt(p)
-                    f.write('\n' + p + '\n\n')
-                count += 1
-
-            # write footer if necessary
-            if opt.footer != '':
-                if os.path.exists(opt.footer):
-                    lines = ''
-                    with open(opt.footer, 'r', encoding="utf-8") as h:
-                        lines = h.readlines()
-                    for line in lines:
-                        f.write(line)
-                else:
-                    print('Warning: --footer file "' + opt.footer + '" does not exist; ignoring it!')
-
-    print('Wrote ' + str(count) + ' prompts to output file...')
+        # write footer if necessary
+        if opt.footer != '':
+            if os.path.exists(opt.footer):
+                lines = ''
+                with open(opt.footer, 'r', encoding="utf-8") as h:
+                    lines = h.readlines()
+                for line in lines:
+                    f.write(line)
+            else:
+                print('Warning: --footer file "' + opt.footer + '" does not exist; ignoring it!')
 
 
 # entry point
@@ -257,8 +271,11 @@ if __name__ == '__main__':
             print('Specified --file "' + opt.file + '" does not exist! Exiting...')
             exit(-1)
 
+    # create list of unique prompts
+    prompts = create_prompt_list(data, opt)
+
     # write the output file
-    write_output(data, opt)
+    write_output(prompts, opt)
 
     print('Done!')
     exit(0)
