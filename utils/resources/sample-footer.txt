@@ -1,0 +1,3 @@
+
+# This is a sample footer file for use with the various scraper utilities.
+# See utils/playgroundai-scraper.py for more information and usage example.

@@ -1,0 +1,26 @@
+[config]
+
+# This is a sample header file for use with the various scraper utilities.
+# Modify these configuration settings to your liking, then designate it as your --header when launching scrapers.
+# See utils/playgroundai-scraper.py for more information and usage example.
+
+!MODE = standard
+!REPEAT = yes
+
+!WIDTH = 1024
+!HEIGHT = 1024
+!HIGHRES_FIX = no
+
+!SAMPLER = DPM++ 2S a Karras
+!STEPS = 30
+!SAMPLES = 1
+!SCALE = 7
+!CLIP_SKIP = 1
+
+!FILENAME = <model>-<date>-<time>
+!AUTO_INSERT_MODEL_TRIGGER = end
+
+!CKPT_FILE = # put your desired model(s) here!
+!NEG_PROMPT = # put your desired default negative prompt here!
+
+
