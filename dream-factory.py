@@ -449,15 +449,21 @@ class Worker(threading.Thread):
                                 p = mp
                                 before = p.split('<lora:', 1)[0]
                                 after = p.split('<lora:', 1)[1]
-                                after = after.split('>', 1)[1]
-                                mp = (before + after).strip()
+                                if '>' in after:
+                                    after = after.split('>', 1)[1]
+                                    mp = (before + after).strip()
+                                else:
+                                    mp = before.strip()
 
                             while '<hypernet:' in mp and '>' in mp:
                                 p = mp
                                 before = p.split('<hypernet:', 1)[0]
                                 after = p.split('<hypernet:', 1)[1]
-                                after = after.split('>', 1)[1]
-                                mp = (before + after).strip()
+                                if '>' in after:
+                                    after = after.split('>', 1)[1]
+                                    mp = (before + after).strip()
+                                else:
+                                    mp = before.strip()
 
                             payload["hr_prompt"] = str(mp)
                         else:
