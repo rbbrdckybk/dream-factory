@@ -346,6 +346,7 @@ For use with custom models that require a 'trigger word' that has been set up in
 ```
 !AUTO_INSERT_MODEL_TRIGGER = start
 ```
+Note that this will also control the behavior of automatic trigger insertion into your HIGHRES_PROMPT (if present), assuming that a valid HIGHRES_CKPT_FILE has been set with associated trigger words.
 #### !SEED
 Specifies the seed value to be used in image creation. This value is normally chosen at random - using the same settings with the same seed value should produce exactly the same output image. Setting this to nothing will indicate that random seed values should be used (the default). This is an advanced setting and isn't included in new prompt file templates, however you may manually add it to your prompt files.
 ```
