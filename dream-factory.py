@@ -219,6 +219,32 @@ class Worker(threading.Thread):
                                 # the keyword we need to replace with the trigger is in the prompt, replace it
                                 self.command['prompt'] = p.replace(keyword, trigger)
 
+                # check to see if the hi-res model we're using has an associated trigger if necessary
+                # BK 2023-10-29
+                if self.command.get('highres_ckpt_file') != '':
+                    if control.model_trigger_words.get(self.command.get('highres_ckpt_file')) != None:
+                        trigger = control.model_trigger_words.get(self.command.get('highres_ckpt_file'))
+                        p = self.command.get('highres_prompt')
+                        if p.strip() == '':
+                            p = self.command.get('prompt')
+                        if trigger not in p:
+                            # trigger word isn't in highres prompt, we need to add it
+                            if self.command.get('auto_insert_model_trigger') == 'first_comma':
+                                if ',' in p:
+                                    self.command['highres_prompt'] = p.split(',', 1)[0] + ', ' + trigger + ',' + p.split(',', 1)[1]
+                                else:
+                                    self.command['highres_prompt'] = p + ', ' + trigger
+                            elif self.command.get('auto_insert_model_trigger') == 'end':
+                                self.command['highres_prompt'] = p + ', ' + trigger
+                            elif self.command.get('auto_insert_model_trigger') == 'start':
+                                self.command['highres_prompt'] = trigger + ', ' + p
+                            elif 'keyword:' in self.command.get('auto_insert_model_trigger'):
+                                keyword = self.command.get('auto_insert_model_trigger')
+                                keyword = keyword.split('keyword:', 1)[1].strip()
+                                if keyword in p:
+                                    # the keyword we need to replace with the trigger is in the prompt, replace it
+                                    self.command['highres_prompt'] = p.replace(keyword, trigger)
+
             # check for wildcard replacements
             p = self.command.get('prompt')
             #print('before wildcard replace: ' + self.command['prompt'])
