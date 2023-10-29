@@ -708,12 +708,20 @@ You may also set this to ```<remove loras>```, which will use the main prompt wi
 ```
 !HIGHRES_PROMPT = <remove loras>
 ```
+Finally, you can use the special token **<prompt>** within !HIGHRES_PROMPT to reference the original/main prompt. Useful if you want to add to the original prompt in some way.
+```
+!HIGHRES_PROMPT = <prompt>, highly detailed, 8k
+```
 Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the prompt that was used during the initial generation will be used).
 #### !HIGHRES_NEG_PROMPT
 Allows you to specify a different negative prompt during the highres fix portion of image generation.
 This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
 ```
 !HIGHRES_NEG_PROMPT = ugly
+```
+You may also use the special token **<neg_prompt>** within !HIGHRES_NEG_PROMPT to reference the original/main negative prompt. Useful if you want to add to the original negative prompt in some way.
+```
+!HIGHRES_NEG_PROMPT = <neg_prompt>, illustration, drawing
 ```
 Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the negative prompt that was used during the initial generation will be used).
 #### !REFINER_CKPT_FILE
