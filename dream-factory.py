@@ -493,8 +493,12 @@ class Worker(threading.Thread):
 
                             payload["hr_prompt"] = str(mp)
                         else:
+                            if '<prompt>' in self.command.get('highres_prompt'):
+                                self.command['highres_prompt'] = self.command.get('highres_prompt').replace('<prompt>', self.command.get('prompt'))
                             payload["hr_prompt"] = str(self.command.get('highres_prompt'))
                     if self.command.get('highres_neg_prompt') != '':
+                        if '<neg_prompt>' in self.command.get('highres_neg_prompt'):
+                            self.command['highres_neg_prompt'] = self.command.get('highres_neg_prompt').replace('<neg_prompt>', self.command.get('neg_prompt'))
                         payload["hr_negative_prompt"] = str(self.command.get('highres_neg_prompt'))
                     if self.command.get('highres_steps') != '':
                         payload["hr_second_pass_steps"] = self.command.get('highres_steps')
