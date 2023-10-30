@@ -1208,6 +1208,8 @@ class Controller:
         # for queuing multiple models to apply to prompt files
         self.models = []
         self.model_index = 0
+        self.highres_models = []
+        self.highres_model_index = 0
 
         # read config options
         self.init_config()
@@ -2395,8 +2397,24 @@ class Controller:
 
     # build a work queue with the specified prompt and style files
     def init_work_queue(self):
+
         # check for a multiple models scenario
-        if len(self.models) > 0:
+        # BK 2023-10-30
+        check_main = False
+        if len(self.highres_models) > 0:
+            # we have multiple high-res models, iterate through all of them
+            # before switching main model
+            if self.highres_model_index < len(self.highres_models)-1:
+                self.highres_model_index += 1
+            else:
+                self.highres_model_index = 0
+                check_main = True
+            new_model = self.highres_models[self.highres_model_index]
+            self.prompt_manager.config['highres_ckpt_file'] = new_model
+        else:
+            check_main = True
+
+        if check_main and len(self.models) > 0:
             # a models list was preserved, need to switch to next ckpt
             # move to next model
             if self.model_index < len(self.models)-1:
@@ -2405,8 +2423,12 @@ class Controller:
                 self.model_index = 0
             new_model = self.models[self.model_index]
             self.prompt_manager.config['ckpt_file'] = new_model
+        else:
+            if self.model_index < 0:
+                # handle start case when both are at -1 and main won't be checked
+                self.model_index = 0
 
-        # proces mode
+        # process mode
         if self.prompt_manager.config.get('mode') == 'process':
             self.work_queue = self.prompt_manager.build_process_work()
             self.orig_work_queue_size = len(self.work_queue)
@@ -2440,9 +2462,11 @@ class Controller:
                 # clean up empty output subdirs on every prompt file switch
                 self.clean_output_subdirs(self.config.get('output_location'))
 
-            # clear model queue
+            # clear model queues
             self.models = []
             self.model_index = 0
+            self.highres_models = []
+            self.highres_model_index = 0
 
             self.clear_work_queue()
 
@@ -3132,6 +3156,14 @@ if __name__ == '__main__':
                             if len(control.models) > 0:
                                 if control.model_index == len(control.models)-1:
                                     # we've reached the end of the models list
+                                    # check that we've also reached the end of the highres list if present
+                                    if len(control.highres_models) > 0:
+                                        if control.highres_model_index == len(control.highres_models)-1:
+                                            should_stop = True
+                                    else:
+                                        should_stop = True
+                            elif len(control.highres_models) > 0:
+                                if control.highres_model_index == len(control.highres_models)-1:
                                     should_stop = True
                             else:
                                 # not running multiple models, stop here
