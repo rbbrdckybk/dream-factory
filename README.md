@@ -673,6 +673,10 @@ This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts 
 ```
 !HIGHRES_CKPT_FILE = epicrealism
 ```
+You may also use a comma-separated list of models. If you also use multiple models for your main model (!CKPT_FILE), then all possible combinations will be generated.
+```
+!HIGHRES_CKPT_FILE = epicrealism, deliberate, dreamshaper
+```
 Substring matches on model filenames are ok (hashes will work, too).
 Set to nothing to clear it (**Latent** will be used as a default if you don't set anything here and use **HIGHRES_FIX = yes**).
 #### !HIGHRES_VAE
