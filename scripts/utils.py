@@ -1570,10 +1570,10 @@ def extract_params_from_command(command):
                 if temp[-1] == '\"':
                     temp = temp[:-1]
                 temp = temp.replace('\\', '')
+                command = '--ddim_steps' + command.split('--ddim_steps', 1)[1]
             else:
                 temp = ''
             params.update({'prompt' : temp})
-            #command = command.split('"', 1)[1]
 
         #elif '"' in command:
         #    params.update({'prompt' : command.split('"', 1)[0]})

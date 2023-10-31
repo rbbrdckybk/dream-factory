@@ -11,7 +11,6 @@ import cherrypy
 from cherrypy.lib import auth_basic, static
 from cherrypy.process.plugins import SimplePlugin
 
-
 # cherrypy already does signal handling, so if it's shutting down,
 # use that as a signal to shut down main thread
 class ShutdownPlugin(SimplePlugin):
