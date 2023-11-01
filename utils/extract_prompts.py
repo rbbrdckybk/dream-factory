@@ -205,6 +205,35 @@ def extract_params_from_command(command):
 
     return params
 
+
+# fixes common formatting issues in user prompts
+def sanitize_prompt(p):
+    while '  ' in p:
+        p = p.replace('  ', ' ')
+    while ',,' in p:
+        p = p.replace(',,', ',')
+    while ' ,' in p:
+        p = p.replace(' ,', ',')
+    while '.,' in p:
+        p = p.replace('.,', ',')
+    while ', ,' in p:
+        p = p.replace(', ,', ',')
+    while '8 k' in p:
+        p = p.replace('8 k', '8k')
+    while '4 k' in p:
+        p = p.replace('4 k', '4k')
+    # regex to force a space after commas and periods (except in decimal #s)
+    #p = re.sub(r'(?<=[.,])(?=[^\s])', r' ', p).strip()
+    p = re.sub(r'(?<=[,])(?=[^\s])', r' ', p).strip()
+    p = re.sub('\.(?!\s|\d|$)', '. ', p).strip()
+
+    while ', ,' in p:
+        p = p.replace(', ,', ',')
+    if p.endswith(','):
+        p = p[:-1]
+    return p
+
+
 # entry point
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -371,6 +400,7 @@ if __name__ == '__main__':
                                 params['prompt'] = params['prompt'].replace(', ,', ',')
                                 params['prompt'] = params['prompt'].replace(' ,', ',')
                                 params['prompt'] = params['prompt'].replace(',  style,', ',')
+                                params['prompt'] = sanitize_prompt(params['prompt'])
                                 params['prompt'] = params['prompt'].strip('\"').strip(",").strip()
 
                                 if params['prompt'].strip() != '':
@@ -382,7 +412,7 @@ if __name__ == '__main__':
                                     if opt.extract_neg_prompts:
                                         if params['neg_prompt'] == '':
                                             params['neg_prompt'] = ' # no negative prompt'
-                                        temp = '!NEG_PROMPT = ' + params['neg_prompt'] + '\n\n' + temp
+                                        temp = '!NEG_PROMPT = ' + sanitize_prompt(params['neg_prompt']) + '\n\n' + temp
                                     if opt.extract_cfg_scale:
                                         temp = '!SCALE = ' + params['scale'] + '\n' + temp
                                     if opt.extract_models:

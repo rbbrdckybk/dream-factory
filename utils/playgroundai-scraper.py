@@ -67,8 +67,13 @@ def sanitize_prompt(p):
         p = p.replace('8 k', '8k')
     while '4 k' in p:
         p = p.replace('4 k', '4k')
-    # regex to force a space after commas and periods
-    p = re.sub(r'(?<=[.,])(?=[^\s])', r' ', p).strip()
+    # regex to force a space after commas and periods (except in decimal #s)
+    #p = re.sub(r'(?<=[.,])(?=[^\s])', r' ', p).strip()
+    p = re.sub(r'(?<=[,])(?=[^\s])', r' ', p).strip()
+    p = re.sub('\.(?!\s|\d|$)', '. ', p).strip()
+
+    while ', ,' in p:
+        p = p.replace(', ,', ',')
     if p.endswith(','):
         p = p[:-1]
     return p
