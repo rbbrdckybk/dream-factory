@@ -126,6 +126,13 @@ def create_output(json):
                 else:
                     print('Header file (' + header + ') does not exist; ignoring it!')
 
+            f.write('[prompts]\n\n')
+            f.write('#####################################################################################################################################\n')
+            f.write('### Dream Factory standard .prompts file\n')
+            f.write('### Created with midjourney-scraper.py on ' + str(date) + '\n')
+            f.write('### ' + str(len(prompts)) + ' unqiue prompts scraped from: ' + url.replace(' ', '+') + '\n')
+            f.write('#####################################################################################################################################\n\n')
+
             # write scraped prompts
             for prompt in prompts:
                 f.write(prompt + '\n\n')
