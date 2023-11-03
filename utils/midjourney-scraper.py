@@ -23,6 +23,7 @@ json_file = ''
 top = False
 searchFound = False
 outdir = ''
+outname = ''
 header = ''
 footer = ''
 
@@ -45,6 +46,11 @@ if __name__ == '__main__':
         help="output folder location (must exist!)"
     )
     parser.add_argument(
+        "--outname",
+        default='midjourney',
+        help="output filename (date will be appended automatically); default is 'midjourney'"
+    )
+    parser.add_argument(
         "--header",
         default='',
         help=".txt file containing text to prepend output .prompts file with"
@@ -58,12 +64,14 @@ if __name__ == '__main__':
     top = opt.top
     json_file = opt.file
     outdir = opt.outdir
+    outname = opt.outname
     header = opt.header
     footer = opt.footer
 
 
 def create_output(json):
     global outdir
+    global outname
     global header
     global footer
 
@@ -97,9 +105,9 @@ def create_output(json):
         prompts.sort()
 
         date = datetime.today().strftime('%Y-%m-%d')
-        filename = 'midjourney-' + date + '.prompts'
+        filename = outname + '-' + date + '.prompts'
         if top:
-            filename = 'midjourney-showcase-top.prompts'
+            filename = outname + '-showcase-top.prompts'
         if outdir != '':
             if os.path.exists(outdir):
                 filename = os.path.join(outdir, filename)
