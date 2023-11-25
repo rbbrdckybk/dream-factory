@@ -212,6 +212,7 @@ def create_output(json):
                     print('Header file (' + header + ') does not exist; ignoring it!')
 
             # write scraped prompts
+            f.write('\n[prompts]\n\n')
             f.write('\n#######################################################################################################\n')
             f.write('# Created with utils\magespace-scraper.py\n')
             if profile_mode:
