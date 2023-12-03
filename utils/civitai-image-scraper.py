@@ -81,11 +81,16 @@ def create_output(json):
     r = json
     count = 0
     prompts = []
+    prompts_unique = []
 
     if r["result"]["data"]["json"]["items"]:
         for job in r["result"]["data"]["json"]["items"]:
             if "meta" in job and job["meta"] is not None and "prompt" in job["meta"] and job["meta"]["prompt"] is not None:
                 count += 1
+                id = ''
+                if "id" in job and job["id"] is not None:
+                    id = str(job["id"])
+
                 prompt = job["meta"]["prompt"].replace('\n', '').strip()
                 if prompt.startswith('['):
                     prompt = 'image of ' + prompt
@@ -121,16 +126,21 @@ def create_output(json):
                     prompt = prompt.replace('  ', ' ')
                 prompt = prompt.strip()
 
-                if neg_prompts == True:
-                    neg = ''
-                    if "negativePrompt" in job["meta"] and job["meta"]["negativePrompt"] is not None:
-                        neg = job["meta"]["negativePrompt"].replace('\n', '').strip()
-                        while '  ' in neg:
-                            neg = neg.replace('  ', ' ')
-                    neg = '!NEG_PROMPT = ' + neg + '\n\n'
-                    prompt = neg + prompt
+                if prompt not in prompts_unique:
+                    prompts_unique.append(prompt)
+                    if neg_prompts == True:
+                        neg = ''
+                        if "negativePrompt" in job["meta"] and job["meta"]["negativePrompt"] is not None:
+                            neg = job["meta"]["negativePrompt"].replace('\n', '').strip()
+                            while '  ' in neg:
+                                neg = neg.replace('  ', ' ')
+                        neg = '!NEG_PROMPT = ' + neg + '\n\n'
+                        prompt = neg + prompt
 
-                prompts.append(prompt)
+                        if id != '':
+                            prompt = '# ' + url + '/' + id + '\n' + prompt
+
+                    prompts.append(prompt)
 
         prompts = list(set(prompts))
         prompts.sort()
