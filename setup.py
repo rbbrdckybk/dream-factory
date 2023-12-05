@@ -51,7 +51,7 @@ def clone_repos(verbose = False, shell = False):
 # installs all dependancies via pip
 def install_pytorch(verbose = False, shell = False):
     print('\nInstalling Pytorch (this may take several minutes - be patient do not abort!):')
-    cmd = 'conda install -y pandas pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia'
+    cmd = 'conda install -y pandas pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia'
     exec(cmd, verbose, shell)
 
 # installs all dependancies via pip
