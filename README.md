@@ -65,7 +65,7 @@ These instructions were tested on several Windows 10 desktops with a variety of 
 
 **[1]** Install [Anaconda](https://www.anaconda.com/products/individual), open the root terminal, and create a new environment (and activate it):
 ```
-conda create --name dream-factory python=3.9
+conda create --name dream-factory python=3.10
 conda activate dream-factory
 ```
 
