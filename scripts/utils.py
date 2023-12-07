@@ -409,10 +409,31 @@ class PromptManager():
 
         elif command == 'highres_ckpt_file':
             model = ''
-            if value != '':
+            if ',' in value:
+              # we're queuing multiple models
+              models = value.split(',')
+              validated_models = []
+              for m in models:
+                  v = self.control.validate_model(m.strip())
+                  if v != '':
+                      validated_models.append(v)
+                  else:
+                      self.control.print("*** WARNING: ckpt in model list of !HIGHRES_CKPT_FILE value (" + m.strip() + ") doesn't match any server values; ignoring it! ***")
+              if len(validated_models) > 0:
+                  # we have at least one valid model, start with the first one
+                  # store list with the controller
+                  self.control.highres_models = validated_models
+                  model = self.control.highres_models[0]
+                  # this is lazy but should always be incremented to zero on the first loop
+                  self.control.highres_model_index = -1
+            else:
                 model = self.control.validate_model(value)
                 if model == '':
                     self.control.print("*** WARNING: prompt file command HIGHRES_CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                else:
+                  # to cover cases where there are multiple !HIGHRES_CKPT_FILE directives in a single prompt file
+                  self.control.highres_models = []
+                  self.control.highres_model_index = 0
             self.config.update({'highres_ckpt_file' : model})
 
         elif command == 'highres_vae':
