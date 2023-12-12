@@ -1569,218 +1569,222 @@ def extract_params_from_command(command):
         'refiner_switch' : ""
     }
 
-    if command != "":
-        command = command.strip('"')
+    try:
+        if command != "":
+            command = command.strip('"')
 
-        # need this because of old format w/ upscale info included
-        if '(upscaled' in command:
-            command = command.split('(upscaled', 1)[0]
-            command = command.replace('(upscaled', '')
+            # need this because of old format w/ upscale info included
+            if '(upscaled' in command:
+                command = command.split('(upscaled', 1)[0]
+                command = command.replace('(upscaled', '')
 
-        if '--prompt' in command:
-            temp = command.split('--prompt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'prompt' : temp.strip().strip('"')})
-
-        else:
-            # we'll assume anything before --ddim_steps is the prompt
-            temp = command.split('--ddim_steps', 1)[0]
-            if len(temp) > 2:
-                temp = temp.strip()
-                if temp[-1] == '\"':
-                    temp = temp[:-1]
-                temp = temp.replace('\\', '')
-                command = '--ddim_steps' + command.split('--ddim_steps', 1)[1]
-            else:
-                temp = ''
-            params.update({'prompt' : temp})
-
-        #elif '"' in command:
-        #    params.update({'prompt' : command.split('"', 1)[0]})
-        #    command = command.split('"', 1)[1]
-
-        if '--neg_prompt' in command:
-            temp = command.split('--neg_prompt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'neg_prompt' : temp.strip().strip('"')})
-
-        if '--ddim_steps' in command:
-            temp = command.split('--ddim_steps', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'steps' : temp.strip()})
-
-        if '--scale' in command:
-            temp = command.split('--scale', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'scale' : temp.strip()})
-
-        if '--seed' in command:
-            temp = command.split('--seed', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'seed' : temp.strip()})
-
-        if '--W' in command:
-            temp = command.split('--W', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'width' : temp.strip()})
-
-        if '--H' in command:
-            temp = command.split('--H', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'height' : temp.strip()})
-
-        if '--clip-skip' in command:
-            temp = command.split('--clip-skip', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'clip_skip' : temp.strip()})
-
-        if '--vae' in command:
-            temp = command.split('--vae', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'vae' : temp.strip()})
-
-        if '--styles' in command:
-            temp = command.split('--styles', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('"', '')
-            params.update({'styles' : temp.strip()})
-
-        if '--hr_scale_factor' in command:
-            temp = command.split('--hr_scale_factor', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'highres_scale_factor' : temp.strip()})
-
-        if '--hr_upscaler' in command:
-            temp = command.split('--hr_upscaler', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'highres_upscaler' : temp.strip()})
-
-        if '--hr_ckpt' in command:
-            temp = command.split('--hr_ckpt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('\"', '')
-            temp = filename_from_abspath(temp)
-            params.update({'highres_ckpt_file' : temp.strip()})
-
-        if '--hr_vae' in command:
-            temp = command.split('--hr_vae', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('\"', '')
-            temp = filename_from_abspath(temp)
-            params.update({'highres_vae' : temp.strip()})
-
-        if '--hr_sampler' in command:
-            temp = command.split('--hr_sampler', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'highres_sampler' : temp.strip()})
-
-        if '--hr_steps' in command:
-            temp = command.split('--hr_steps', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'highres_steps' : temp.strip()})
-
-        if '--hr_prompt' in command:
-            temp = command.split('--hr_prompt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'highres_prompt' : temp.strip().strip('"')})
-
-        if '--hr_neg_prompt' in command:
-            temp = command.split('--hr_neg_prompt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'highres_neg_prompt' : temp.strip().strip('"')})
-
-        if '--refiner_ckpt' in command:
-            temp = command.split('--refiner_ckpt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('\"', '')
-            temp = filename_from_abspath(temp)
-            params.update({'refiner_ckpt_file' : temp.strip()})
-
-        if '--refiner_switch' in command:
-            temp = command.split('--refiner_switch', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'refiner_switch' : temp.strip()})
-
-        if '--init-img' in command:
-            temp = command.split('--init-img', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('../', '').strip().strip('"')
-            temp = filename_from_abspath(temp)
-            params.update({'input_image' : temp})
-
-        if '--cn-img' in command:
-            temp = command.split('--cn-img', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('../', '').strip().strip('"')
-            temp = filename_from_abspath(temp)
-            params.update({'controlnet_input_image' : temp})
-
-        if '--strength' in command:
-            temp = command.split('--strength', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'strength' : temp.strip()})
-
-        if '--plms' in command:
-            # non-optimized version, ddim is default unless --plms specified
-            params.update({'sampler' : 'plms'})
-        else:
-            # optimized version
-            if '--sampler' in command:
-                temp = command.split('--sampler', 1)[1]
+            if '--prompt' in command:
+                temp = command.split('--prompt', 1)[1]
                 if '--' in temp:
                     temp = temp.split('--', 1)[0]
-                params.update({'sampler' : temp.strip()})
+                params.update({'prompt' : temp.strip().strip('"')})
 
-        if '--ckpt' in command:
-            temp = command.split('--ckpt', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('\"', '')
-            temp = filename_from_abspath(temp)
-            params.update({'ckpt_file' : temp.strip()})
+            else:
+                # we'll assume anything before --ddim_steps is the prompt
+                temp = command.split('--ddim_steps', 1)[0]
+                if len(temp) > 2:
+                    temp = temp.strip()
+                    if temp[-1] == '\"':
+                        temp = temp[:-1]
+                    temp = temp.replace('\\', '')
+                    command = '--ddim_steps' + command.split('--ddim_steps', 1)[1]
+                else:
+                    temp = ''
+                params.update({'prompt' : temp})
 
-        if '--cn-model' in command:
-            temp = command.split('--cn-model', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            temp = temp.replace('\"', '')
-            temp = filename_from_abspath(temp)
-            params.update({'controlnet_model' : temp.strip()})
+            #elif '"' in command:
+            #    params.update({'prompt' : command.split('"', 1)[0]})
+            #    command = command.split('"', 1)[1]
 
-        if '--cn-cmode' in command:
-            temp = command.split('--cn-cmode', 1)[1]
-            if '--' in temp:
-                temp = temp.split('--', 1)[0]
-            params.update({'controlnet_controlmode' : temp.strip()})
+            if '--neg_prompt' in command:
+                temp = command.split('--neg_prompt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'neg_prompt' : temp.strip().strip('"')})
 
-        if '--cn-pp' in command:
-            params.update({'controlnet_pixelperfect' : 'yes'})
+            if '--ddim_steps' in command:
+                temp = command.split('--ddim_steps', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'steps' : temp.strip()})
 
-        if '--tiles' in command:
-            params.update({'tiling' : 'yes'})
+            if '--scale' in command:
+                temp = command.split('--scale', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'scale' : temp.strip()})
+
+            if '--seed' in command:
+                temp = command.split('--seed', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'seed' : temp.strip()})
+
+            if '--W' in command:
+                temp = command.split('--W', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'width' : temp.strip()})
+
+            if '--H' in command:
+                temp = command.split('--H', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'height' : temp.strip()})
+
+            if '--clip-skip' in command:
+                temp = command.split('--clip-skip', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'clip_skip' : temp.strip()})
+
+            if '--vae' in command:
+                temp = command.split('--vae', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'vae' : temp.strip()})
+
+            if '--styles' in command:
+                temp = command.split('--styles', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('"', '')
+                params.update({'styles' : temp.strip()})
+
+            if '--hr_scale_factor' in command:
+                temp = command.split('--hr_scale_factor', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_scale_factor' : temp.strip()})
+
+            if '--hr_upscaler' in command:
+                temp = command.split('--hr_upscaler', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_upscaler' : temp.strip()})
+
+            if '--hr_ckpt' in command:
+                temp = command.split('--hr_ckpt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('\"', '')
+                temp = filename_from_abspath(temp)
+                params.update({'highres_ckpt_file' : temp.strip()})
+
+            if '--hr_vae' in command:
+                temp = command.split('--hr_vae', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('\"', '')
+                temp = filename_from_abspath(temp)
+                params.update({'highres_vae' : temp.strip()})
+
+            if '--hr_sampler' in command:
+                temp = command.split('--hr_sampler', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_sampler' : temp.strip()})
+
+            if '--hr_steps' in command:
+                temp = command.split('--hr_steps', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_steps' : temp.strip()})
+
+            if '--hr_prompt' in command:
+                temp = command.split('--hr_prompt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_prompt' : temp.strip().strip('"')})
+
+            if '--hr_neg_prompt' in command:
+                temp = command.split('--hr_neg_prompt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_neg_prompt' : temp.strip().strip('"')})
+
+            if '--refiner_ckpt' in command:
+                temp = command.split('--refiner_ckpt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('\"', '')
+                temp = filename_from_abspath(temp)
+                params.update({'refiner_ckpt_file' : temp.strip()})
+
+            if '--refiner_switch' in command:
+                temp = command.split('--refiner_switch', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'refiner_switch' : temp.strip()})
+
+            if '--init-img' in command:
+                temp = command.split('--init-img', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('../', '').strip().strip('"')
+                temp = filename_from_abspath(temp)
+                params.update({'input_image' : temp})
+
+            if '--cn-img' in command:
+                temp = command.split('--cn-img', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('../', '').strip().strip('"')
+                temp = filename_from_abspath(temp)
+                params.update({'controlnet_input_image' : temp})
+
+            if '--strength' in command:
+                temp = command.split('--strength', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'strength' : temp.strip()})
+
+            if '--plms' in command:
+                # non-optimized version, ddim is default unless --plms specified
+                params.update({'sampler' : 'plms'})
+            else:
+                # optimized version
+                if '--sampler' in command:
+                    temp = command.split('--sampler', 1)[1]
+                    if '--' in temp:
+                        temp = temp.split('--', 1)[0]
+                    params.update({'sampler' : temp.strip()})
+
+            if '--ckpt' in command:
+                temp = command.split('--ckpt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('\"', '')
+                temp = filename_from_abspath(temp)
+                params.update({'ckpt_file' : temp.strip()})
+
+            if '--cn-model' in command:
+                temp = command.split('--cn-model', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                temp = temp.replace('\"', '')
+                temp = filename_from_abspath(temp)
+                params.update({'controlnet_model' : temp.strip()})
+
+            if '--cn-cmode' in command:
+                temp = command.split('--cn-cmode', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'controlnet_controlmode' : temp.strip()})
+
+            if '--cn-pp' in command:
+                params.update({'controlnet_pixelperfect' : 'yes'})
+
+            if '--tiles' in command:
+                params.update({'tiling' : 'yes'})
+    except:
+        # there was an issue reading metadata, return an empty dict
+        pass
 
     return params
 

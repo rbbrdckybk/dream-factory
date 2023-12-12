@@ -194,6 +194,10 @@ class Worker(threading.Thread):
 
             if self.command.get('prompt').strip() == '.':
                 self.command['prompt'] = ''
+            else:
+                # clean up potentially dangerous prompt content:
+                while '--' in self.command.get('prompt'):
+                     self.command['prompt'] = self.command.get('prompt').replace('--', '-')
 
             # check for auto-insertion of model trigger word
             if (control.model_trigger_words != None) and (self.command.get('auto_insert_model_trigger') != 'off'):
