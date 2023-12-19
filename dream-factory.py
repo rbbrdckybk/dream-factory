@@ -1843,7 +1843,8 @@ class Controller:
 
             'sd_location' : "",
             'sd_port' : 7861,
-            'gpu_init_stagger' : 1
+            'gpu_init_stagger' : 1,
+            'startup_delay' : 0
         }
 
         file = utils.TextFile(self.config_file)
@@ -1895,6 +1896,14 @@ class Controller:
                             print("*** WARNING: specified 'GPU_INIT_STAGGER' is not a valid number; it will be ignored!")
                         else:
                             self.config.update({'gpu_init_stagger' : int(value)})
+
+                    elif command == 'startup_delay':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'STARTUP_DELAY' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'startup_delay' : int(value)})
 
                     elif command == 'webserver_use':
                         if value == 'yes' or value == 'no':

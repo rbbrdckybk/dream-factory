@@ -24,6 +24,13 @@ SD_PORT = 7861
 # allowing them all to init simultaneously may cause issues depending on system resources.
 GPU_INIT_STAGGER = 1
 
+# Optional Auto1111 startup delay, in seconds
+# You may add a delay here if you receive errors during startup initialization.
+# Usually these will be some sort of "invalid response" from Auto1111; the API may be up and 
+# running but not quite ready to process requests. This delay will wait the specified time to 
+# make the initial requests to Auto1111 after the API indicates it's available.
+STARTUP_DELAY = 0
+
 # Directory containing your prompt files.
 # Locations are relative to Dream Factory's installation directory unless specified.
 PROMPTS_LOCATION = prompts
