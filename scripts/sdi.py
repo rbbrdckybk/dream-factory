@@ -285,7 +285,7 @@ class Monitor(threading.Thread):
     def alive_check_callback(self, response_code):
         #self.sdi_ref.log(str(response_code))
         if response_code == 200:
-            # TODO BK add wait here
+            # optionally wait here once the API is available
             if self.sdi_ref.control_ref.config['startup_delay'] > 0:
                 self.sdi_ref.log("Auto1111 API is available, waiting for " + str(self.sdi_ref.control_ref.config['startup_delay']) + " seconds...")
                 time.sleep(self.sdi_ref.control_ref.config['startup_delay'])
