@@ -273,6 +273,12 @@ if __name__ == '__main__':
         action='store_true',
         help="remove all lora/hypernet references from prompts"
     )
+    parser.add_argument(
+        "--prepend_filename",
+        type=str,
+        default='',
+        help="prepend the specified filename directive (e.g. <model>-<date>-<time>) with an image reference #"
+    )
     opt = parser.parse_args()
 
     prompts = {}
@@ -460,6 +466,7 @@ if __name__ == '__main__':
 
                 last_neg_prompt = '-1'
                 last_cfg = '-1'
+                ref = 0
                 for p in prompts[key]:
                     # remove neg prompt/cfg if it's the same as the previous prompt
                     # would have been smarter to do this above
@@ -475,7 +482,10 @@ if __name__ == '__main__':
                     else:
                         p = p.replace('!SCALE = ' + cfg + '\n', '')
 
+                    if opt.prepend_filename != '':
+                        f.write('!FILENAME = ' + str(ref).zfill(4) + '-' + opt.prepend_filename + '\n')
                     f.write(p + '\n\n')
+                    ref += 1
             f.close()
 
         print('Done!')
