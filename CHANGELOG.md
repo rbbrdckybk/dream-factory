@@ -6,6 +6,16 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2023.12.22]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **cf2772fab0af5573da775e7437e6acdca424f26e**
+
+### Added
+- Added option to specify a default model to use for upscaling directly from the integrated gallery via config.txt (see **PF_UPSCALE_OVERRIDE_CKPT_FILE** in config-default.txt). This is especially helpful when using SDXL main models, as you may specify a SD 1.5 model for upscales to dramatically reduce memory requirements (and thus allow higher resolution upscales).
+
+### Fixed
+- Added a startup wait/delay for the Automatic1111 API to be ready. If you were seeing startup errors related to Auto1111 API responses (likely due to models being stored on slow/NAS drives), this should solve your issue (thanks Koneko349!).
+- Numerous minor/cosmetic fixes over the past few weeks that didn't warrant their own entries.
+
 ## [2023.10.14]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **5ef669de080814067961f28357256e8fe27544f4**
 
