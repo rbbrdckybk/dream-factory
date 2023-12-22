@@ -788,6 +788,8 @@ class Worker(threading.Thread):
                                     if new_dimensions != []:
                                         sd_width = new_dimensions[0]
                                         sd_height = new_dimensions[1]
+                                        self.command['width'] = sd_width
+                                        self.command['height'] = sd_height
                                     else:
                                         control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
 
@@ -957,7 +959,7 @@ class Worker(threading.Thread):
                         if self.command['use_upscale'] == 'yes':
                             upscale_text = " (upscaled "
                             if self.command['upscale_model'] == 'sd':
-                                upscale_text += 'via SD upscale @ ' + str(self.command.get('upscale_sd_strength')) + ' strength)'
+                                upscale_text += 'via SD upscale: to ' + str(sd_width) + 'x' + str(sd_height) + ' @ ' + str(self.command.get('upscale_sd_strength')) + ' strength)'
                             elif self.command['upscale_model'] == 'ultimate':
                                 upscale_text += 'via SD ultimate upscale: ' + str(self.command.get('upscale_amount')) + 'x using ' + self.command['upscale_ult_model'] + ' @ ' + str(self.command.get('upscale_sd_strength')) + ' strength)'
                             else:
@@ -976,7 +978,6 @@ class Worker(threading.Thread):
                         exif[0x9c9d] = ('AI art' + upscale_text).encode('utf16')
 
                         newfilename = ''
-
                         if self.command['filename'] != '':
                             # user specified custom filename format
 
@@ -1837,6 +1838,7 @@ class Controller:
             'upscale_codeformer_amount' : 0.0,
             'upscale_gfpgan_amount' : 0.0,
             'upscale_sd_strength' : 0.3,
+            'upscale_override_ckpt_file' : '',
             'upscale_model' : "ESRGAN_4x",
             'ckpt_file' : "",
             'filename' : "",
@@ -2153,6 +2155,10 @@ class Controller:
                     elif command == 'pf_ckpt_file':
                         # this is validated after we receive valid models from the server
                         self.config.update({'ckpt_file' : value})
+
+                    elif command == 'pf_upscale_override_ckpt_file':
+                        # this is validated after we receive valid models from the server
+                        self.config.update({'upscale_override_ckpt_file' : value})
 
                     elif command == 'pf_filename':
                         self.config.update({'filename' : value})
@@ -2723,6 +2729,7 @@ class Controller:
                         work['mode'] = 'process'
                         work['input_image'] = actual_path
                         work['use_upscale'] = 'yes'
+                        work['override_ckpt_file'] = self.config['upscale_override_ckpt_file']
                         work['upscale_model'] = 'sd'
                         work['output_dir'] = upscale_dir
                         work['filename'] = '<input-img>'
@@ -2837,6 +2844,17 @@ class Controller:
                 trigger = line.split(',', 1)[1].strip()
                 if trigger != '':
                     self.model_trigger_words[model] = trigger
+
+        # validate default override upscale model if there is one:
+        if self.config['upscale_override_ckpt_file'] != '':
+            model = self.config['upscale_override_ckpt_file']
+            validated_model = self.validate_model(model)
+            if validated_model != '':
+                self.config['upscale_override_ckpt_file'] = validated_model
+                self.print('[controller] >>> default upscale override model validated: ' + self.config['upscale_override_ckpt_file'])
+            else:
+                self.config['upscale_override_ckpt_file'] = ''
+                self.print("*** WARNING: config.txt file command PF_UPSCALE_OVERRIDE_CKPT_FILE value (" + model + ") doesn't match any server values; ignoring it! ***")
 
         # validate default model if there is one:
         if self.config['ckpt_file'] != '':

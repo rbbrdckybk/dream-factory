@@ -94,7 +94,7 @@ JPG_QUALITY = 88
 # This is used when calculating the final size for automatic SD upscales
 # If you set this to a number that's too high, you'll get errors!
 # Suggested values to try: 12GB VRAM: 4200000   8GB VRAM: 2600000
-# May need to be lower if you use options such as --no-half-vae
+# May need to be lower depending on your Auto1111 launch options (--xformers, --medvram etc)
 # Once set, may be overridden in PROCESS mode files with !OVERRIDE_MAX_OUTPUT_SIZE
 MAX_OUTPUT_SIZE = 
 
@@ -128,6 +128,7 @@ PF_UPSCALE_AMOUNT = 2.0				# upscaling factor (2 means you'll get an image with 
 PF_UPSCALE_CODEFORMER_AMOUNT = 0.0	# visibility of codeformer face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_GFPGAN_AMOUNT = 0.0		# visibility of gfpgan face enhancement (0 = off, 1 = full effect)
 PF_UPSCALE_SD_STRENGTH = 0.3		# denoising strength when using SD upscale
+PF_UPSCALE_OVERRIDE_CKPT_FILE =		# set a default model to use when upscaling via gallery; otherwise original model will be used
 PF_UPSCALE_KEEP_ORG = no			# keep the original non-upscaled image (yes/no)?
 PF_NEG_PROMPT = 					# if you have a 'catch all' negative prompt you typically use, enter it here
 PF_FILENAME =						# set a default custom filename: https://github.com/rbbrdckybk/dream-factory#filename
