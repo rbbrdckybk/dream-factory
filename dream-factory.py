@@ -1069,6 +1069,17 @@ class Worker(threading.Thread):
                                 if '.' in hr_model:
                                     hr_model = hr_model.rsplit('.', 1)[0].strip()
 
+                            ad_model = ''
+                            if self.command.get('adetailer_model') != '':
+                                ad_model = self.command.get('adetailer_model')
+                                ad_model = ad_model.split('[', 1)[0].strip()
+                                if '\\' in ad_model:
+                                    ad_model = ad_model.rsplit('\\', 1)[1].strip()
+                                if '/' in ad_model:
+                                    ad_model = ad_model.rsplit('/', 1)[1].strip()
+                                if '.' in ad_model:
+                                    ad_model = ad_model.rsplit('.', 1)[0].strip()
+
                             styles = ''
                             style_count = 0
                             if len(self.command.get('styles')) > 0:
@@ -1087,6 +1098,7 @@ class Worker(threading.Thread):
                                     pass
                                 newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<strength>', str(self.command.get('strength')), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<ad-strength>', str(self.command.get('adetailer_strength')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
@@ -1096,6 +1108,7 @@ class Worker(threading.Thread):
                                 newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<hr-model>', hr_model, newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<ad-model>', ad_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<styles>', styles, newfilename, flags=re.IGNORECASE)
 
                             else:
