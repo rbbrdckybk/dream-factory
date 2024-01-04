@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2024, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import threading
@@ -87,6 +87,11 @@ class Worker(threading.Thread):
             else:
                 seed = int(self.command.get('seed')) + control.loops
                 self.command['seed'] = seed
+
+        # check for ADetailer params
+        use_adetailer = False
+        if control.sdi_adetailer_available and self.command.get('adetailer_use') and self.command.get('adetailer_model') != '':
+            use_adetailer = True
 
         # if this is a process-mode prompt, skip past image generation stuff
         if self.command.get('mode') != 'process':
@@ -339,7 +344,6 @@ class Worker(threading.Thread):
                     self.command['width'] = new_size[0]
                     self.command['height'] = new_size[1]
 
-
             # check for ControlNet params
             use_controlnet = False
             scribble_mode = False
@@ -442,7 +446,8 @@ class Worker(threading.Thread):
                   "height": self.command.get('height'),
                   #"restore_faces": False,
                   "tiling": self.command.get('tiling'),
-                  "negative_prompt": str(self.command.get('neg_prompt'))
+                  "negative_prompt": str(self.command.get('neg_prompt')),
+                  "alwayson_scripts": {}
                 }
             else:
                 # txt2img
@@ -460,7 +465,8 @@ class Worker(threading.Thread):
                   "height": self.command.get('height'),
                   #"restore_faces": False,
                   "tiling": self.command.get('tiling'),
-                  "negative_prompt": str(self.command.get('neg_prompt'))
+                  "negative_prompt": str(self.command.get('neg_prompt')),
+                  "alwayson_scripts": {}
                 }
 
                 if self.command['highres_fix'] == 'yes':
@@ -556,7 +562,14 @@ class Worker(threading.Thread):
                         }]
                     }
                 }
-                payload["alwayson_scripts"] = cn_payload
+                #payload["alwayson_scripts"] = cn_payload
+                payload["alwayson_scripts"].update(cn_payload)
+
+            # add ADetailer params to existing payload if ADetailer is enabled
+            # https://github.com/Bing-su/adetailer/wiki/API
+            if use_adetailer:
+                ad_payload = utils.build_adetailer_payload(self.command)
+                payload["alwayson_scripts"].update(ad_payload)
 
             # handle override settings here: clip_skip, vae, etc
             override_settings = {}
@@ -656,8 +669,17 @@ class Worker(threading.Thread):
         # upscale here if requested
         if (self.worker['sdi_instance'].last_job_success or process_mode) and self.worker['sdi_instance'].isRunning:
             # only if we're not shutting down
+            use_upscale = False
             if self.command['use_upscale'] == 'yes':
-                self.worker['work_state'] = 'upscaling'
+                use_upscale = True
+
+            if use_upscale or use_adetailer:
+                if use_upscale:
+                    self.worker['work_state'] = 'upscaling'
+                elif use_adetailer:
+                    self.worker['work_state'] = 'adetailer'
+                else:
+                    self.worker['work_state'] = 'processing'
                 gpu_id = self.worker['id'].replace("cuda:", "")
 
                 if control.config.get('debug_test_mode'):
@@ -680,7 +702,12 @@ class Worker(threading.Thread):
                         if not process_mode:
                             self.worker['sdi_instance'].log('upscaling images...')
                         else:
-                            self.worker['sdi_instance'].log('upscaling ' + self.command.get('input_image') + '...')
+                            if use_upscale:
+                                self.worker['sdi_instance'].log('upscaling ' + self.command.get('input_image') + '...')
+                            elif use_adetailer:
+                                self.worker['sdi_instance'].log('adetailer: ' + self.command.get('input_image') + '...')
+                            else:
+                                self.worker['sdi_instance'].log('processing ' + self.command.get('input_image') + '...')
                         for file in new_files:
                             encoded = None
                             if not process_mode:
@@ -690,221 +717,237 @@ class Worker(threading.Thread):
                                 encoded = base64.b64encode(open(self.command.get('input_image'), "rb").read())
                             encodedString = str(encoded, encoding='utf-8')
                             img_payload = 'data:image/png;base64,' + encodedString
-                            if self.command['upscale_model'] != 'sd' and self.command['upscale_model'] != 'ultimate':
-                                # normal upscale
-                                payload = {
-                                    #"resize_mode": 0,
-                                    #"show_extras_results": true,
-                                    "gfpgan_visibility": self.command['upscale_gfpgan_amount'],
-                                    "codeformer_visibility": self.command['upscale_codeformer_amount'],
-                                    #"codeformer_weight": 0,
-                                    "upscaling_resize": self.command['upscale_amount'],
-                                    #"upscaling_resize_w": 512,
-                                    #"upscaling_resize_h": 512,
-                                    #"upscaling_crop": true,
-                                    "upscaler_1": self.command['upscale_model'],
-                                    #"upscaler_2": "None",
-                                    #"extras_upscaler_2_visibility": 0,
-                                    #"upscale_first": false,
-                                    "image": img_payload
-                                }
-                                self.worker['sdi_instance'].do_upscale(payload, samples_dir)
+                            if use_upscale:
+                                if self.command['upscale_model'] != 'sd' and self.command['upscale_model'] != 'ultimate':
+                                    # normal upscale
+                                    payload = {
+                                        #"resize_mode": 0,
+                                        #"show_extras_results": true,
+                                        "gfpgan_visibility": self.command['upscale_gfpgan_amount'],
+                                        "codeformer_visibility": self.command['upscale_codeformer_amount'],
+                                        #"codeformer_weight": 0,
+                                        "upscaling_resize": self.command['upscale_amount'],
+                                        #"upscaling_resize_w": 512,
+                                        #"upscaling_resize_h": 512,
+                                        #"upscaling_crop": true,
+                                        "upscaler_1": self.command['upscale_model'],
+                                        #"upscaler_2": "None",
+                                        #"extras_upscaler_2_visibility": 0,
+                                        #"upscale_first": false,
+                                        "image": img_payload
+                                    }
+                                    self.worker['sdi_instance'].do_upscale(payload, samples_dir)
+                                else:
+                                    # SD upscale uses img2img
+                                    # use whatever params we can find in original image
+
+                                    sd_sampler = str(self.command.get('sampler'))
+                                    if "sampler" in original_command:
+                                        sd_sampler = original_command['sampler']
+                                        # validate sampler in case we're upscaling very old images
+                                        if control.prompt_manager != None:
+                                            # TODO: should instantiate new prompt_manager if we don't have one yet
+                                            sd_sampler = control.prompt_manager.validate_sampler(sd_sampler, True)
+
+                                    sd_vae = str(self.command.get('vae'))
+                                    if "vae" in original_command:
+                                        sd_vae = original_command['vae']
+
+                                    sd_prompt = str(self.command.get('prompt'))
+                                    if "prompt" in original_command:
+                                        sd_prompt = original_command['prompt']
+
+                                    sd_neg_prompt = str(self.command.get('neg_prompt'))
+                                    if "neg_prompt" in original_command:
+                                        sd_neg_prompt = original_command['neg_prompt']
+
+                                    sd_seed = str(self.command.get('seed'))
+                                    if "seed" in original_command:
+                                        try:
+                                            sd_seed = int(original_command['seed'])
+                                        except:
+                                            pass
+
+                                    sd_steps = self.command.get('steps')
+                                    if "steps" in original_command:
+                                        try:
+                                            sd_steps = int(original_command['steps'])
+                                        except:
+                                            pass
+
+                                    sd_scale = self.command.get('scale')
+                                    if "scale" in original_command:
+                                        try:
+                                            sd_scale = float(original_command['scale'])
+                                        except:
+                                            pass
+
+                                    sd_tiling = self.command.get('tiling')
+                                    if "tiling" in original_command:
+                                        if original_command['tiling'] == 'yes':
+                                            sd_tiling = True
+                                        else:
+                                            sd_tiling = False
+
+                                    # grab styles from original command and put into list
+                                    styles = []
+                                    if "styles" in original_command:
+                                        if original_command['styles'] != '':
+                                            temp = original_command['styles'].split(',')
+                                            for t in temp:
+                                                styles.append(t.strip())
+
+                                    # calculate max output size for sd_upscale
+                                    orig_width = 0
+                                    orig_height = 0
+                                    sd_width = 512
+                                    sd_height = 512
+                                    if self.command['upscale_model'] == 'sd':
+                                        with Image.open(self.command.get('input_image')) as img:
+                                            orig_width, orig_height = img.size
+
+                                        set_max_output_size = control.config.get('max_output_size')
+
+                                        # check for overrides in process mode directives
+                                        if self.command.get('override_max_output_size') != 0:
+                                            set_max_output_size = int(self.command.get('override_max_output_size'))
+                                        new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], set_max_output_size, True)
+
+                                        if new_dimensions != []:
+                                            sd_width = new_dimensions[0]
+                                            sd_height = new_dimensions[1]
+                                            self.command['width'] = sd_width
+                                            self.command['height'] = sd_height
+                                        else:
+                                            control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
+
+                                    if self.command.get('override_steps') != 0:
+                                        sd_steps = self.command.get('override_steps')
+
+                                    if self.command.get('override_sampler') != '':
+                                        sd_sampler = self.command.get('override_sampler')
+
+                                    # check if a model change is needed before upscaling
+                                    sd_model = str(self.command.get('ckpt_file'))
+                                    if "ckpt_file" in original_command:
+                                        sd_model = original_command['ckpt_file']
+                                        sd_model = control.validate_model(sd_model)
+
+                                        # check if we're overriding the model for upscaling
+                                        override_model = ''
+                                        if self.command.get('override_ckpt_file') != '':
+                                            override_model = control.validate_model(self.command.get('override_ckpt_file'))
+                                            if override_model != '':
+                                                sd_model = override_model
+
+                                        # check if a refiner model is available if necessary
+                                        if override_model == '':
+                                            if control.config.get('auto_use_refiner'):
+                                                refiner_model = original_command['ckpt_file'].replace('.safetensors', '').replace('.ckpt', '')
+                                                if '[' in refiner_model:
+                                                    refiner_model = refiner_model.split('[', 1)[0].strip()
+                                                refiner_model = refiner_model + '_refiner'
+                                                refiner_model = control.validate_model(refiner_model)
+                                                if refiner_model != '':
+                                                    sd_model = refiner_model
+
+                                    if sd_model != '' and (sd_model != self.worker['sdi_instance'].model_loaded):
+                                        self.worker['sdi_instance'].load_model(sd_model)
+                                        while self.worker['sdi_instance'].options_change_in_progress:
+                                            # wait for model change to complete
+                                            time.sleep(0.25)
+
+                                    payload = {
+                                      "init_images": [img_payload],
+                                      "sampler_index": str(sd_sampler),
+                                      #"resize_mode": 0,
+                                      "denoising_strength": self.command.get('upscale_sd_strength'),
+                                      "prompt": str(sd_prompt),
+                                      "seed": str(sd_seed),
+                                      "batch_size": 1,
+                                      "n_iter": 1,
+                                      "steps": sd_steps,
+                                      "cfg_scale": sd_scale,
+                                      "width": sd_width,
+                                      "height": sd_height,
+                                      #"restore_faces": False,
+                                      "tiling": sd_tiling,
+                                      "negative_prompt": sd_neg_prompt,
+                                      "alwayson_scripts": {}
+                                    }
+
+                                    # add styles to payload if present
+                                    if styles != []:
+                                        payload["styles"] = styles
+
+                                    override_settings = {}
+                                    if self.command.get('clip_skip') != '':
+                                        override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
+
+                                    if self.command.get('override_vae') != '':
+                                        override_settings["sd_vae"] = self.command.get('override_vae')
+                                    else:
+                                        if override_model == '':
+                                            if sd_vae != '':
+                                                override_settings["sd_vae"] = sd_vae
+
+                                    if override_settings != {}:
+                                        payload["override_settings"] = override_settings
+
+                                    # add additional sd_ultimate_upscale params if necessary
+                                    if self.command['upscale_model'] == 'ultimate':
+                                        up_index = control.get_upscale_model_index(self.command['upscale_ult_model'])
+                                        if up_index == -1:
+                                            up_index = control.get_upscale_model_index('ESRGAN_4x')
+                                            if up_index == -1:
+                                                up_index = 0
+
+                                        custom_scale = 2.0
+                                        if 'upscale_amount' in self.command and float(self.command['upscale_amount']) > 1.0:
+                                            custom_scale = self.command['upscale_amount']
+                                        custom_scale = float(custom_scale)
+
+                                        # docs: https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
+                                        payload["script_name"] = "ultimate sd upscale"
+                                        payload["script_args"] = [
+                                        	"",            # (not used)
+                                        	512,           # tile_width
+                                        	512,           # tile_height
+                                        	8,             # mask_blur
+                                        	32,            # padding
+                                        	64,            # seams_fix_width
+                                        	0.35,          # seams_fix_denoise
+                                        	32,            # seams_fix_padding
+                                        	up_index,      # upscaler_index
+                                        	True,          # save_upscaled_image a.k.a Upscaled
+                                        	0,             # redraw_mode
+                                        	False,         # save_seams_fix_image a.k.a Seams fix
+                                        	8,             # seams_fix_mask_blur
+                                        	0,             # seams_fix_type
+                                        	2,             # target_size_type (0 = From img2img2 settings, 1 = Custom size, 2 = Scale from image size)
+                                        	2048,          # custom_width
+                                        	2048,          # custom_height
+                                        	custom_scale   # custom_scale
+                                        ]
+
+                                    # add adetailer if specified
+                                    if use_adetailer:
+                                        ad_payload = utils.build_adetailer_payload(self.command, True)
+                                        payload["alwayson_scripts"].update(ad_payload)
+
+                                    self.worker['sdi_instance'].do_img2img(payload, samples_dir)
                             else:
-                                # SD upscale uses img2img
-                                # use whatever params we can find in original image
-
-                                sd_sampler = str(self.command.get('sampler'))
-                                if "sampler" in original_command:
-                                    sd_sampler = original_command['sampler']
-                                    # validate sampler in case we're upscaling very old images
-                                    if control.prompt_manager != None:
-                                        # TODO: should instantiate new prompt_manager if we don't have one yet
-                                        sd_sampler = control.prompt_manager.validate_sampler(sd_sampler, True)
-
-                                sd_vae = str(self.command.get('vae'))
-                                if "vae" in original_command:
-                                    sd_vae = original_command['vae']
-
-                                sd_prompt = str(self.command.get('prompt'))
-                                if "prompt" in original_command:
-                                    sd_prompt = original_command['prompt']
-
-                                sd_neg_prompt = str(self.command.get('neg_prompt'))
-                                if "neg_prompt" in original_command:
-                                    sd_neg_prompt = original_command['neg_prompt']
-
-                                sd_seed = str(self.command.get('seed'))
-                                if "seed" in original_command:
-                                    try:
-                                        sd_seed = int(original_command['seed'])
-                                    except:
-                                        pass
-
-                                sd_steps = self.command.get('steps')
-                                if "steps" in original_command:
-                                    try:
-                                        sd_steps = int(original_command['steps'])
-                                    except:
-                                        pass
-
-                                sd_scale = self.command.get('scale')
-                                if "scale" in original_command:
-                                    try:
-                                        sd_scale = float(original_command['scale'])
-                                    except:
-                                        pass
-
-                                sd_tiling = self.command.get('tiling')
-                                if "tiling" in original_command:
-                                    if original_command['tiling'] == 'yes':
-                                        sd_tiling = True
-                                    else:
-                                        sd_tiling = False
-
-                                # grab styles from original command and put into list
-                                styles = []
-                                if "styles" in original_command:
-                                    if original_command['styles'] != '':
-                                        temp = original_command['styles'].split(',')
-                                        for t in temp:
-                                            styles.append(t.strip())
-
-                                # calculate max output size for sd_upscale
-                                orig_width = 0
-                                orig_height = 0
-                                sd_width = 512
-                                sd_height = 512
-                                if self.command['upscale_model'] == 'sd':
-                                    with Image.open(self.command.get('input_image')) as img:
-                                        orig_width, orig_height = img.size
-
-                                    set_max_output_size = control.config.get('max_output_size')
-
-                                    # check for overrides in process mode directives
-                                    if self.command.get('override_max_output_size') != 0:
-                                        set_max_output_size = int(self.command.get('override_max_output_size'))
-                                    new_dimensions = utils.get_largest_possible_image_size([orig_width, orig_height], set_max_output_size, True)
-
-                                    if new_dimensions != []:
-                                        sd_width = new_dimensions[0]
-                                        sd_height = new_dimensions[1]
-                                        self.command['width'] = sd_width
-                                        self.command['height'] = sd_height
-                                    else:
-                                        control.print('Error: SD upscale unable to find appropriate upscale size under MAX_OUTPUT_SIZE for ' + str(self.command.get('input_image')) + '!')
-
-                                if self.command.get('override_steps') != 0:
-                                    sd_steps = self.command.get('override_steps')
-
-                                if self.command.get('override_sampler') != '':
-                                    sd_sampler = self.command.get('override_sampler')
-
-                                # check if a model change is needed before upscaling
-                                sd_model = str(self.command.get('ckpt_file'))
-                                if "ckpt_file" in original_command:
-                                    sd_model = original_command['ckpt_file']
-                                    sd_model = control.validate_model(sd_model)
-
-                                    # check if we're overriding the model for upscaling
-                                    override_model = ''
-                                    if self.command.get('override_ckpt_file') != '':
-                                        override_model = control.validate_model(self.command.get('override_ckpt_file'))
-                                        if override_model != '':
-                                            sd_model = override_model
-
-                                    # check if a refiner model is available if necessary
-                                    if override_model == '':
-                                        if control.config.get('auto_use_refiner'):
-                                            refiner_model = original_command['ckpt_file'].replace('.safetensors', '').replace('.ckpt', '')
-                                            if '[' in refiner_model:
-                                                refiner_model = refiner_model.split('[', 1)[0].strip()
-                                            refiner_model = refiner_model + '_refiner'
-                                            refiner_model = control.validate_model(refiner_model)
-                                            if refiner_model != '':
-                                                sd_model = refiner_model
-
-                                if sd_model != '' and (sd_model != self.worker['sdi_instance'].model_loaded):
-                                    self.worker['sdi_instance'].load_model(sd_model)
-                                    while self.worker['sdi_instance'].options_change_in_progress:
-                                        # wait for model change to complete
-                                        time.sleep(0.25)
-
+                                # We're just doing ADetailer; no upscale...
                                 payload = {
                                   "init_images": [img_payload],
-                                  "sampler_index": str(sd_sampler),
-                                  #"resize_mode": 0,
-                                  "denoising_strength": self.command.get('upscale_sd_strength'),
-                                  "prompt": str(sd_prompt),
-                                  "seed": str(sd_seed),
-                                  "batch_size": 1,
-                                  "n_iter": 1,
-                                  "steps": sd_steps,
-                                  "cfg_scale": sd_scale,
-                                  "width": sd_width,
-                                  "height": sd_height,
-                                  #"restore_faces": False,
-                                  "tiling": sd_tiling,
-                                  "negative_prompt": sd_neg_prompt
+                                  "alwayson_scripts": {}
                                 }
-
-                                # add styles to payload if present
-                                if styles != []:
-                                    payload["styles"] = styles
-
-                                override_settings = {}
-                                if self.command.get('clip_skip') != '':
-                                    override_settings["CLIP_stop_at_last_layers"] = int(self.command.get('clip_skip'))
-
-                                if self.command.get('override_vae') != '':
-                                    override_settings["sd_vae"] = self.command.get('override_vae')
-                                else:
-                                    if override_model == '':
-                                        if sd_vae != '':
-                                            override_settings["sd_vae"] = sd_vae
-
-                                if override_settings != {}:
-                                    payload["override_settings"] = override_settings
-
-                                # add additional sd_ultimate_upscale params if necessary
-                                if self.command['upscale_model'] == 'ultimate':
-                                    up_index = control.get_upscale_model_index(self.command['upscale_ult_model'])
-                                    if up_index == -1:
-                                        up_index = control.get_upscale_model_index('ESRGAN_4x')
-                                        if up_index == -1:
-                                            up_index = 0
-
-                                    custom_scale = 2.0
-                                    if 'upscale_amount' in self.command and float(self.command['upscale_amount']) > 1.0:
-                                        custom_scale = self.command['upscale_amount']
-                                    custom_scale = float(custom_scale)
-
-                                    # docs: https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
-                                    payload["script_name"] = "ultimate sd upscale"
-                                    payload["script_args"] = [
-                                    	"",            # (not used)
-                                    	512,           # tile_width
-                                    	512,           # tile_height
-                                    	8,             # mask_blur
-                                    	32,            # padding
-                                    	64,            # seams_fix_width
-                                    	0.35,          # seams_fix_denoise
-                                    	32,            # seams_fix_padding
-                                    	up_index,      # upscaler_index
-                                    	True,          # save_upscaled_image a.k.a Upscaled
-                                    	0,             # redraw_mode
-                                    	False,         # save_seams_fix_image a.k.a Seams fix
-                                    	8,             # seams_fix_mask_blur
-                                    	0,             # seams_fix_type
-                                    	2,             # target_size_type (0 = From img2img2 settings, 1 = Custom size, 2 = Scale from image size)
-                                    	2048,          # custom_width
-                                    	2048,          # custom_height
-                                    	custom_scale   # custom_scale
-                                    ]
-
+                                ad_payload = utils.build_adetailer_payload(self.command, True)
+                                payload["alwayson_scripts"].update(ad_payload)
                                 self.worker['sdi_instance'].do_img2img(payload, samples_dir)
+
                             while self.worker['sdi_instance'].busy and self.worker['sdi_instance'].isRunning:
                                 time.sleep(0.25)
-
 
                         # remove originals if upscaled version present
                         if not process_mode:
@@ -935,7 +978,9 @@ class Worker(threading.Thread):
                 work_time = round(random.uniform(1, 2), 2)
                 time.sleep(work_time)
             else:
-                new_files = os.listdir(samples_dir)
+                new_files = []
+                if exists(samples_dir):
+                    new_files = os.listdir(samples_dir)
                 nf_count = 0
                 for f in new_files:
                     if (".png" in f):
@@ -965,6 +1010,12 @@ class Worker(threading.Thread):
                             else:
                                 upscale_text += str(self.command['upscale_amount']) + "x via " + self.command['upscale_model'] + ")"
 
+                        ad_text = ""
+                        if use_adetailer:
+                            ad_text = " (ADetailer applied: "
+                            ad_text += str(self.command.get('adetailer_model')) + ' @ ' + str(self.command.get('adetailer_strength')) + ' strength)'
+
+
                         pngImage = PngImageFile(samples_dir + "/" + f)
                         im = pngImage.convert('RGB')
                         exif = None
@@ -975,7 +1026,7 @@ class Worker(threading.Thread):
                             exif[0x0131] = "https://github.com/rbbrdckybk/dream-factory"
                         else:
                             exif = original_exif
-                        exif[0x9c9d] = ('AI art' + upscale_text).encode('utf16')
+                        exif[0x9c9d] = ('AI art' + upscale_text + ad_text).encode('utf16')
 
                         newfilename = ''
                         if self.command['filename'] != '':
@@ -1204,6 +1255,7 @@ class Controller:
         self.sdi_txt2img_scripts = None
         self.sdi_img2img_scripts = None
         self.sdi_ultimate_upscale_available = False
+        self.sdi_adetailer_available = False
         self.wildcards = None
         self.default_model_validated = False
         self.max_output_size = 0

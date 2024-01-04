@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2024, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import os, os.path
@@ -129,6 +129,14 @@ def build_gallery(control):
                 if params['controlnet_pixelperfect'] == 'yes':
                     param_string += ' (pixel perfect)'
 
+            if params['adetailer_model'] != '':
+                if param_string != '':
+                    param_string += '  |  '
+                # remove the hash from the model string
+                model = str(params['adetailer_model'])
+                model = model.split('[', 1)[0].strip()
+                param_string += 'ADetailer enabled ' + ' (' + model + ')'
+
             if params['sampler'] != '':
                 if param_string != '':
                     param_string += '  |  '
@@ -210,13 +218,24 @@ def build_gallery(control):
                     param_string += '  |  '
                 param_string += 'seed: ' + str(params['seed'])
 
+            ad_info = upscale_info
             if '(upscaled' in upscale_info:
                 upscale_info = upscale_info.split('(upscaled', 1)[1]
+                if '(ADetailer' in upscale_info:
+                    upscale_info = upscale_info.split('(ADetailer', 1)[0]
                 upscale_info = upscale_info.replace(')', '').strip()
                 upscale_info = "upscaled " + upscale_info
                 if param_string != '':
                     param_string += '  |  '
                 param_string += upscale_info
+
+            if '(ADetailer' in ad_info:
+                ad_info = ad_info.split('(ADetailer', 1)[1]
+                ad_info = ad_info.replace(')', '').strip()
+                ad_info = "ADetailer " + ad_info
+                if param_string != '':
+                    param_string += '  |  '
+                param_string += ad_info
 
         #img_identifier = utils.filename_from_abspath(img)
         img_identifier = utils.slugify(img)
@@ -887,6 +906,15 @@ def build_worker_panel(workers):
                             prompt_options_text += ' | CodeFormer amount: ' + str(worker["job_prompt_info"].get('upscale_codeformer_amount'))
                         else:
                             prompt_options_text += ' | CodeFormer disabled'
+
+                    elif worker["work_state"] == 'adetailer':
+                        prompt_text += ' -> ADetailer: \'' + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image')) + '\' ...'
+                        prompt_options_text = 'model: ' + worker["job_prompt_info"].get('adetailer_model')
+                        if str(worker["job_prompt_info"].get('adetailer_strength')) != '':
+                            prompt_options_text += ' | strength: ' + str(worker["job_prompt_info"].get('adetailer_strength'))
+
+                    elif worker["work_state"] == 'processing':
+                        prompt_text += ' -> working on: \'' + utils.filename_from_abspath(worker["job_prompt_info"].get('input_image')) + '\' ...'
 
                 else:
                     prompt_text = worker["job_prompt_info"].get('prompt').replace('<', '&lt').replace('>', '&gt')

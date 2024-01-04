@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2024, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import json
@@ -355,7 +355,7 @@ class SDI:
                 raise TimeoutError(f'Server at {url} not responding after {timeout} seconds')
 
             time.sleep(5)  # Wait before trying again
- 
+
     # starts up a new SD instance
     def initialize(self):
         self.init = True
@@ -780,16 +780,24 @@ class SDI:
         r = response.json()
         txt2img_scripts = []
         img2img_scripts = []
-        rtxt = 'is not'
+
         for i in r['txt2img']:
             txt2img_scripts.append(i)
         for i in r['img2img']:
             img2img_scripts.append(i)
-            if i == 'ultimate sd upscale':
-                self.control_ref.sdi_ultimate_upscale_available = True
-                rtxt = 'is'
 
+        rtxt = 'is not'
+        if 'ultimate sd upscale' in img2img_scripts:
+            self.control_ref.sdi_ultimate_upscale_available = True
+            rtxt = 'is'
         self.log('received script query response: SD indicates \'Ultimate SD Upscale script\' ' + rtxt + ' available for use...', True)
+
+        rtxt = 'is not'
+        if 'adetailer' in img2img_scripts:
+            self.control_ref.sdi_adetailer_available = True
+            rtxt = 'is'
+        self.log('received script query response: SD indicates \'ADetailer script\' ' + rtxt + ' available for use...', True)
+
         self.control_ref.sdi_txt2img_scripts = txt2img_scripts
         self.control_ref.sdi_img2img_scripts = img2img_scripts
         self.busy = False

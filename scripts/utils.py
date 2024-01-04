@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
+# Copyright 2021 - 2024, Bill Kennedy (https://github.com/rbbrdckybk/dream-factory)
 # SPDX-License-Identifier: MIT
 
 import threading
@@ -249,7 +249,7 @@ class PromptManager():
             'ckpt_file' : self.control.config['ckpt_file'],
             'override_ckpt_file' : '',
             'sampler' : self.control.config['sampler'],
-            'prompt' : "",                                              # BK 2023-09-22
+            'prompt' : "",
             'neg_prompt' : self.control.config['neg_prompt'],
             'highres_fix' : self.control.config['highres_fix'],
             'highres_scale_factor' : '',
@@ -275,6 +275,17 @@ class PromptManager():
             'override_sampler' : '',
             'override_steps' : 0,
             'override_vae' : '',
+            'adetailer_use' : False,
+            'adetailer_model' : '',
+            'adetailer_prompt' : '',
+            'adetailer_neg_prompt' : '',
+            'adetailer_ckpt_file' : '',
+            'adetailer_vae' : '',
+            'adetailer_strength' : '',
+            'adetailer_steps' : '',
+            'adetailer_sampler' : '',
+            'adetailer_scale' : '',
+            'adetailer_clip_skip' : '',
             'filename' : self.control.config['filename'],
             'output_dir' : '',
             'outdir' : self.control.config['output_location']
@@ -756,6 +767,95 @@ class PromptManager():
                 self.config.update({'controlnet_pixelperfect' : True})
             elif value == 'no' or value == 'off':
                 self.config.update({'controlnet_pixelperfect' : False})
+
+        elif command == 'adetailer_use':
+            if value == 'yes' or value == 'on':
+                if self.control.sdi_adetailer_available:
+                    self.config.update({'adetailer_use' : True})
+                else:
+                    self.control.print("*** WARNING: !ADETAILER_USE isn't usuable without Auto1111 adetailer extension installed; ignoring it! ***")
+            elif value == 'no' or value == 'off':
+                self.config.update({'adetailer_use' : False})
+
+        elif command == 'adetailer_model':
+            if value != '':
+                self.config.update({'adetailer_model' : value})
+            else:
+                self.config.update({'adetailer_model' : ''})
+
+        elif command == 'adetailer_prompt':
+            self.config.update({'adetailer_prompt' : value})
+
+        elif command == 'adetailer_neg_prompt':
+            self.config.update({'adetailer_neg_prompt' : value})
+
+        elif command == 'adetailer_ckpt_file':
+            if value != '':
+                model = self.control.validate_model(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command ADETAILER_CKPT_FILE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                else:
+                    self.config.update({'adetailer_ckpt_file' : model})
+            else:
+                self.config.update({'adetailer_ckpt_file' : ''})
+
+        elif command == 'adetailer_vae':
+            if value != '':
+                model = self.control.validate_VAE(value)
+                if model == '':
+                    self.control.print("*** WARNING: prompt file command ADETAILER_VAE value (" + value + ") doesn't match any server values; ignoring it! ***")
+                    self.config.update({'adetailer_vae' : ''})
+                else:
+                    self.config.update({'adetailer_vae' : model})
+            else:
+                self.config.update({'adetailer_vae' : ''})
+
+        elif command == 'adetailer_strength':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    self.control.print("*** WARNING: specified 'ADETAILER_STRENGTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'adetailer_strength' : value})
+
+        elif command == 'adetailer_steps':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'ADETAILER_STEPS' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'adetailer_steps' : value})
+            else:
+                self.config.update({'adetailer_steps' : ''})
+
+        elif command == 'adetailer_scale':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    self.control.print("*** WARNING: specified 'ADETAILER_SCALE' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'adetailer_scale' : value})
+
+        elif command == 'adetailer_clip_skip':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'ADETAILER_CLIP_SKIP' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'adetailer_clip_skip' : value})
+            else:
+                self.config.update({'adetailer_clip_skip' : ''})
+
+        elif command == 'adetailer_sampler':
+            if value != '':
+                sampler = self.validate_sampler(value)
+                self.config.update({'adetailer_sampler' : sampler})
+            else:
+                self.config.update({'adetailer_sampler' : ''})
 
         elif command == 'repeat':
             if value == 'yes':
@@ -1412,16 +1512,16 @@ def create_command(command, output_dir_ext, gpu_id):
     output_folder = command.get('outdir') + '/' + str(date.today()) + '-' + str(output_dir_ext)
 
     #py_command = "python scripts/txt2img.py"
-    py_command = 'txt2img:'
-    if command.get('controlnet_input_image') != '' and (command.get('controlnet_model') != '' or 'reference' in command.get('controlnet_pre')):
-        py_command = 'txt2img with ControlNet:'
-
+    py_command = 'txt2img'
     if command.get('input_image') != '':
-        #py_command = "python scripts/img2img.py"
-        if command.get('controlnet_input_image') != '' and (command.get('controlnet_model') != '' or 'reference' in command.get('controlnet_pre')):
-            py_command = 'img2img with ControlNet:'
-        else:
-            py_command = 'img2img:'
+        py_command = 'img2img'
+
+    if command.get('controlnet_input_image') != '' and (command.get('controlnet_model') != '' or 'reference' in command.get('controlnet_pre')):
+        py_command += ' +ControlNet'
+    if command.get('adetailer_use') and command.get('adetailer_model') != '':
+        py_command += ' +ADetailer'
+
+    py_command += ':'
 
     # if this isn't happening on the default gpu, specify the device
     if "cuda:" in gpu_id and gpu_id != "cuda:0":
@@ -1468,6 +1568,39 @@ def create_command(command, output_dir_ext, gpu_id):
 
     if command.get('vae') != "":
         py_command += " --vae " + str(command.get('vae'))
+
+    if command.get('adetailer_use') == True:
+        py_command += " --ad-use"
+
+        if command.get('adetailer_model') != "":
+            py_command += " --ad_model \"" + str(command.get('adetailer_model')) + "\""
+
+        if command.get('adetailer_prompt') != "":
+            py_command += " --ad_prompt \"" + str(command.get('adetailer_prompt')) + "\""
+
+        if command.get('adetailer_neg_prompt') != "":
+            py_command += " --ad_neg_prompt \"" + str(command.get('adetailer_neg_prompt')) + "\""
+
+        if command.get('adetailer_ckpt_file') != "":
+            py_command += " --ad_ckpt_file \"" + str(command.get('adetailer_ckpt_file')) + "\""
+
+        if command.get('adetailer_vae') != "":
+            py_command += " --ad_vae \"" + str(command.get('adetailer_vae')) + "\""
+
+        if command.get('adetailer_strength') != "":
+            py_command += " --ad_strength " + str(command.get('adetailer_strength'))
+
+        if command.get('adetailer_steps') != "":
+            py_command += " --ad_steps " + str(command.get('adetailer_steps'))
+
+        if command.get('adetailer_scale') != "":
+            py_command += " --ad_scale " + str(command.get('adetailer_scale'))
+
+        if command.get('adetailer_sampler') != "":
+            py_command += " --ad_sampler " + str(command.get('adetailer_sampler'))
+
+        if command.get('adetailer_clip_skip') != "":
+            py_command += " --ad_clip_skip " + str(command.get('adetailer_clip_skip'))
 
     if command.get('highres_scale_factor') != "":
         py_command += " --hr_scale_factor " + str(command.get('highres_scale_factor'))
@@ -1565,6 +1698,16 @@ def extract_params_from_command(command):
         'highres_steps' : "",
         'highres_prompt' : "",
         'highres_neg_prompt' : "",
+        'adetailer_model' : "",
+        'adetailer_prompt' : "",
+        'adetailer_neg_prompt' : "",
+        'adetailer_ckpt_file' : "",
+        'adetailer_vae' : "",
+        'adetailer_strength' : "",
+        'adetailer_steps' : "",
+        'adetailer_sampler' : "",
+        'adetailer_scale' : "",
+        'adetailer_clip_skip' : "",
         'refiner_ckpt_file' : "",
         'refiner_switch' : ""
     }
@@ -1707,6 +1850,66 @@ def extract_params_from_command(command):
                 if '--' in temp:
                     temp = temp.split('--', 1)[0]
                 params.update({'highres_neg_prompt' : temp.strip().strip('"')})
+
+            if '--ad_prompt' in command:
+                temp = command.split('--ad_prompt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_prompt' : temp.strip().strip('"')})
+
+            if '--ad_neg_prompt' in command:
+                temp = command.split('--ad_neg_prompt', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_neg_prompt' : temp.strip().strip('"')})
+
+            if '--ad_model' in command:
+                temp = command.split('--ad_model', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_model' : temp.strip().strip('"')})
+
+            if '--ad_ckpt_file' in command:
+                temp = command.split('--ad_ckpt_file', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_ckpt_file' : temp.strip().strip('"')})
+
+            if '--ad_vae' in command:
+                temp = command.split('--ad_vae', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_vae' : temp.strip().strip('"')})
+
+            if '--ad_steps' in command:
+                temp = command.split('--ad_steps', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_steps' : temp.strip()})
+
+            if '--ad_strength' in command:
+                temp = command.split('--ad_strength', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_strength' : temp.strip()})
+
+            if '--ad_scale' in command:
+                temp = command.split('--ad_scale', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_scale' : temp.strip()})
+
+            if '--ad_clip_skip' in command:
+                temp = command.split('--ad_clip_skip', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_clip_skip' : temp.strip()})
+
+            if '--ad_sampler' in command:
+                temp = command.split('--ad_sampler', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_sampler' : temp.strip()})
 
             if '--refiner_ckpt' in command:
                 temp = command.split('--refiner_ckpt', 1)[1]
@@ -2126,3 +2329,75 @@ def wildcard_replace_list(list, key, replace, all=False):
     else:
         replace_list = list
     return replace_list
+
+
+# given a command, builds a JSON payload for the ADetailer extension
+# https://github.com/Bing-su/adetailer/wiki/API
+def build_adetailer_payload(command, skip_img2img=False):
+    ad_use_sampler = False
+    ad_sampler = ''
+    if command.get('adetailer_sampler') != '':
+        ad_use_sampler = True
+        ad_sampler = str(command.get('adetailer_sampler'))
+
+    ad_strength = 0.75
+    if command.get('adetailer_strength') != '':
+        ad_strength = float(command.get('adetailer_strength'))
+
+    ad_use_steps = False
+    ad_steps = 28
+    if command.get('adetailer_steps') != '':
+        ad_use_steps = True
+        ad_steps = int(command.get('adetailer_steps'))
+
+    ad_use_scale = False
+    ad_scale = 7.0
+    if command.get('adetailer_scale') != '':
+        ad_use_scale = True
+        ad_scale = float(command.get('adetailer_scale'))
+
+    ad_use_clip_skip = False
+    ad_clip_skip = 1
+    if command.get('adetailer_clip_skip') != '':
+        ad_use_clip_skip = True
+        ad_clip_skip = int(command.get('adetailer_clip_skip'))
+
+    ad_use_checkpoint = False
+    ad_checkpoint = ''
+    if command.get('adetailer_ckpt_file') != '':
+        ad_use_checkpoint = True
+        ad_checkpoint = str(command.get('adetailer_ckpt_file'))
+
+    ad_use_vae = False
+    ad_vae = ''
+    if command.get('adetailer_vae') != '':
+        ad_use_vae = True
+        ad_vae = str(command.get('adetailer_vae'))
+
+    ad_payload = {
+        "ADetailer": {
+            "args": [
+                True,
+                skip_img2img,
+                {
+                    "ad_model": str(command.get('adetailer_model')),
+                    "ad_prompt": str(command.get('adetailer_prompt')),
+                    "ad_negative_prompt": str(command.get('adetailer_neg_prompt')),
+                    "ad_denoising_strength": ad_strength,
+                    "ad_use_steps": ad_use_steps,
+                    "ad_steps": ad_steps,
+                    "ad_use_cfg_scale": ad_use_scale,
+                    "ad_cfg_scale": ad_scale,
+                    "ad_use_sampler": ad_use_sampler,
+                    "ad_sampler": ad_sampler,
+                    "ad_use_clip_skip": ad_use_clip_skip,
+                    "ad_clip_skip": ad_clip_skip,
+                    "ad_use_checkpoint": ad_use_checkpoint,
+                    "ad_checkpoint": ad_checkpoint,
+                    "ad_use_vae": ad_use_vae,
+                    "ad_vae": ad_vae
+                }
+            ]
+        }
+    }
+    return ad_payload
