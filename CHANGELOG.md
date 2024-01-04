@@ -6,6 +6,15 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2024.01.04]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **cf2772fab0af5573da775e7437e6acdca424f26e**
+
+### Added
+- Added support for the [ADetailer extension](https://github.com/Bing-su/adetailer). You can see some [initial docs here](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use). In my initial testing, ADetailer works especially well in **!MODE = process** .prompts files that target a directory full of pre-selected images that require some sort of specific fixing (e.g. more detail in faces or hands, etc).
+
+### Changed
+- Updated web UI footer copyright notice for the new year. Happy 2024!
+
 ## [2023.12.22]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **cf2772fab0af5573da775e7437e6acdca424f26e**
 

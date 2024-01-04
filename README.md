@@ -40,7 +40,8 @@ Some UI screenshots:
 
 # Features
 
- * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with support for SD 1.4, SD 1.5, SD 2.0, SD 2.1, and SDXL (with ControlNet support).
+ * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with support for SD 1.4, SD 1.5, SD 2.0, SD 2.1, and SDXL.
+ * Direct support for ControlNet, ADetailer, and Ultimate SD Upscale extensions.
  * Dream Factory acts as a powerful automation and management tool for the popular [Automatic1111 SD repo](https://github.com/AUTOMATIC1111/stable-diffusion-webui#features). Integration with Automatic1111's repo means Dream Factory has access to one of the most full-featured Stable Diffusion packages available.
  * Multi-threaded engine capable of simultaneous, fast management of multiple GPUs. As far as I'm aware, Dream Factory is currently one of the only Stable Diffusion options for true multi-GPU support.
  * Powerful custom prompt file format that allows you to easily define compound prompt templates. Want to quickly create thousands of prompts from a template like "_photo of a **[adjective(s)] [animal]** as a **[profession]**, art by **[artist(s)]**, **[keyword(s)]**_" where each bracketed section needs to be filled in with dozens (or hundreds) of different items? No problem. Maybe you want your GPUs to create every possible combination, or maybe you want combinations to be picked randomly? Your choice. Maybe you want some items to be handled with different settings? Totally doable. Prompt files can be as complex or simple as you want — you can simply paste in a list of stand-alone prompts and go, too!
@@ -214,7 +215,17 @@ These directives are valid in both the [config] section of both standard and ran
  * [!HIGHRES_NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_neg_prompt)
  * [!REFINER_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#refiner_ckpt_file)
  * [!REFINER_SWITCH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#refiner_switch)
- 
+ * [!ADETAILER_USE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_MODEL](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_VAE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_STRENGTH](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+ * [!ADETAILER_CLIP_SKIP](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#adetailer_use)
+
 These directives are valid only in the [config] section of **standard** prompt files (!MODE = standard):
 
  * [!REPEAT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#repeat)
@@ -409,6 +420,8 @@ When upscaling, keep the original (non-upscaled) image as well? Valid options ar
 ```
 #### !FILENAME
 Allows you to specify a custom output filename. You may use the following variables; they will be filled in when the image is created:
+* ```<ad-model>```
+* ```<ad-strength>```
 * ```<cn-img>```
 * ```<cn-model>```
 * ```<date>```
@@ -741,6 +754,33 @@ Allows you to specify when the refiner model should be switched to during image 
 !REFINER_SWITCH = 0.75
 ```
 Set to nothing to clear it (if you don't set anything here but use **!REFINER_CKPT_FILE**, then 0.8 will be used as a default).
+#### !ADETAILER_USE
+Allows you to control the ADetailer extension via Dream Factory directives. Note that you must have installed the [ADetailer extension](https://github.com/Bing-su/adetailer) to use these!
+```
+!ADETAILER_USE = yes
+!ADETAILER_MODEL = face_yolov8n.pt
+```
+The above commands are the minimum required to activate ADetailer. Note that there is currently no way to verify that the value provided to **!ADETAILER_MODEL** is valid via API calls, so if you supply an invalid model here, you'll see errors (you can see a list of your available models via your Auto1111 UI)!
+Set !ADETAILER_USE to **no** to deactivate ADetailer.
+In addition, the following optional directives allow for additional control:
+```
+# set these to use a specific checkpoint and/or vae during the ADetailer step
+# substring matches are ok here
+!ADETAILER_CKPT_FILE = deliberate
+!ADETAILER_VAE = vae-ft-mse-840000-ema-pruned
+
+# set these to use a specific prompt/negative prompt during the ADetailer step
+# these will target only the area that ADetailer inpaints (e.g. faces, hands, etc)
+!ADETAILER_PROMPT = detailed studio portrait of a middle-aged man
+!ADETAILER_NEG_PROMPT = hands, cartoon, cgi, render, illustration, painting, drawing
+
+# set these to override default ADetailer values
+!ADETAILER_STRENGTH = 0.75
+!ADETAILER_SCALE = 7.5
+!ADETAILER_SAMPLER = Euler
+!ADETAILER_CLIP_SKIP = 1
+```
+Note that you may use these ADetailer directives in either normal (!MODE = standard) or process (!MODE = process) .prompts files. The most efficient workflow is to probably generate initial images without ADetailer enabled, and then set up a process .prompts file to batch process a folder of selected images (e.g. to fix faces/hands/etc).
 
 ## Viewing your Images
 
