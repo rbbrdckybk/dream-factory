@@ -92,6 +92,8 @@ class Worker(threading.Thread):
         use_adetailer = False
         if control.sdi_adetailer_available and self.command.get('adetailer_use') and self.command.get('adetailer_model') != '':
             use_adetailer = True
+            if '<prompt>' in self.command.get('adetailer_prompt'):
+                self.command['adetailer_prompt'] = self.command.get('adetailer_prompt').replace('<prompt>', self.command.get('prompt'))
 
         # if this is a process-mode prompt, skip past image generation stuff
         if self.command.get('mode') != 'process':
@@ -1098,7 +1100,6 @@ class Worker(threading.Thread):
                                     pass
                                 newfilename = re.sub('<scale>', str(self.command.get('scale')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<strength>', str(self.command.get('strength')), newfilename, flags=re.IGNORECASE)
-                                newfilename = re.sub('<ad-strength>', str(self.command.get('adetailer_strength')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<seed>', str(self.command.get('seed')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<steps>', str(self.command.get('steps')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
@@ -1108,9 +1109,7 @@ class Worker(threading.Thread):
                                 newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<hr-model>', hr_model, newfilename, flags=re.IGNORECASE)
-                                newfilename = re.sub('<ad-model>', ad_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<styles>', styles, newfilename, flags=re.IGNORECASE)
-
                             else:
                                 # these are only applicable to upscale process jobs
                                 newfilename = re.sub('<upscale-model>', self.command.get('upscale_model'), newfilename, flags=re.IGNORECASE)
@@ -1122,7 +1121,10 @@ class Worker(threading.Thread):
                             newfilename = re.sub('<date-month>', dt.now().strftime('%m'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<date-day>', dt.now().strftime('%d'), newfilename, flags=re.IGNORECASE)
                             newfilename = re.sub('<input-img>', input_img, newfilename, flags=re.IGNORECASE)
-
+                            if str(self.command.get('adetailer_strength')) != '':
+                                newfilename = re.sub('<ad-strength>', str(self.command.get('adetailer_strength')), newfilename, flags=re.IGNORECASE)
+                            if ad_model != '':
+                                newfilename = re.sub('<ad-model>', ad_model, newfilename, flags=re.IGNORECASE)
 
                             # remove all unrecognized variables
                             #opening_braces = '<'
