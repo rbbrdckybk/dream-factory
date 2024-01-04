@@ -761,7 +761,9 @@ Allows you to control the ADetailer extension via Dream Factory directives. Note
 !ADETAILER_MODEL = face_yolov8n.pt
 ```
 The above commands are the minimum required to activate ADetailer. Note that there is currently no way to verify that the value provided to **!ADETAILER_MODEL** is valid via API calls, so if you supply an invalid model here, you'll see errors (you can see a list of your available models via your Auto1111 UI)!
+
 Set !ADETAILER_USE to **no** to deactivate ADetailer.
+
 In addition, the following optional directives allow for additional control:
 ```
 # set these to use a specific checkpoint and/or vae during the ADetailer step
