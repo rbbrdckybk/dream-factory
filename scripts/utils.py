@@ -286,6 +286,8 @@ class PromptManager():
             'adetailer_sampler' : '',
             'adetailer_scale' : '',
             'adetailer_clip_skip' : '',
+            'adetailer_width' : '',
+            'adetailer_height' : '',
             'filename' : self.control.config['filename'],
             'output_dir' : '',
             'outdir' : self.control.config['output_location']
@@ -829,6 +831,28 @@ class PromptManager():
                     self.config.update({'adetailer_steps' : value})
             else:
                 self.config.update({'adetailer_steps' : ''})
+
+        elif command == 'adetailer_width':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'ADETAILER_WIDTH' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'adetailer_width' : value})
+            else:
+                self.config.update({'adetailer_width' : ''})
+
+        elif command == 'adetailer_height':
+            if value != '':
+                try:
+                    int(value)
+                except:
+                    self.control.print("*** WARNING: specified 'ADETAILER_HEIGHT' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'adetailer_height' : value})
+            else:
+                self.config.update({'adetailer_height' : ''})
 
         elif command == 'adetailer_scale':
             if value != '':
@@ -1593,6 +1617,12 @@ def create_command(command, output_dir_ext, gpu_id):
         if command.get('adetailer_steps') != "":
             py_command += " --ad_steps " + str(command.get('adetailer_steps'))
 
+        if command.get('adetailer_width') != "":
+            py_command += " --ad_widths " + str(command.get('adetailer_width'))
+
+        if command.get('adetailer_height') != "":
+            py_command += " --ad_height " + str(command.get('adetailer_height'))
+
         if command.get('adetailer_scale') != "":
             py_command += " --ad_scale " + str(command.get('adetailer_scale'))
 
@@ -1705,6 +1735,8 @@ def extract_params_from_command(command):
         'adetailer_vae' : "",
         'adetailer_strength' : "",
         'adetailer_steps' : "",
+        'adetailer_width' : "",
+        'adetailer_height' : "",
         'adetailer_sampler' : "",
         'adetailer_scale' : "",
         'adetailer_clip_skip' : "",
@@ -1886,6 +1918,18 @@ def extract_params_from_command(command):
                 if '--' in temp:
                     temp = temp.split('--', 1)[0]
                 params.update({'adetailer_steps' : temp.strip()})
+
+            if '--ad_width' in command:
+                temp = command.split('--ad_width', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_width' : temp.strip()})
+
+            if '--ad_height' in command:
+                temp = command.split('--ad_height', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'adetailer_height' : temp.strip()})
 
             if '--ad_strength' in command:
                 temp = command.split('--ad_strength', 1)[1]
@@ -2350,6 +2394,16 @@ def build_adetailer_payload(command, skip_img2img=False):
         ad_use_steps = True
         ad_steps = int(command.get('adetailer_steps'))
 
+    ad_use_size = False
+    ad_width = 512
+    ad_height = 512
+    if command.get('adetailer_width') != '':
+        ad_use_size = True
+        ad_width = int(command.get('adetailer_width'))
+    if command.get('adetailer_height') != '':
+        ad_use_size = True
+        ad_height = int(command.get('adetailer_height'))
+
     ad_use_scale = False
     ad_scale = 7.0
     if command.get('adetailer_scale') != '':
@@ -2395,7 +2449,10 @@ def build_adetailer_payload(command, skip_img2img=False):
                     "ad_use_checkpoint": ad_use_checkpoint,
                     "ad_checkpoint": ad_checkpoint,
                     "ad_use_vae": ad_use_vae,
-                    "ad_vae": ad_vae
+                    "ad_vae": ad_vae,
+                    "ad_use_inpaint_width_height": ad_use_size,
+                    "ad_inpaint_width": ad_width,
+                    "ad_inpaint_height": ad_height
                 }
             ]
         }
