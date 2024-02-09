@@ -16,8 +16,8 @@ import argparse
 import os
 from os.path import exists
 
-url = "https://www.midjourney.com/showcase/recent/"
-search = 'recent.json'
+url = "https://www.midjourney.com/showcase"
+search = 'recent-jobs?amount=50&page=0'
 json_file = ''
 
 top = False
@@ -79,11 +79,11 @@ def create_output(json):
     count = 0
     prompts = []
 
-    if r["pageProps"]["jobs"]:
-        for job in r["pageProps"]["jobs"]:
-            if "prompt" in job and job["prompt"] is not None:
+    if r["jobs"]:
+        for job in r["jobs"]:
+            if "full_command" in job and job["full_command"] is not None:
                 count += 1
-                prompt = job["prompt"].replace('\n', '').strip()
+                prompt = job["full_command"].replace('\n', '').strip()
                 if prompt.startswith('['):
                     prompt = 'image of ' + prompt
                 if '--ar' in prompt:
