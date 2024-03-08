@@ -830,13 +830,13 @@ class Worker(threading.Thread):
                                         sd_sampler = self.command.get('override_sampler')
 
                                     # check if a model change is needed before upscaling
+                                    override_model = ''
                                     sd_model = str(self.command.get('ckpt_file'))
                                     if "ckpt_file" in original_command:
                                         sd_model = original_command['ckpt_file']
                                         sd_model = control.validate_model(sd_model)
 
                                         # check if we're overriding the model for upscaling
-                                        override_model = ''
                                         if self.command.get('override_ckpt_file') != '':
                                             override_model = control.validate_model(self.command.get('override_ckpt_file'))
                                             if override_model != '':
