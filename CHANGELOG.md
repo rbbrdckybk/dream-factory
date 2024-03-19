@@ -6,6 +6,18 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2024.03.18]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **bef51aed032c0aaa5cfd80445bc4cf0d85b408b5**
+
+### Added
+- Added directive that allows setting weight of ControlNet (**!CONTROLNET_WEIGHT**).
+- Added custom output filename support for LoRAs. Use **<lora>** in your **!FILENAME** directives to automatically include the name of the first LoRA found in your prompt(s) in your output filenames. Only the first LoRA will be included; if anyone sees value in including more, drop a request!
+- Added a config.txt (**PF_UPSCALE_OVERRIDE_STEPS**) option for setting a fixed step count when upscaling images from the integrated gallery. Useful in conjuction with the existing **PF_UPSCALE_OVERRIDE_CKPT_FILE** in case you want to generate images with one of the newer SDXL Lightning models that require a tiny step count, but want to upscale with a fixed non-Lightning model.
+
+### Changed
+- The LoRA reference in the integrated editor will now display "Pony XL" for LoRAs that are meant to be used with Pony Diffusion (assuming you have civitai.com integration enabled in your config.txt.
+- These directives will check for the wrong OS path separator slashes and make corrections automatically: **!INPUT_IMAGE**, **!CONTROLNET_INPUT_IMAGE**, **!RANDOM_INPUT_IMAGE_DIR** (e.g. 'input\images' will automatically become 'input/images' on Linux OSes and vice-versa). Useful if you're running Dream Factory on multiple computers and are tired of flipping slashes in your .prompts files when moving between OSes! Also **WILDCARD_LOCATION** in your config.txt.
+
 ## [2024.01.04]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **cf2772fab0af5573da775e7437e6acdca424f26e**
 
