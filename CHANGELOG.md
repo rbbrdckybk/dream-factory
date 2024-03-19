@@ -12,7 +12,7 @@ Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk
 ### Added
 - Added directive that allows setting weight of ControlNet (**!CONTROLNET_WEIGHT**).
 - Added custom output filename support for LoRAs. Use **<lora>** in your **!FILENAME** directives to automatically include the name of the first LoRA found in your prompt(s) in your output filenames. Only the first LoRA will be included; if anyone sees value in including more, drop a request!
-- Added a config.txt (**PF_UPSCALE_OVERRIDE_STEPS**) option for setting a fixed step count when upscaling images from the integrated gallery. Useful in conjuction with the existing **PF_UPSCALE_OVERRIDE_CKPT_FILE** in case you want to generate images with one of the newer SDXL Lightning models that require a tiny step count, but want to upscale with a fixed non-Lightning model.
+- Added a config.txt option (**PF_UPSCALE_OVERRIDE_STEPS**) for setting a fixed step count when upscaling images from the integrated gallery. Useful in conjuction with the existing **PF_UPSCALE_OVERRIDE_CKPT_FILE** in case you want to generate images with one of the newer SDXL Lightning models that require a tiny step count, but want to upscale with a fixed non-Lightning model.
 
 ### Changed
 - The LoRA reference in the integrated editor will now display "Pony XL" for LoRAs that are meant to be used with Pony Diffusion (assuming you have civitai.com integration enabled in your config.txt.
