@@ -197,6 +197,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!CONTROLNET_CONTROLMODE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_controlmode)
  * [!CONTROLNET_PIXELPERFECT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_pixelperfect)
  * [!CONTROLNET_LOWVRAM](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_lowvram)
+ * [!CONTROLNET_WEIGHT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#controlnet_weight)
  * [!AUTO_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#auto_size)
  * [!CLIP_SKIP](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#clip_skip)
  * [!SEAMLESS_TILING](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#seamless_tiling)
@@ -431,6 +432,7 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<height>```
 * ```<hr-model>```
 * ```<input-img>```
+* ```<lora>```
 * ```<model>```
 * ```<neg-prompt>```
 * ```<prompt>```
@@ -527,6 +529,11 @@ Use this to enable (yes) or disable (no, the default) low VRAM mode when using C
 !CONTROLNET_LOWVRAM = yes
 ```
 This may be helpful if you have a GPU with less VRAM.
+#### !CONTROLNET_WEIGHT
+Use this to set the weight of the ControlNet (default = 1.0; set between 0-2). 
+```
+!CONTROLNET_WEIGHT = 1.0
+```
 #### !AUTO_SIZE
 Allows you to have Dream Factory automatically size your output images based in the size of input images or ControlNet input images. Valid options are **match_input_image_size**, **match_controlnet_image_size**, **match_input_image_aspect_ratio**, **match_controlnet_image_aspect_ratio**, **resize_longest_dimension:[size]**, or **off** (default).
 ```
@@ -868,10 +875,10 @@ Due to Automatic's lack of a clear license for his Automatic1111 repo, I've elec
 
 You can grab a known-compatible version of Automatic1111's SD webui by going to your Auto1111 installation directory and typing this at the command-line:
 ```
-git checkout cf2772fab0af5573da775e7437e6acdca424f26e
+git checkout bef51aed032c0aaa5cfd80445bc4cf0d85b408b5
 ```
 If you get an error that the hash reference is not a tree, run ```git pull``` and try again.
 
 If/when you want to go back to the latest version, you can just run ```git checkout master```.
 
-(updated 2023-12-22, previous supported hash: 5ef669de080814067961f28357256e8fe27544f4)
+(updated 2024-03-08, previous supported hash: cf2772fab0af5573da775e7437e6acdca424f26e)
