@@ -229,6 +229,7 @@ class PromptManager():
             'controlnet_guessmode' : False,
             'controlnet_controlmode' : "Balanced",
             'controlnet_pixelperfect' : False,
+            'controlnet_weight' : 1.0,
             'strength' : 0.75,
             'min_strength' : 0.0,
             'max_strength' : 0.0,
@@ -692,19 +693,23 @@ class PromptManager():
 
         elif command == 'input_image':
             if value != '':
-                if os.path.exists(value):
+                orig_value = value
+                value = check_path(value)
+                if value != '':
                     self.config.update({'input_image' : value})
                 else:
-                    self.control.print("*** WARNING: specified 'INPUT_IMAGE' (" + value + ") does not exist; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'INPUT_IMAGE' (" + orig_value + ") does not exist; it will be ignored!")
             else:
                 self.config.update({'input_image' : ''})
 
         elif command == 'random_input_image_dir':
             if value != '':
-                if os.path.exists(value):
+                orig_value = value
+                value = check_path(value)
+                if value != '':
                     self.config.update({'random_input_image_dir' : value})
                 else:
-                    self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' (" + value + ") does not exist; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'RANDOM_INPUT_IMAGE_DIR' (" + orig_value + ") does not exist; it will be ignored!")
 
         elif command == 'output_dir':
             if value != '':
@@ -721,10 +726,12 @@ class PromptManager():
 
         elif command == 'controlnet_input_image':
             if value != '':
-                if os.path.exists(value):
+                orig_value = value
+                value = check_path(value)
+                if value != '':
                     self.config.update({'controlnet_input_image' : value})
                 else:
-                    self.control.print("*** WARNING: specified 'CONTROLNET_INPUT_IMAGE' (" + value + ") does not exist; it will be ignored!")
+                    self.control.print("*** WARNING: specified 'CONTROLNET_INPUT_IMAGE' (" + orig_value + ") does not exist; it will be ignored!")
             else:
                 self.config.update({'controlnet_input_image' : ''})
 
@@ -769,6 +776,15 @@ class PromptManager():
                 self.config.update({'controlnet_pixelperfect' : True})
             elif value == 'no' or value == 'off':
                 self.config.update({'controlnet_pixelperfect' : False})
+
+        elif command == 'controlnet_weight':
+            if value != '':
+                try:
+                    float(value)
+                except:
+                    self.control.print("*** WARNING: specified 'CONTROLNET_WEIGHT' is not a valid number; it will be ignored!")
+                else:
+                    self.config.update({'controlnet_weight' : value})
 
         elif command == 'adetailer_use':
             if value == 'yes' or value == 'on':
@@ -1517,6 +1533,7 @@ def filename_from_abspath(fpath):
         filename = fpath.rsplit('/', 1)[1]
     return filename
 
+
 # gets just path from absolute path + filename
 def path_from_abspath(fpath):
     path = fpath
@@ -1525,6 +1542,22 @@ def path_from_abspath(fpath):
     elif '/' in fpath:
         path = fpath.rsplit('/', 1)[0]
     return path
+
+
+# checks if a path exists, if it doesn't, checks if it does with slashes flipped
+# returns whichever exists if one does, returns empty string if neither exist
+def check_path(path):
+    rpath = ''
+    if os.path.exists(path):
+        rpath = path
+    else:
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        elif '/' in path:
+            path = path.replace('/', '\\')
+        if os.path.exists(path):
+            rpath = path
+    return rpath
 
 
 # creates the full command to invoke SD with our specified params

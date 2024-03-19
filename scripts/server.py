@@ -731,7 +731,10 @@ def build_lora_reference(control):
                                 if m['civitai_base_model'] != '':
                                     civitai_base_model = m['civitai_base_model']
                                 if 'sd' not in civitai_base_model.lower():
-                                    civitai_base_model = '&nbsp;'
+                                    if 'pony' in civitai_base_model.lower():
+                                        civitai_base_model = 'Pony XL'
+                                    else:
+                                        civitai_base_model = '&nbsp;'
                                 if m['civitai_nsfw']:
                                     civitai_nsfw = 'nsfw'
                                 count = 0

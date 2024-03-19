@@ -75,6 +75,7 @@ class Worker(threading.Thread):
         original_iptc = {}
         original_command = {}
         process_mode = False
+
         if not int(self.command.get('seed')) > 0:
             self.command['seed'] = -1
         else:
@@ -550,7 +551,7 @@ class Worker(threading.Thread):
                             "mask": "",
                             "module": str(self.command.get('controlnet_pre')),
                             "model": str(self.command.get('controlnet_model')),
-                            "weight": 1,
+                            "weight": float(self.command.get('controlnet_weight')),
                             #"resize_mode": "Scale to Fit (Inner Fit)",
                             "lowvram": self.command.get('controlnet_lowvram'),
                             #"processor_res": cn_params[0],
@@ -570,7 +571,9 @@ class Worker(threading.Thread):
             # add ADetailer params to existing payload if ADetailer is enabled
             # https://github.com/Bing-su/adetailer/wiki/API
             if use_adetailer:
-                ad_payload = utils.build_adetailer_payload(self.command)
+                ad_payload = utils.build_adetailer_payload(self.command, True)
+                if self.command.get('input_image') != '':
+                    ad_payload = utils.build_adetailer_payload(self.command, False)
                 payload["alwayson_scripts"].update(ad_payload)
 
             # handle override settings here: clip_skip, vae, etc
@@ -1091,6 +1094,14 @@ class Worker(threading.Thread):
                                     styles += style.replace('Style: ', '').strip()
                                     style_count += 1
 
+                            first_lora = ''
+                            if '<lora:' in self.command.get('prompt').lower():
+                                lp = self.command.get('prompt').lower().split('<lora:', 1)[1]
+                                if '>' in lp:
+                                    first_lora = lp.split('>', 1)[0]
+                                if ':' in first_lora:
+                                    first_lora = first_lora.split(':', 1)[0]
+
                             newfilename = self.command['filename']
                             if not process_mode:
                                 try:
@@ -1110,6 +1121,7 @@ class Worker(threading.Thread):
                                 newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<hr-model>', hr_model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<styles>', styles, newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<lora>', first_lora, newfilename, flags=re.IGNORECASE)
                             else:
                                 # these are only applicable to upscale process jobs
                                 newfilename = re.sub('<upscale-model>', self.command.get('upscale_model'), newfilename, flags=re.IGNORECASE)
@@ -1906,6 +1918,7 @@ class Controller:
             'upscale_gfpgan_amount' : 0.0,
             'upscale_sd_strength' : 0.3,
             'upscale_override_ckpt_file' : '',
+            'upscale_override_steps' : 0,
             'upscale_model' : "ESRGAN_4x",
             'ckpt_file' : "",
             'filename' : "",
@@ -1935,7 +1948,9 @@ class Controller:
                         if value != '':
                             #value = value.replace('/', os.path.sep)
                             #value = value.replace('\\', os.path.sep)
-                            self.config.update({'wildcard_location' : value})
+                            value = utils.check_path(value)
+                            if value != '':
+                                self.config.update({'wildcard_location' : value})
 
                     elif command == 'output_location':
                         if value != '':
@@ -2226,6 +2241,14 @@ class Controller:
                     elif command == 'pf_upscale_override_ckpt_file':
                         # this is validated after we receive valid models from the server
                         self.config.update({'upscale_override_ckpt_file' : value})
+
+                    elif command == 'pf_upscale_override_steps':
+                        try:
+                            int(value)
+                        except:
+                            print("*** WARNING: specified 'PF_UPSCALE_OVERRIDE_STEPS' is not a valid number; it will be ignored!")
+                        else:
+                            self.config.update({'upscale_override_steps' : int(value)})
 
                     elif command == 'pf_filename':
                         self.config.update({'filename' : value})
@@ -2797,6 +2820,8 @@ class Controller:
                         work['input_image'] = actual_path
                         work['use_upscale'] = 'yes'
                         work['override_ckpt_file'] = self.config['upscale_override_ckpt_file']
+                        if self.config['upscale_override_steps'] > 0:
+                            work['override_steps'] = self.config['upscale_override_steps']
                         work['upscale_model'] = 'sd'
                         work['output_dir'] = upscale_dir
                         work['filename'] = '<input-img>'
