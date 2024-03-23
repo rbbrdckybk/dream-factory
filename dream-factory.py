@@ -1099,8 +1099,13 @@ class Worker(threading.Thread):
                                 lp = self.command.get('prompt').lower().split('<lora:', 1)[1]
                                 if '>' in lp:
                                     first_lora = lp.split('>', 1)[0]
+                                if '\\' in first_lora:
+                                    first_lora = first_lora.rsplit('\\', 1)[1]
+                                if '/' in first_lora:
+                                    first_lora = first_lora.rsplit('/', 1)[1]
                                 if ':' in first_lora:
                                     first_lora = first_lora.split(':', 1)[0]
+                                first_lora = utils.slugify(first_lora)
 
                             newfilename = self.command['filename']
                             if not process_mode:
