@@ -173,6 +173,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!HIGHRES_FIX](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_fix)
  * [!STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#steps)
  * [!SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#sampler)
+ * [!SCHEDULER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#scheduler)
  * [!SCALE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#scale)
  * [!SAMPLES](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#samples)
  * [!BATCH_SIZE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#batch_size)
@@ -211,6 +212,7 @@ These directives are valid in both the [config] section of both standard and ran
  * [!HIGHRES_CKPT_FILE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_ckpt_file)
  * [!HIGHRES_VAE](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_vae)
  * [!HIGHRES_SAMPLER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_sampler)
+ * [!HIGHRES_SCHEDULER](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_scheduler)
  * [!HIGHRES_STEPS](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_steps)
  * [!HIGHRES_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_prompt)
  * [!HIGHRES_NEG_PROMPT](https://github.com/rbbrdckybk/dream-factory/blob/main/README.md#highres_neg_prompt)
@@ -288,10 +290,16 @@ The number of denoising steps (default = 20). More steps will generally improve 
 ```
 You may also specify a range (e.g. !STEPS = 30-55) and a random value within your range will be chosen when the prompt is executed.
 #### !SAMPLER
-The sampler to use (default is DPM++ 2M Karras). This must match an available option in your Auto1111 SD webui exactly. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available samplers (click on a sampler to copy it to the clipboard so that you can easily paste it into the editor).
+The sampler to use (default is DPM++ 2M). This must match an available option in your Auto1111 SD webui exactly. You can press ctrl+h or click the help icon at the top right corner of the editor to see a reference list of available samplers (click on a sampler to copy it to the clipboard so that you can easily paste it into the editor).
 ```
-!SAMPLER = DPM++ 2M Karras
+!SAMPLER = DPM++ 2M
 ```
+#### !SCHEDULER
+The scheduler to use (default is Automatic). This must match a value from the Auto1111 webui (Uniform, Karras, Exponential, Polyexponential, SGM Uniform).
+```
+!SAMPLER = Karras
+```
+Set to nothing or Automatic to return to the default.
 #### !SCALE
 The guidance scale, or how closely you want Stable Diffusion to follow your text prompt. The default is 7.5, and generally speaking useful values are between 5 - 30.
 ```
@@ -437,6 +445,7 @@ Allows you to specify a custom output filename. You may use the following variab
 * ```<neg-prompt>```
 * ```<prompt>```
 * ```<sampler>```
+* ```<scheduler>```
 * ```<scale>```
 * ```<seed>```
 * ```<steps>```
@@ -709,12 +718,19 @@ This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts 
 Substring matches on VAE filenames are ok.
 Set to nothing to clear it.
 #### !HIGHRES_SAMPLER
-Allows you to specify a different model to use during the highres fix portion of image generation.
+Allows you to specify a different sampler to use during the highres fix portion of image generation.
 This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
 ```
 !HIGHRES_SAMPLER = Euler a
 ```
 Set to nothing to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the sampler that was used during the initial generation will be used).
+#### !HIGHRES_SCHEDULER
+Allows you to specify a different scheduler to use during the highres fix portion of image generation.
+This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
+```
+!HIGHRES_SCHEDULER = Karras
+```
+Set to nothing or Automatic to clear it (if you don't set anything here and use **HIGHRES_FIX = yes**, then the sampler that was used during the initial generation will be used).
 #### !HIGHRES_STEPS
 Allows you to specify a different number of steps during the highres fix portion of image generation.
 This has no effect unless ```!HIGHRES_FIX = yes``` is also set in your .prompts file.
