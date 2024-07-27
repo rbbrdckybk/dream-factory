@@ -6,6 +6,12 @@ When updating to a new release, use the built-in setup.py script with the --upda
 ```
 python setup.py --update
 ```
+## [2024.07.27]
+Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **82a973c04367123ae98bd9abdf80d9eda9b910e2**
+
+### Added
+- Added directives to set schedulers (**!SCHEDULER**, **!HIGHRES_SCHEDULER**).
+
 ## [2024.03.18]
 Tested & confirmed working with [Auto1111 version](https://github.com/rbbrdckybk/dream-factory#compatibility-with-automatic1111): **bef51aed032c0aaa5cfd80445bc4cf0d85b408b5**
 
