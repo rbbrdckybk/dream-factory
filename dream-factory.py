@@ -437,7 +437,8 @@ class Worker(threading.Thread):
                 payload = {
                   "init_images": [img_payload],
                   "sampler_index": str(self.command.get('sampler')),
-                  "scheduler": control.sdi_schedulers.get(str(self.command.get('scheduler'))),
+                  #"scheduler": control.sdi_schedulers.get(str(self.command.get('scheduler'))),
+                  "scheduler": str(self.command.get('scheduler')),
                   #"resize_mode": 0,
                   "denoising_strength": self.command.get('strength'),
                   "prompt": str(self.command.get('prompt')),
@@ -459,7 +460,8 @@ class Worker(threading.Thread):
                   "enable_hr": self.command.get('highres_fix'),
                   "denoising_strength": self.command.get('strength'),
                   "sampler_index": str(self.command.get('sampler')),
-                  "scheduler": control.sdi_schedulers.get(str(self.command.get('scheduler'))),
+                  #"scheduler": control.sdi_schedulers.get(str(self.command.get('scheduler'))),
+                  "scheduler": str(self.command.get('scheduler')),
                   "prompt": str(self.command.get('prompt')),
                   "seed": self.command.get('seed'),
                   "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
@@ -482,8 +484,8 @@ class Worker(threading.Thread):
                     if self.command.get('highres_sampler') != '':
                         payload["hr_sampler_name"] = str(self.command.get('highres_sampler'))
                     if self.command.get('highres_scheduler') != '':
-                        #payload["hr_scheduler"] = str(self.command.get('highres_scheduler'))
-                        payload["hr_scheduler"] = control.sdi_schedulers.get(str(self.command.get('highres_scheduler')))
+                        #payload["hr_scheduler"] = control.sdi_schedulers.get(str(self.command.get('highres_scheduler')))
+                        payload["hr_scheduler"] = str(self.command.get('highres_scheduler'))
                     if self.command.get('highres_prompt') != '':
                         if self.command.get('highres_prompt').lower().strip() == '<remove loras>':
                             # use the main prompt with loras/hypernets stripped out
