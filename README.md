@@ -297,7 +297,7 @@ The sampler to use (default is DPM++ 2M). This must match an available option in
 #### !SCHEDULER
 The scheduler to use (default is Automatic). This must match a value from the Auto1111 webui (Uniform, Karras, Exponential, Polyexponential, SGM Uniform).
 ```
-!SAMPLER = Karras
+!SCHEDULER = Karras
 ```
 Set to nothing or Automatic to return to the default.
 #### !SCALE
