@@ -437,6 +437,7 @@ class Worker(threading.Thread):
                 payload = {
                   "init_images": [img_payload],
                   "sampler_index": str(self.command.get('sampler')),
+                  "scheduler": control.sdi_schedulers.get(str(self.command.get('scheduler'))),
                   #"resize_mode": 0,
                   "denoising_strength": self.command.get('strength'),
                   "prompt": str(self.command.get('prompt')),
@@ -458,6 +459,7 @@ class Worker(threading.Thread):
                   "enable_hr": self.command.get('highres_fix'),
                   "denoising_strength": self.command.get('strength'),
                   "sampler_index": str(self.command.get('sampler')),
+                  "scheduler": control.sdi_schedulers.get(str(self.command.get('scheduler'))),
                   "prompt": str(self.command.get('prompt')),
                   "seed": self.command.get('seed'),
                   "batch_size": self.command.get('batch_size'),     # gpu makes this many at once
@@ -479,6 +481,9 @@ class Worker(threading.Thread):
                         payload["hr_checkpoint_name"] = str(self.command.get('highres_ckpt_file'))
                     if self.command.get('highres_sampler') != '':
                         payload["hr_sampler_name"] = str(self.command.get('highres_sampler'))
+                    if self.command.get('highres_scheduler') != '':
+                        #payload["hr_scheduler"] = str(self.command.get('highres_scheduler'))
+                        payload["hr_scheduler"] = control.sdi_schedulers.get(str(self.command.get('highres_scheduler')))
                     if self.command.get('highres_prompt') != '':
                         if self.command.get('highres_prompt').lower().strip() == '<remove loras>':
                             # use the main prompt with loras/hypernets stripped out
@@ -527,6 +532,7 @@ class Worker(threading.Thread):
                     self.command['highres_upscaler'] = ''
                     self.command['highres_ckpt_file'] = ''
                     self.command['highres_sampler'] = ''
+                    self.command['highres_scheduler'] = ''
                     self.command['highres_steps'] = ''
                     self.command['highres_prompt'] = ''
                     self.command['highres_neg_prompt'] = ''
@@ -1121,6 +1127,7 @@ class Worker(threading.Thread):
                                 newfilename = re.sub('<width>', str(self.command.get('width')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<height>', str(self.command.get('height')), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<sampler>', self.command.get('sampler'), newfilename, flags=re.IGNORECASE)
+                                newfilename = re.sub('<scheduler>', self.command.get('scheduler'), newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<model>', model, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<cn-img>', cn_img, newfilename, flags=re.IGNORECASE)
                                 newfilename = re.sub('<cn-model>', cn_model, newfilename, flags=re.IGNORECASE)
@@ -1261,7 +1268,9 @@ class Controller:
         self.sdi_ports_assigned = 0
         #self.sdi_setup_request_made = False        # made this worker-level
         self.sdi_sampler_request_made = False
+        self.sdi_scheduler_request_made = False
         self.sdi_samplers = None
+        self.sdi_schedulers = None                  # this is a dict: [label name] = api name
         self.models_filename = 'model-triggers.txt'
         self.model_trigger_words = None
         self.sdi_model_request_made = False
@@ -3179,6 +3188,13 @@ if __name__ == '__main__':
                 # when the first worker is ready
                 worker['sdi_instance'].get_server_samplers()
                 control.sdi_sampler_request_made = True
+                skip = True
+
+            if not control.sdi_scheduler_request_made:
+                # get available schedulers from the server
+                # when the first worker is ready
+                worker['sdi_instance'].get_server_schedulers()
+                control.sdi_scheduler_request_made = True
                 skip = True
 
             if not control.sdi_model_request_made:

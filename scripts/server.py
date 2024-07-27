@@ -138,9 +138,12 @@ def build_gallery(control):
                 param_string += 'ADetailer enabled ' + ' (' + model + ')'
 
             if params['sampler'] != '':
+                sampler_full_name = str(params['sampler'])
+                if 'scheduler' in params and params['scheduler'] != '' and params['scheduler'].lower() != 'automatic':
+                    sampler_full_name += ' ' + str(params['scheduler'])
                 if param_string != '':
                     param_string += '  |  '
-                param_string += 'sampler: ' + str(params['sampler'])
+                param_string += 'sampler: ' + sampler_full_name
 
             if params['steps'] != '':
                 if param_string != '':
@@ -199,9 +202,12 @@ def build_gallery(control):
 
             if 'highres_sampler' in params and params['highres_sampler'] != '':
                 show_denoise = True
+                hr_sampler_full_name = str(params['highres_sampler'])
+                if 'highres_scheduler' in params and params['highres_scheduler'] != '' and params['highres_scheduler'].lower() != 'automatic':
+                    hr_sampler_full_name += ' ' + str(params['highres_scheduler'])
                 if param_string != '':
                     param_string += '  |  '
-                param_string += 'HR fix sampler: ' + str(params['highres_sampler'])
+                param_string += 'HR fix sampler: ' + hr_sampler_full_name
 
             if 'highres_steps' in params and params['highres_steps'] != '':
                 show_denoise = True

@@ -250,6 +250,7 @@ class PromptManager():
             'ckpt_file' : self.control.config['ckpt_file'],
             'override_ckpt_file' : '',
             'sampler' : self.control.config['sampler'],
+            'scheduler' : 'Automatic',
             'prompt' : "",
             'neg_prompt' : self.control.config['neg_prompt'],
             'highres_fix' : self.control.config['highres_fix'],
@@ -258,6 +259,7 @@ class PromptManager():
             'highres_ckpt_file' : '',
             'highres_vae' : '',
             'highres_sampler' : '',
+            'highres_scheduler' : '',
             'highres_steps' : '',
             'highres_prompt' : '',
             'highres_neg_prompt' : '',
@@ -467,6 +469,13 @@ class PromptManager():
                 self.config.update({'highres_sampler' : sampler})
             else:
                 self.config.update({'highres_sampler' : ''})
+
+        elif command == 'highres_scheduler':
+            if value != '':
+                scheduler = self.validate_scheduler(value)
+                self.config.update({'highres_scheduler' : scheduler})
+            else:
+                self.config.update({'highres_scheduler' : ''})
 
         elif command == 'highres_steps':
             if value != '':
@@ -1152,6 +1161,13 @@ class PromptManager():
             sampler = self.validate_sampler(value)
             self.config.update({'sampler' : sampler})
 
+        elif command == 'scheduler':
+            if value != '':
+                scheduler = self.validate_scheduler(value)
+                self.config.update({'scheduler' : scheduler})
+            else:
+                self.config.update({'scheduler' : 'Automatic'})
+
         elif command == 'override_sampler':
             if value != '':
                 sampler = self.validate_sampler(value)
@@ -1191,6 +1207,28 @@ class PromptManager():
                     self.control.print("*** WARNING: prompt file command SAMPLER value (" + sampler + ") doesn't match any server values; defaulting to Euler! ***")
 
         return validated_sampler
+
+
+    # validate user-supplied scheduler name against server list
+    def validate_scheduler(self, scheduler, suppress_warning=False):
+        validated_scheduler = scheduler
+        validated = False
+        if self.control.sdi_schedulers != None:
+            for s in self.control.sdi_schedulers:
+                if scheduler.lower() == s.lower():
+                    # case-insensitive match; use the exact casing from the server
+                    validated_scheduler = s
+                    validated = True
+                    break
+
+            if not validated:
+                # user-supplied scheduler doesn't closely match anything on server list
+                # use default
+                validated_scheduler = 'Automatic'
+                if not suppress_warning:
+                    self.control.print("*** WARNING: prompt file command SCHEDULER value (" + scheduler + ") doesn't match any server values; defaulting to Automatic! ***")
+
+        return validated_scheduler
 
 
     # validate user-supplied controlnet model
@@ -1680,6 +1718,9 @@ def create_command(command, output_dir_ext, gpu_id):
     if command.get('highres_sampler') != "":
         py_command += " --hr_sampler " + str(command.get('highres_sampler'))
 
+    if command.get('highres_scheduler') != "":
+        py_command += " --hr_scheduler " + str(command.get('highres_scheduler'))
+
     if command.get('highres_steps') != "":
         py_command += " --hr_steps " + str(command.get('highres_steps'))
 
@@ -1716,6 +1757,9 @@ def create_command(command, output_dir_ext, gpu_id):
 
     # with img2img only ddim is supported so don't pass sampler options
     py_command += " --sampler " + str(command.get('sampler'))
+
+    if command.get('scheduler') != "":
+        py_command += " --scheduler " + str(command.get('scheduler'))
     #if command.get('input_image') == "":
     #    if command.get('sampler') != '' and command.get('sd_low_memory') == "yes":
     #        py_command += " --sampler " + str(command.get('sampler'))
@@ -1741,6 +1785,7 @@ def extract_params_from_command(command):
         'height' : "",
         'steps' : "",
         'sampler' : "ddim",
+        'scheduler' : "Automatic",
         'scale' : "",
         'input_image' : "",
         'strength' : "",
@@ -1758,6 +1803,7 @@ def extract_params_from_command(command):
         'highres_ckpt_file' : "",
         'highres_vae' : "",
         'highres_sampler' : "",
+        'highres_scheduler' : "",
         'highres_steps' : "",
         'highres_prompt' : "",
         'highres_neg_prompt' : "",
@@ -1898,6 +1944,12 @@ def extract_params_from_command(command):
                     temp = temp.split('--', 1)[0]
                 params.update({'highres_sampler' : temp.strip()})
 
+            if '--hr_scheduler' in command:
+                temp = command.split('--hr_scheduler', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'highres_scheduler' : temp.strip()})
+
             if '--hr_steps' in command:
                 temp = command.split('--hr_steps', 1)[1]
                 if '--' in temp:
@@ -2023,6 +2075,12 @@ def extract_params_from_command(command):
                 if '--' in temp:
                     temp = temp.split('--', 1)[0]
                 params.update({'strength' : temp.strip()})
+
+            if '--scheduler' in command:
+                temp = command.split('--scheduler', 1)[1]
+                if '--' in temp:
+                    temp = temp.split('--', 1)[0]
+                params.update({'scheduler' : temp.strip()})
 
             if '--plms' in command:
                 # non-optimized version, ddim is default unless --plms specified

@@ -118,7 +118,7 @@ HIRES_FIX_MODE = simple
 PF_WIDTH = 512             			# output image final width, default is 512
 PF_HEIGHT = 512            			# output image final height, default is 512
 PF_HIGHRES_FIX = no					# helps a lot when generating images significantly larger than 512x512 at the cost of speed
-PF_SAMPLER = DPM++ 2M Karras		# sampler to use (create a new prompt file using the web UI to see a full list of options)
+PF_SAMPLER = DPM++ 2M			# sampler to use (create a new prompt file using the web UI to see a full list of options)
 PF_STEPS = 20              			# number of steps, default = 50
 PF_SCALE = 7.5              		# guidance scale, default = 7.5
 PF_SAMPLES = 1						# number of images to generate per prompt

@@ -98,6 +98,18 @@ class GetSamplersRequest(threading.Thread):
         self.callback(response)
 
 
+# for fetching valid schedulers
+class GetSchedulersRequest(threading.Thread):
+    def __init__(self, sdi_ref, callback=lambda: None, *args):
+        threading.Thread.__init__(self)
+        self.sdi_ref = sdi_ref
+        self.callback = callback
+
+    def run(self):
+        response = requests.get(url=f'{self.sdi_ref.url}/sdapi/v1/schedulers')
+        self.callback(response)
+
+
 # for fetching valid model checkpoints
 class GetModelsRequest(threading.Thread):
     def __init__(self, sdi_ref, callback=lambda: None, *args):
@@ -551,10 +563,18 @@ class SDI:
     # gets valid samplers from server
     def get_server_samplers(self):
         self.busy = True
-        #self.log('Fetching samplers from server...')
         self.log('querying SD for available samplers...', True)
         query = GetSamplersRequest(self, self.sampler_response)
         query.start()
+
+
+    # gets valid schedulers from server
+    def get_server_schedulers(self):
+        self.busy = True
+        self.log('querying SD for available schedulers...', True)
+        query = GetSchedulersRequest(self, self.scheduler_response)
+        query.start()
+
 
     # handle server sampler response
     def sampler_response(self, response):
@@ -575,6 +595,22 @@ class SDI:
         if self.control_ref.prompt_file != '':
             self.control_ref.new_prompt_file(self.control_ref.prompt_file)
 
+        self.busy = False
+
+
+    # handle server scheduler response
+    def scheduler_response(self, response):
+        r = response.json()
+        schedulers = {}
+        for i in r:
+            #schedulers.append(i['name'])
+            schedulers[i['label']] = i['name']
+        self.log('received scheduler query response: SD indicates ' + str(len(schedulers)) + ' schedulers available for use...', True)
+        #schedulers.sort()
+        self.control_ref.sdi_schedulers = schedulers
+        # reload prompt file if we have one to validate it against schedulers
+        if self.control_ref.prompt_file != '':
+            self.control_ref.new_prompt_file(self.control_ref.prompt_file)
         self.busy = False
 
 
