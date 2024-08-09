@@ -40,7 +40,7 @@ Some UI screenshots:
 
 # Features
 
- * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with support for SD 1.4, SD 1.5, SD 2.0, SD 2.1, and SDXL.
+ * Based on [Stable Diffusion](https://stability.ai/blog/stable-diffusion-public-release), with support for SD 1.4, SD 1.5, SD 2.0, SD 2.1, SDXL, and SD3.
  * Direct support for ControlNet, ADetailer, and Ultimate SD Upscale extensions.
  * Dream Factory acts as a powerful automation and management tool for the popular [Automatic1111 SD repo](https://github.com/AUTOMATIC1111/stable-diffusion-webui#features). Integration with Automatic1111's repo means Dream Factory has access to one of the most full-featured Stable Diffusion packages available.
  * Multi-threaded engine capable of simultaneous, fast management of multiple GPUs. As far as I'm aware, Dream Factory is currently one of the only Stable Diffusion options for true multi-GPU support.
